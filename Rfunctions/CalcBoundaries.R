@@ -1,0 +1,68 @@
+CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
+                           sided=1,  #one or two-sided
+                           alpha=0.05,  #type I error
+                           beta=0.2,  #type II error
+                           informationRates=c(0.5,1),  #planned or observed information rates
+                           gammaA=2,  #rho parameter for alpha error spending function
+                           gammaB=2,  #rho parameter for beta error spending function
+                           method=1,  #use method 1 or 2 from paper H&J
+                           delta=1.5,  #effect that the study is powered for
+                           Id=0.55){  #(expected) information ratio at each decision analysis
+  
+  require(rpact)
+  
+  if(sided!=1){
+    stop("Function cannot handle two-sided tests yet")
+  }
+  
+  if(sum(Id < informationRates[-length(informationRates)])>0){
+    stop("Information at decision analysis should not be smaller than information at interim analysis")
+  }
+  
+  
+  message("the method assumes that positive effects are good")
+  
+  StandardDesign <- getDesignGroupSequential(kMax=kMax, sided = sided, alpha = alpha, beta = beta,
+                                            informationRates = informationRates,
+                                            typeOfDesign="asKD",
+                                            typeBetaSpending="bsKD",gammaA=gammaA,gammaB=gammaB)
+  
+  R <- getDesignCharacteristics(StandardDesign)$inflationFactor
+  Imax <- ((qnorm(1-alpha)+qnorm(1-beta))/delta)^2*R
+  Id <- Id*Imax
+  
+  if(max(Id) >= Imax){
+    stop("Function cannot handle Id >= Imax yet")
+  }
+    
+  uk <- StandardDesign$criticalValues
+  lk <- c(StandardDesign$futilityBounds,uk[kMax])
+  ck <- rep(0,kMax-1)
+  
+  if(method==1){
+    
+    for(i in 1:(kMax-1)){
+      ck[i] <- Method1(uk=uk[1:i],lk=lk[1:i],Ik=(informationRates*Imax)[1:i],Id=Id[i],Imax=Imax)
+    }
+    
+  } else if(method==2){
+    
+    for(i in 1:(kMax-1)){
+      ###THIS GIVES ERRORS BECAUSE IT HAS TROUBLE WITH THE BOUNDARIES FOR THE UNIROOT FUNCTIONS IN METHOD1 AND 2
+      delayedBnds <- Method2(uk=uk[1:i],
+                             lk=lk[1:i],
+                             Ik=(informationRates*Imax)[1:i],
+                             Id=Id[i],
+                             Imax=Imax,
+                             delta=delta)
+      ck[i] <- delayedBnds$critval
+      lk[i] <- delayedBnds$lkd
+    }
+    
+  } else {
+    stop(("Please specify method=1 or method=2"))
+  }
+  
+  list("uk"=uk,"lk"=lk,"ck"=ck)
+}
+
