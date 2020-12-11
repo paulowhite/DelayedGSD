@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: okt 30 2020 (18:19) 
+## Last-Updated: dec 10 2020 (12:26) 
 ##           By: Brice Ozenne
-##     Update #: 118
+##     Update #: 143
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -20,14 +20,17 @@
 #' @description Extract information relative to a parameter.
 #'
 #' @param object a \code{ttest} object or a \code{gls} object.
+#' @param name.coef A character indicating relative to which coefficient the information should be computed.
 #' @param method A character (\code{"direct"}, \code{"explicit"}, \code{"inflation"})
 #' or a list containing the theoretical value of the variance-covariance matrix for each treatment group.
-#'
+#' @param ... not used. For compatibility with the generic method.
+#' 
 #' @details Argument \bold{method}: \cr
 #' \itemize{
 #' \item \code{"direct"} use the square of the inverse of the estimated standard error for the regression coefficient to estimate the information.
 #' \item \code{"explicit"} plug in the formula for the information / variance, the quantities estimated by the model (e.g. residual variance, effective sample size).
 #' \item \code{"inflation"} same as \code{"explicit"} except it uses the number of samples instead of the number of samples with observations as the sample size when doing the plug-in.
+#' \item \code{"pooling"} pool the current information with the future information of observations with missing data.
 #' }
 #' 
 #' @export
@@ -46,24 +49,33 @@
 #'             data.frame(group=1,value=Y))
 #'
 #' ## t-test
-#' getInformation(ttest(value~1, df[df$group==0,]))
+#' getInformation(ttest(value~1, df[df$group==0,])) ## only work for R>=4.0
 #' getInformation(ttest(x = X), method = "direct")
 #' getInformation(ttest(X), method = "explicit")
+#' getInformation(ttest(X), method = list(1)) ## information with a variance of 1
+#' getInformation(ttest(X), method = list(2)) ## information with a variance of 2
+#' getInformation(ttest(rnorm(length(X))), method = list(2)) ## note: the X values do not matter here
 #' 
 #' getInformation(ttest(value~group, data = df))
 #' getInformation(ttest(x = X, Y), method = "direct")
 #' getInformation(ttest(X,Y), method = "explicit")
+#' getInformation(ttest(X,Y), method = list(1,2)) ## information with a variance of 1 in one group and 2 in the other group
+#' getInformation(ttest(X,Y), method = list(1,3)) ## information with a variance of 1 in one group and 3 in the other group
 #'
 #' ## gls
 #' library(nlme)
 #' 
-#' e.gls <- gls(value~1, df[df$group==1,])
+#' e.gls <- gls(value~1, df[df$group==0,])
 #' getInformation(e.gls, name.coef = "(Intercept)", method = "direct")
 #' getInformation(e.gls, name.coef = "(Intercept)", method = "explicit")
+#' getInformation(e.gls, name.coef = "(Intercept)", method = list(matrix(1,1,1)))
 #' 
 #' e.gls <- gls(value~group, data = df, weights = varIdent(form=~1|group))
 #' getInformation(e.gls, name.coef = "(Intercept)", method = "direct")
 #' getInformation(e.gls, name.coef = "(Intercept)", method = "explicit")
+#' getInformation(e.gls, name.coef = "group", method = "direct")
+#' getInformation(e.gls, name.coef = "group", method = "explicit")
+#' getInformation(e.gls, name.coef = "group", method = list(matrix(1,1,1),matrix(2,1,1)))
 #' 
 #' #### Two endpoints ####
 #' ## simulate data
@@ -86,6 +98,7 @@
 #' getInformation(e.gls, name.coef = "time", method = "direct")
 #' getInformation(e.gls, name.coef = "time", method = "explicit")
 #' getInformation(e.gls, name.coef = "time", method = "pooling")
+#' getInformation(e.gls, name.coef = "time", method = list(diag(1:2)))
 #' 
 #' e.gls <- gls(value~time*group, data = df,
 #'              correlation = corSymm(form=~1|id),
@@ -110,6 +123,9 @@ getInformation.ttest <- function(object, method = "direct", ...){
     if(object$method=="One Sample t-test"){
         x <- object$args$x
         if(is.list(method)){ ## useful when sigma is theoretically known
+            if(length(method) != 1){
+                stop("The number of variance parameters contained in the \'method\' argument do not match the number of groups.\n")
+            }
             n <- length(x)
             vec.sigma2 <- method[[1]]
             se <- sqrt(sum(vec.sigma2/n))
@@ -128,6 +144,9 @@ getInformation.ttest <- function(object, method = "direct", ...){
         y <- object$args$y
         
         if(is.list(method)){ ## useful when sigma are theoretically known
+            if(length(method) != 2){
+                stop("The number of variance parameters contained in the \'method\' argument do not match the number of groups.\n")
+            }
             n <- c(length(x),length(y))
             vec.sigma2 <- c(method[[1]],method[[2]])
         }else if(method=="explicit"){
@@ -158,6 +177,9 @@ getInformation.gls <- function(object, name.coef, method = "direct",...){
     
     data <- nlme::getData(object)
     vec.id <- unique(object$group)
+    if(length(vec.id)==0){
+        vec.id <- 1:NROW(data)
+    }
     name.allcoef <- names(coef(object))
     n.allcoef <- length(name.allcoef)
     name.coef <- match.arg(name.coef, names(coef(object)))
@@ -186,22 +208,26 @@ getInformation.gls <- function(object, name.coef, method = "direct",...){
  
         if(is.null(object$modelStruct$varStruct)){
             index.Sigma <- rep(1,length(vec.id))
-        }else{
+        }else if(!is.null(object$modelStruct$corStruct)){
             Sigma.pattern <- unique(do.call(rbind,tapply(attr(object$modelStruct$varStruct,"groups"),object$groups, function(iVec){list(iVec)})))
             index.Sigma <- apply(apply(Sigma.pattern, 1, function(iPattern){attr(object$modelStruct$varStruct,"groups") %in% iPattern}),1,which)
+        }else{
+            index.Sigma <- as.numeric(as.factor(attr(object$modelStruct$varStruct,"groups")))
         }
-        if(any(index.Sigma %in% 1:length(method) == FALSE)){
+        if(length(unique(sort(index.Sigma))) != length(method) || any(unique(sort(index.Sigma)) %in% 1:length(method) == FALSE)){
             stop("The number of covariance matrices contained in the \'method\' argument do not match the number of covariate levels.\n")
         }
         for(iId in 1:n.id){ ## iId <- 1
-            
-            if(is.null(object$modelStruct$corStruct)){
+            if(is.null(object$modelStruct$corStruct) && is.null(object$modelStruct$varStruct)){
                 iX <- X[iId,,drop=FALSE]
-                iSigma <- method[[iId]]
-            }else{
+                iSigma <- method[[1]]
+            }else if(!is.null(object$modelStruct$corStruct)){
                 iIndex <- which(object$group==vec.id[iId])
                 iX <- X[iIndex,,drop=FALSE]
                 iSigma <- method[[unique(index.Sigma[iIndex])]]
+            }else if(!is.null(object$modelStruct$varStruct)){
+                iX <- X[iId,,drop=FALSE]
+                iSigma <- method[[index.Sigma[iId]]]
             }
             Info <- Info + t(iX) %*% solve(iSigma) %*% iX
         }
