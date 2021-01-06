@@ -1,48 +1,91 @@
 PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
                            type="Z",    #type of boundaries to plot (Z-statistic (Z), p-value (P), effect (E))
-                           Itype="rate",
-                           main=NULL){   #information scale on x-axis (rate or absolute (abs))
-  
-  if(Itype=="rate"){
-    Ival <- CalcBndObj$Ik/CalcBndObj$Imax
-    Idval <- CalcBndObj$Id/CalcBndObj$Imax
-    xlb <- "Information fraction"
-  } else if(Itype=="abs"){
-    Ival <- CalcBndObj$Ik
-    Idval <- CalcBndObj$Id
-    xlb <- "Information"
-  } else {
-    stop("Itype not correctly specified")
-  }
-  
-  if(type=="Z"){
-    plot(Ival,CalcBndObj$uk,type="l",lty=2,lwd=2,ylim=c(-1,3),col="green",xlab=xlb,ylab="Stopping boundary (Z-statistic)",main=main)
-    lines(Ival,CalcBndObj$lk,col="red",lwd=2,lty=2)
-    points(Idval,CalcBndObj$ck,col="black",pch=4,cex=1.5)
-    points(Ival,CalcBndObj$lk,col="red",pch=21,bg="red",cex=1.2)
-    points(Ival,CalcBndObj$uk,col="green",pch=21,bg="green",cex=1.2)
-    abline(h=qnorm(1-CalcBndObj$alpha),lty=2,col="grey")
-    legend("bottomright",c("Stopping bound for efficacy","Stopping bound for futility","Critical value fixed design","Decision boundary"),lty=c(2,2,2,NA),pch=c(21,21,NA,4),col=c("green","red","grey","black"),pt.bg = c("green","red",NA,NA))
-  } else if(type=="P"){
-    plot(Ival,1-pnorm(CalcBndObj$uk),type="l",lty=2,lwd=2,ylim=c(0,1),col="green",xlab=xlb,ylab="Stopping boundary (P-value)",main=main)
-    lines(Ival,1-pnorm(CalcBndObj$lk),col="red",lwd=2,lty=2)
-    points(Idval,1-pnorm(CalcBndObj$ck),col="black",pch=4,cex=1.5)
-    points(Ival,1-pnorm(CalcBndObj$lk),col="red",pch=21,bg="red",cex=1.2)
-    points(Ival,1-pnorm(CalcBndObj$uk),col="green",pch=21,bg="green",cex=1.2)
-    abline(h=CalcBndObj$alpha,lty=2,col="grey")
-    legend("topright",c("Stopping bound for efficacy","Stopping bound for futility","Critical value fixed design","Decision boundary"),lty=c(2,2,2,NA),pch=c(21,21,NA,4),col=c("green","red","grey","black"),pt.bg = c("green","red",NA,NA))
-  } else if(type=="E"){
-    plot(Ival,CalcBndObj$uk/CalcBndObj$Ik,type="l",lty=2,lwd=2,ylim=c(min(CalcBndObj$lk/CalcBndObj$Ik)-0.5,max(CalcBndObj$uk/CalcBndObj$Ik)+0.5),col="green",xlab=xlb,ylab="Stopping boundary (Effect estimate)",main=main)
-    lines(Ival,CalcBndObj$lk/CalcBndObj$Ik,col="red",lwd=2,lty=2)
-    points(Idval,CalcBndObj$ck/CalcBndObj$Id,col="black",pch=4,cex=1.5)
-    points(Ival,CalcBndObj$lk/CalcBndObj$Ik,col="red",pch=21,bg="red",cex=1.2)
-    points(Ival,CalcBndObj$uk/CalcBndObj$Ik,col="green",pch=21,bg="green",cex=1.2)
-    abline(h=qnorm(1-CalcBndObj$alpha)/CalcBndObj$Ik[length(CalcBndObj$Ik)],lty=2,col="grey")
-    legend("bottomright",c("Stopping bound for efficacy","Stopping bound for futility","Critical value fixed design","Decision boundary"),lty=c(2,2,2,NA),pch=c(21,21,NA,4),col=c("green","red","grey","black"),pt.bg = c("green","red",NA,NA))
-  } else {
-    stop("Incorrect type specified")
-  }
-  
+                           Itype="rate"){   #information scale on x-axis (rate or absolute (abs))  
+    # {{{ Preliminaries 
+    if(Itype=="rate"){
+        Ival <- CalcBndObj$Ik/CalcBndObj$Imax
+        Idval <- CalcBndObj$Id/CalcBndObj$Imax
+        xlb <- "Information fraction"
+    } else if(Itype=="abs"){
+        Ival <- CalcBndObj$Ik
+        Idval <- CalcBndObj$Id
+        xlb <- "Information"
+    } else {
+        stop("Itype not correctly specified")
+    }
+    if( !(type %in% c("Z","E","P")) )  stop("Incorrect type specified")
+    # }}}
+    # {{{ Values to plot
+    # default (if type="Z")
+    xu <- Ival
+    xd <- Idval
+    yu <- CalcBndObj$uk
+    yl <- CalcBndObj$lk
+    yc <- CalcBndObj$ck
+    yh <- qnorm(1-CalcBndObj$alpha)
+    whereleg <- "bottomleft"
+    ylab <- "Stopping boundary (Z-statistic)"
+    ylim <- c(-1,3)
+
+    if(type=="P"){
+        whereleg <- "topleft"
+        ylab <- "Stopping boundary (P-value)"
+        yu <- 1-pnorm(CalcBndObj$uk)
+        yl <- 1-pnorm(CalcBndObj$lk)
+        yc <- 1-pnorm(CalcBndObj$ck)
+        yh <- CalcBndObj$alpha
+        ylim <- c(0,1)    
+    }
+    if(type=="E"){
+        ylab <- "Stopping boundary (Effect estimate)"
+        yu <- CalcBndObj$uk/sqrt(CalcBndObj$Ik)
+        yl <- CalcBndObj$lk/sqrt(CalcBndObj$Ik)
+        yc <- CalcBndObj$c/sqrt(CalcBndObj$Id)
+        yh <- qnorm(1-CalcBndObj$alpha)/sqrt(CalcBndObj$Ik[length(CalcBndObj$Ik)])
+        ylim <- c(min(yl)-0.5,max(yu)+0.5)
+    }
+    # }}}
+    # {{{ Plot
+    plot(xu,yu,type="l",lty=2,lwd=2,ylim=ylim,col="green3",xlab=xlb,ylab=ylab,axes=FALSE,
+         xlim=c(0,max(xu)))
+    lines(xu,yl,col="red",lwd=2,lty=2)
+    points(xd,yc,col="black",pch=19,cex=1.5)
+    points(xu,yl,col="red",pch=21,bg="red",cex=1.2)
+    points(xu,yu,col="green3",pch=21,bg="green3",cex=1.2)
+    abline(h=yh,lty=2,col="grey")
+    # axes
+    axis(1,at=c(0,xu,xd),labels=format(c(0,xu,xd),digits=2))
+    axis(2,at=c(yl,yu,yc,ylim,yh),
+         labels=format(c(yl,yu,yc,ylim,yh),digits=2),las=2)
+    # color areas
+    colvectgreen <- col2rgb("green3")/255
+    colvectred <- col2rgb("red")/255
+    myrgbcolgreen <- rgb(red=colvectgreen[1],
+                         green=colvectgreen[2],
+                         blue=colvectgreen[3],
+                         alpha=0.25)
+    myrgbcolred <- rgb(red=colvectred[1],
+                       green=colvectred[2],
+                       blue=colvectred[3],
+                       alpha=0.25)
+    polygon(x=c(0,xu,rev(xu),0),
+            y=c(yl[1],yl,rep(ifelse(type=="P",max(ylim),min(ylim)),length(yu)+1)),
+            col=myrgbcolred,border=NA)
+    polygon(x=c(0,xu,rev(xu),0),
+            y=c(yu[1],yu,rep(ifelse(type!="P",max(ylim),min(ylim)),length(yu)+1)),
+            col=myrgbcolgreen,border=NA)
+    # legend   
+    legend(whereleg,
+           c("Stopping bound for efficacy",
+             "Stopping bound for futility",
+             "Critical value fixed design",
+             "Decision boundary"),
+           lty=c(2,2,2,NA),
+           pch=c(21,21,NA,19),
+           col=c("green3","red","grey","black"),
+           pt.bg = c("green3","red",NA,NA),
+           bg="white")
+    # }}}    
 }
 
 #consider whether we want to somehow integrate the plotting function of the Rpact package and add to that, but it
