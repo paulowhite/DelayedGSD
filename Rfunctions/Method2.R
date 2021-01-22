@@ -35,7 +35,7 @@ Method2 <- function(uk,  #upper bounds for all analyses up to and including curr
   #browser()
   
   sol <- uniroot(function(x){
-    
+
     c <- Method1(lk=c(lk[0:(k-1)],x),uk=uk,Ik=Ik[1:k],Id=Id,Imax=Imax)
     
     pmvnorm(lower = c(lk[0:(k-1)],uk[k],-Inf),
