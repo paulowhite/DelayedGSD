@@ -1,11 +1,12 @@
 CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
                            sided=1,  #one or two-sided
-                           alpha=0.05,  #type I error
+                           alpha=0.025,  #type I error
                            beta=0.2,  #type II error
                            informationRates=c(0.5,1),  #planned or observed information rates
                            gammaA=2,  #rho parameter for alpha error spending function
                            gammaB=2,  #rho parameter for beta error spending function
                            method=1,  #use method 1 or 2 from paper H&J
+                           cNotBelowFixedc=FALSE, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
                            delta=1.5,  #effect that the study is powered for
                            Id=0.55){  #(expected) information ratio at each decision analysis
   
@@ -41,23 +42,29 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
   
   if(method==1){
     
-    for(i in 1:(kMax-1)){
-      ck[i] <- Method1(uk=uk[1:i],lk=lk[1:i],Ik=(informationRates*Imax)[1:i],Id=Id[i],Imax=Imax)
-    }
+      for(i in 1:(kMax-1)){
+          ck[i] <- Method1(uk=uk[1:i],
+                           lk=lk[1:i],
+                           Ik=(informationRates*Imax)[1:i],
+                           Id=Id[i],
+                           Imax=Imax,
+                           cMin=ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf))
+      }
     
   } else if(method==2){
     
-    for(i in 1:(kMax-1)){
-      ###THIS GIVES ERRORS BECAUSE IT HAS TROUBLE WITH THE BOUNDARIES FOR THE UNIROOT FUNCTIONS IN METHOD1 AND 2
-      delayedBnds <- Method2(uk=uk[1:i],
-                             lk=lk[1:i],
-                             Ik=(informationRates*Imax)[1:i],
-                             Id=Id[i],
-                             Imax=Imax,
-                             delta=delta)
-      ck[i] <- delayedBnds$critval
-      lk[i] <- delayedBnds$lkd
-    }
+      for(i in 1:(kMax-1)){
+          ###THIS GIVES ERRORS BECAUSE IT HAS TROUBLE WITH THE BOUNDARIES FOR THE UNIROOT FUNCTIONS IN METHOD1 AND 2
+          delayedBnds <- Method2(uk=uk[1:i],
+                                 lk=lk[1:i],
+                                 Ik=(informationRates*Imax)[1:i],
+                                 Id=Id[i],
+                                 Imax=Imax,
+                                 delta=delta,
+                                 cMin=ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf))
+          ck[i] <- delayedBnds$critval
+          lk[i] <- delayedBnds$lkd
+      }
     
   } else {
     stop(("Please specify method=1 or method=2"))
