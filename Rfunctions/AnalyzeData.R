@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 25 2020 (09:23) 
 ## Version: 
-## Last-Updated: Aug 28 2020 (17:14) 
-##           By: Paul Blanche
-##     Update #: 32
+## Last-Updated: feb  2 2021 (10:21) 
+##           By: Brice Ozenne
+##     Update #: 38
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -17,9 +17,14 @@
 ## 
 ### Code:
 
-AnalyzeData <- function(d){
+#' @param d dataset
+#' @param ddf [character] method used to compute the degrees of freedom of the Wald statistic.
+#' Can be \code{satterthwaite} or \code{nlme}.
+AnalyzeData <- function(d, ddf = "nlme"){
 
     require(nlme)
+
+    ddf <- match.arg(ddf, choices = c("nlme","satterthwaite"))
     N.fw <- length(grep("t",names(d)))
     # transform to long format
     d$baseline <- d$X1
@@ -60,14 +65,33 @@ AnalyzeData <- function(d){
     ## pval_2_sided <- 2*(pnorm(-abs(meandiff/SEmeandiff)))  #2-sided p-value
     ## pval_1_sided <- pnorm(meandiff/SEmeandiff, lower.tail=TRUE)    #1-sided p-value
 
-   
-    out <- list(d.long=long,
-                fit=m,
-                pavlue=2*(pnorm(-abs(coef(m)["Z1"]/sqrt(m$varBeta["Z1","Z1"])))),
-                estimate=coef(m)["Z1"],
-                se=sqrt(m$varBeta["Z1","Z1"]),
-                Info=1/m$varBeta["Z1","Z1"])
-    out
+
+    if(ddf=="nlme"){
+        out <- list(d.long=long,
+                    fit=m,
+                    pavlue=2*(pnorm(-abs(coef(m)["Z1"]/sqrt(m$varBeta["Z1","Z1"])))),
+                    estimate=coef(m)["Z1"],
+                    se=sqrt(m$varBeta["Z1","Z1"]),
+                    Info=1/m$varBeta["Z1","Z1"])
+    }else{
+        require(emmeans)
+        groupTest <- emmeans(m, specs = ~Z|time.factor)
+        e.satterthwaite <- summary(pairs(groupTest, reverse = TRUE), by = NULL, infer = TRUE, adjust = "none")
+        index <- which(e.satterthwaite$time.factor==levels(long$time.factor)[1])
+        
+        out <- list(d.long=long,
+                    fit=m,
+                    pavlue=e.satterthwaite$p.value[index],
+                    estimate=e.satterthwaite$estimate[index],
+                    se=e.satterthwaite$SE[index],
+                    Info=1/e.satterthwaite$SE[index]^2)
+
+        if(abs(out$estimate-coef(m)["Z1"])>1e-12){
+            warning("Something went wrong when extracting the coefficient from emmeans \n")
+        }
+    }
+    
+    return(out)
 }
 
 #----------------------------------------------------------------------
