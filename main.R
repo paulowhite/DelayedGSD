@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 24 2020 (14:37) 
 ## Version: 
-## Last-Updated: Sep 15 2020 (11:33) 
-##           By: Paul Blanche
-##     Update #: 169
+## Last-Updated: feb  3 2021 (14:06) 
+##           By: Brice Ozenne
+##     Update #: 173
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,7 +19,10 @@ rm(list=ls())
 
 if(system("whoami",intern=TRUE)=="paul"){  
     setwd("~/research/SeqDesignDelayed/DelayedGSD/")
+}else if(system("whoami",intern=TRUE)=="brice"){  
+    setwd("~/Documents/GitHub/DelayedGSD/")
 }
+
 source("Rfunctions/GenData.R")
 source("Rfunctions/PlotProgress.R")
 source("Rfunctions/AnalyzeData.R")
@@ -50,11 +53,19 @@ PlotProgress(d,at=thet)
 di <- SelectData(d,t=thet)
 di
 # Analyze the data
-#
+
 Res <- AnalyzeData(di)
-Res$estimate
-Res$se
-summary(Res$fit)
+Res <- AnalyzeData(di, ddf = "satterthwaite")
+
+
+ResInfo <- getInformation(Res$fit, data = Res$d.long, name.coef = "Z1", type = "estimation", details = TRUE)
+as.double(ResInfo) - 1/vcov(Res$fit)["Z1","Z1"]
+attr(ResInfo,"details")$decision$information
+attr(ResInfo,"details")$interim$information
+attr(ResInfo,"details")$interim.cc$information
+
+getInformation(Res$fit, data = Res$d.long, name.coef = "Z1", type = "prediction", method.prediction = "inflation")
+
 
 
 

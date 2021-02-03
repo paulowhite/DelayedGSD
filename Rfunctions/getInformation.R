@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb  3 2021 (13:20) 
+## Last-Updated: feb  3 2021 (14:06) 
 ##           By: Brice Ozenne
-##     Update #: 500
+##     Update #: 536
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -241,7 +241,11 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     ## *** at interim: full information approach
     ## keep all observations without missing values in the response
     X.interim <- model.matrix(f.gls, data = data)
-    index.interim <- as.numeric(rownames(X.interim)) ## not nice but don't have better for now
+
+    index.interim <- which(!is.na(data[[all.vars(f.gls)[1]]]))
+    if(any(abs(X.decision[index.interim,]-X.interim)>1e-10)){ ## Sanity check
+        warning("Something went wrong when selecting the data at interim. \n")
+    }
     data.interim <- data[index.interim,,drop=FALSE]
     resPattern.interim <- .getPattern(object, data = data.interim, variance = variance, name.coef = name.coef)
 
@@ -269,7 +273,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
                                     index.variance = resPattern.decision$index.vargroup,
                                     index.cluster = resPattern.decision$index.cluster)
     var.decision <- solve(info.decision)[name.coef,name.coef]
-    
+
     ## *** at interim: full information approach
     info.interim <- getInformation(X.interim,
                                    variance = resPattern.interim$variance.vargroup,
@@ -295,18 +299,25 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     }else if(method.prediction == "inflation"){ 
         out <- 1/var.decision ## same as (1/var.interim.cc) * (n.decision/n.interim.full))
     }else if(method.prediction == "pooling"){ ## based on full information at interim
+        if(length(rho)>1){
+            stop("Argument \'method.prediction\' can only be \"pooling\" when there is only two timepoints. \n")
+        }
         info.current <- 1/(var.interim - (1-rho^2) * var.interim.cc * n.interim.proxy/(n.interim.full+n.interim.proxy))
         out <- info.current * (n.decision/(n.interim.full+n.interim.proxy)) 
     }
 
     ## ** export
     if(details){
-        attr(out,"details") <- list(decision = list(information = info.decision,
+        attr(out,"details") <- list(decision = list(information = 1/solve(info.decision)[name.coef,name.coef],
+                                                    vcov = solve(info.decision),
                                                     pattern = resPattern.decision),
-                                    interim = list(information = info.interim,
+                                    interim = list(information = 1/solve(info.interim)[name.coef,name.coef],
+                                                   vcov = solve(info.interim),
                                                    pattern = resPattern.interim),
-                                    interim.cc = list(information = info.interim.cc,
+                                    interim.cc = list(information = 1/solve(info.interim.cc)[name.coef,name.coef],
+                                                      vcov = solve(info.interim.cc),
                                                       pattern = resPattern.interim),
+                                    n = c(decision = n.decision, interim.full = n.interim.full, interim.proxy = n.interim.proxy)
                                     )
     }
     
@@ -324,9 +335,6 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
                                 )
         corStructNew <- Initialize(corStructNew, data = data)
         corgroups <- getGroups(corStructNew)
-        if(length(coef(object$modelStruct$corStruct))>1){
-            stop("Cannot handle more than 1 correlation coefficient")
-        }
     }
     if(!is.null(object$modelStruct$varStruct)){ 
         varStructNew <- do.call(class(object$modelStruct$varStruct)[1],
@@ -378,7 +386,12 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     
     ## ** correlation coefficient
     if(!is.null(variance)){
-        rho <- .getLowerOffDiag(variance[[1]])
+        if(NCOL(variance[[1]])>1 && NROW(variance[[1]])>1){
+            rho <- variance[[1]][lower.tri(variance[[1]])]
+        }else{
+            rho <- 0
+        }
+        
     }else if(is.null(object$modelStruct$corStruct)){
         rho <- 0
     }else{
@@ -390,7 +403,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     Sigma.pattern.full <- Sigma.pattern[sapply(Sigma.pattern, length) == rep.full]
     names(Sigma.pattern.full) <- sapply(Sigma.pattern.full, paste, collapse = "|")
 
-    variance <- .getResVcov(object, variance = variance, rho = rho, Sigma.pattern = Sigma.pattern.full)
+    variance <- .getResVcov(object, variance = variance, rho = rho, Sigma.pattern = Sigma.pattern.full, rep.full = rep.full)
 
     ## ** (missing data) residual variance-covariance matrix    
     if(is.null(object$modelStruct$varStruct) || is.null(object$modelStruct$corStruct)){ ## no variance or correlation structure
@@ -401,12 +414,12 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
 
         MSigma.pattern.full <- do.call(rbind,Sigma.pattern.full)
         
-        for(i.vargroup in 1:n.vargroup){
+        for(i.vargroup in 1:n.vargroup){ ## i.vargroup <- 2
             iname.vargroup <- name.vargroup[i.vargroup]
             if(iname.vargroup %in% names(Sigma.pattern.full)){
                 variance.vargroup[[i.vargroup]] <- variance[[iname.vargroup]]
             }else{
-                test <- t(apply(MSigma.pattern.full, 1, `%in%`, iname.vargroup)) ## t() because apply(,1,) returns the transposed version
+                test <- t(apply(MSigma.pattern.full, 1, `%in%`, Sigma.pattern[[iname.vargroup]])) ## t() because apply(,1,) returns the transposed version
                 index <- which.max(rowSums(test))
                 variance.vargroup[[i.vargroup]] <- variance.vargroup[[index]][test[index,],test[index,],drop=FALSE]
             }
@@ -423,7 +436,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
 }
 
 ## * .getResVcov
-.getResVcov <- function(object, variance, rho, Sigma.pattern){
+.getResVcov <- function(object, variance, rho, Sigma.pattern, rep.full){
 
     ## ** build or check variance covariance patterns for fully observed cluster
     if(is.null(variance)){
@@ -435,8 +448,11 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
             variance <- as.list((sigma(object)*coef(object$modelStruct$varStruct, allCoef = TRUE, unconstrained = FALSE))^2)
         }else{
             vec.sigma <- sigma(object)*coef(object$modelStruct$varStruct, allCoef = TRUE, unconstrained = FALSE)
+            Mcor <- matrix(1, nrow = rep.full, ncol = rep.full)
+            Mcor[lower.tri(Mcor)] <- rho
+            Mcor[upper.tri(Mcor)] <- t(Mcor)[upper.tri(Mcor)]
             variance <- setNames(lapply(Sigma.pattern, function(x){
-                tcrossprod(vec.sigma[x]) * (diag(1-rho,2,2)+rho)
+                tcrossprod(vec.sigma[x]) * Mcor
             }), names(Sigma.pattern))
         }
     }else{
@@ -459,20 +475,17 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
 
         
         ## check correlation
-        rho <- sapply(variance[sapply(variance,length)>1], function(x){.getLowerOffDiag(cov2cor(x))})
-        if(length(rho)>1 && any(abs(diff(rho))>1e-10)){
-            stop("When specificy the argument \"variance\", the correlation should be the same for all matrices. \n")
+        ls.rho <- lapply(variance[sapply(variance,length)>1], function(x){cov2cor(x)[lower.tri(x)]})
+        if(length(ls.rho)>1){
+            M.rho <- do.call(rbind, ls.rho)
+            test <- apply(M.rho, MARGIN = 2, FUN = function(x){max(abs(diff(x)))})
+            if(test>1e-10){
+                stop("When specificy the argument \"variance\", the correlation should be the same for all matrices. \n")
+            }
         }
     }
 
     return(variance)
-
-}
-
-## * .getLowerOffDiag
-## Extract off diagonal elements in the lower triangular part of the matrix
-.getLowerOffDiag <- function(object){
-    return(object[lower.tri(object)*(row(object) != col(object))==1])
 }
 
 ######################################################################
