@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb  3 2021 (14:06) 
+## Last-Updated: feb  3 2021 (16:05) 
 ##           By: Brice Ozenne
-##     Update #: 536
+##     Update #: 562
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -29,11 +29,19 @@
 #' or a list containing the theoretical value of the variance-covariance matrix for each treatment group.
 #' @param variance [NULL, list] If \code{NULL} then the estimated variance-covariance matrix from the object is used.
 #' Otherwise it should be a list containing the theoretical value of the variance-covariance matrix for each treatment group.
-#' @param ... not used. For compatibility with the generic method.
-#' 
-#' @details Argument \bold{method}:
+#' @param data [data.frame] The dataset relative to which the information should be computed. See details section.
+#' @param details [logical] Should intermediate results be output. See details section.
+#' @param ... not used. For compatibility with the generic details.
+
+#' @method Argument \bold{data}: the dataset may contain missing value in the outcome but no in the covariates. Missing value in the outcome indicates that the information is not available at the interim analysis but will be come available at decision.
 #'
-#'  \bold{Limitation}: for now can only deal with two observations per cluster.
+#'
+#' Argument \bold{details}: when using gls models, an attribute detail is added to the output which contain a list:\itemize{
+#' \item decision: information at decision analysis
+#' \item interim: information at the interim analysis using all available data
+#' \item interim.cc: information at the interim analysis using a complete case analysis
+#' \item n: sample size at decision, interim with complete observation, interim with only partial observations
+#' }
 #' 
 #' @export
 `getInformation` <- function(object, ...) UseMethod("getInformation")
@@ -197,7 +205,8 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
                  "Consider passing the data via the \'data\' argument. \n")
         }
     }
-
+    data <- as.data.frame(data)
+    
     if(!is.null(object$modelStruct$varStruct) && !inherits(object$modelStruct$varStruct, what = "varIdent")){
         stop("Only handles \"varIdent\" variance structures \n.")
     }
@@ -297,7 +306,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     if(type == "estimation"){
         out <- 1/var.interim
     }else if(method.prediction == "inflation"){ 
-        out <- 1/var.decision ## same as (1/var.interim.cc) * (n.decision/n.interim.full))
+        out <- 1/var.decision ## same as (1/var.interim.cc) * (n.decision/n.interim.full)
     }else if(method.prediction == "pooling"){ ## based on full information at interim
         if(length(rho)>1){
             stop("Argument \'method.prediction\' can only be \"pooling\" when there is only two timepoints. \n")
@@ -336,7 +345,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
         corStructNew <- Initialize(corStructNew, data = data)
         corgroups <- getGroups(corStructNew)
     }
-    if(!is.null(object$modelStruct$varStruct)){ 
+    if(!is.null(object$modelStruct$varStruct)){
         varStructNew <- do.call(class(object$modelStruct$varStruct)[1],
                                 args = list(form = stats::formula(object$modelStruct$varStruct),
                                             value = coef(object$modelStruct$varStruct, unconstrained = FALSE))
@@ -409,11 +418,10 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     if(is.null(object$modelStruct$varStruct) || is.null(object$modelStruct$corStruct)){ ## no variance or correlation structure
         variance.vargroup <- variance
     }else{ ## variance and correlation structure
-        name.vargroup <- c(names(Sigma.pattern.full), setdiff(names(Sigma.pattern),names(Sigma.pattern.full)))
+        name.vargroup <- names(Sigma.pattern)
         variance.vargroup <- setNames(vector(mode = "list", length = n.vargroup), name.vargroup)
-
         MSigma.pattern.full <- do.call(rbind,Sigma.pattern.full)
-        
+
         for(i.vargroup in 1:n.vargroup){ ## i.vargroup <- 2
             iname.vargroup <- name.vargroup[i.vargroup]
             if(iname.vargroup %in% names(Sigma.pattern.full)){
@@ -421,7 +429,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
             }else{
                 test <- t(apply(MSigma.pattern.full, 1, `%in%`, Sigma.pattern[[iname.vargroup]])) ## t() because apply(,1,) returns the transposed version
                 index <- which.max(rowSums(test))
-                variance.vargroup[[i.vargroup]] <- variance.vargroup[[index]][test[index,],test[index,],drop=FALSE]
+                variance.vargroup[[i.vargroup]] <- variance[[names(index)]][test[index,],test[index,],drop=FALSE]
             }
         }
     }
