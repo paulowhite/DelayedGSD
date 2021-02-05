@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 25 2020 (09:23) 
 ## Version: 
-## Last-Updated: feb  2 2021 (10:21) 
+## Last-Updated: feb  5 2021 (09:34) 
 ##           By: Brice Ozenne
-##     Update #: 38
+##     Update #: 40
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -75,7 +75,7 @@ AnalyzeData <- function(d, ddf = "nlme"){
                     Info=1/m$varBeta["Z1","Z1"])
     }else{
         require(emmeans)
-        groupTest <- emmeans(m, specs = ~Z|time.factor)
+        groupTest <- emmeans::emmeans(m, specs = ~Z|time.factor, data = long[!is.na(long$X),,drop=FALSE])
         e.satterthwaite <- summary(pairs(groupTest, reverse = TRUE), by = NULL, infer = TRUE, adjust = "none")
         index <- which(e.satterthwaite$time.factor==levels(long$time.factor)[1])
         

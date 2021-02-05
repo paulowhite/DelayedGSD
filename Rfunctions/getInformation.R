@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb  3 2021 (16:05) 
+## Last-Updated: feb  5 2021 (13:18) 
 ##           By: Brice Ozenne
-##     Update #: 562
+##     Update #: 658
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -199,7 +199,11 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     method.prediction <- match.arg(method.prediction, c("inflation","pooling"))
 
     if(is.null(data)){
-        data <- try(nlme::getData(object), silent = TRUE)
+        if(type == "estimation"){
+            data <- try(nlme::getData(object), silent = TRUE)
+        }else{
+            data <- try(eval(object$call$data), silent = TRUE)
+        }
         if(inherits(data,"try-error")){
             stop("Could not retrieve the data used to fit the gls model. \n",
                  "Consider passing the data via the \'data\' argument. \n")
@@ -283,6 +287,12 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
                                     index.cluster = resPattern.decision$index.cluster)
     var.decision <- solve(info.decision)[name.coef,name.coef]
 
+    score.decision <- .getScore(X.decision,
+                                variance = resPattern.decision$variance.vargroup,
+                                residuals = data[[all.vars(f.gls)[1]]] - X.decision %*% coef(object),
+                                index.variance = resPattern.decision$index.vargroup,
+                                index.cluster = resPattern.decision$index.cluster)
+
     ## *** at interim: full information approach
     info.interim <- getInformation(X.interim,
                                    variance = resPattern.interim$variance.vargroup,
@@ -296,23 +306,52 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
                                       index.variance = resPattern.interim.cc$index.vargroup,
                                       index.cluster = resPattern.interim.cc$index.cluster)
     var.interim.cc <- solve(info.interim.cc)[name.coef,name.coef]
-
+    ## object.cc <- update(object, data = data.interim.cc)
+    ## coef(object.cc)
+    ## coef(object)
+    
     ## ** sample size
-    n.decision <- resPattern.decision$n.cluster
-    n.interim.full <- resPattern.interim.cc$n.cluster
-    n.interim.proxy <- resPattern.interim$n.cluster - n.interim.full
+    n.decision <- resPattern.decision$n.cluster ## number of patients at decision
+    n.interim <- resPattern.interim$n.cluster ## number of patients at interim (with at least one observation proxy or outcome)
+    n.interim.cc <- resPattern.interim.cc$n.cluster ## number of patients at interim with complete data
 
     ## ** predict information
     if(type == "estimation"){
         out <- 1/var.interim
     }else if(method.prediction == "inflation"){ 
-        out <- 1/var.decision ## same as (1/var.interim.cc) * (n.decision/n.interim.full)
-    }else if(method.prediction == "pooling"){ ## based on full information at interim
-        if(length(rho)>1){
+        out <- 1/var.decision ## same as (1/var.interim.cc) * (n.decision/n.interim.cc)
+    }else if(method.prediction == "pooling"){ 
+
+        ## test number of timepoints
+        if(length(resPattern.decision$rho)>1){
             stop("Argument \'method.prediction\' can only be \"pooling\" when there is only two timepoints. \n")
         }
-        info.current <- 1/(var.interim - (1-rho^2) * var.interim.cc * n.interim.proxy/(n.interim.full+n.interim.proxy))
-        out <- info.current * (n.decision/(n.interim.full+n.interim.proxy)) 
+
+        ## get the number of observation with only the proxy
+        index.interim.full <- which(data[[cluster.var]] %in% unique(data.interim[[cluster.var]]))
+        if(NCOL(X.decision)>1 && length(setdiff(index.interim.full, index.interim))>0){ ## identify the "proxy" variable
+            ## Is having full data for each cluster at interim better than the observed data at interim for estimating the parameter of interest?
+            ## i.e. does score of the parameter of interest contains a linear combination of the score of other parameters, so that their contribution to the score of the parameter of interest will always be 0.
+            ## example Score = [Score_alpha & Score_beta] where Score_alpha = [S_1 \\ S_2] and Score_beta = [S_2 \\ 0] so sum(S_2) must be 0 and therefore the last observations do not contribute to Score_alpha
+            X.new <- X.decision[setdiff(index.interim.full, index.interim),,drop=FALSE]
+            scorefit <- lm.fit(x = X.new[,setdiff(colnames(X.new),name.coef)], y = X.new[,name.coef])
+            combin <- na.omit(coef(scorefit))
+
+            ## check whether,  at interim (full information), the score of the parameter of interest contains the score of the linear combination, via the design matrix 
+            X.combin <- Reduce("+",lapply(1:length(combin), function(x){X.interim[,names(combin)[x]]*combin[x]}))
+            test.0 <- (X.combin-X.interim)[which(abs(X.combin)>1e-10)]
+
+            if(all(abs(scorefit$residuals)<1e-10) && (all(abs(test.0)<1e-10))){
+                n.interim.proxy <- 0 ## number of patients without the outcome measurment and only the proxy measurement 
+            }else{
+                n.interim.proxy <- n.interim - n.interim.cc ## number of patients without the outcome measurment and only the proxy measurement
+            }
+        }else{
+            n.interim.proxy <- n.interim - n.interim.cc ## number of patients without the outcome measurment and only the proxy measurement
+        }
+        ##  pool variance and deduce information
+        info.current <- 1/(var.interim - (1-resPattern.decision$rho^2) * var.interim.cc * n.interim.proxy/n.interim) ## information if we had the outcome (instead of proxy) for all interim patients
+        out <- info.current * (n.decision/n.interim) ## information add the new patients (if any) at interim
     }
 
     ## ** export
@@ -326,7 +365,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
                                     interim.cc = list(information = 1/solve(info.interim.cc)[name.coef,name.coef],
                                                       vcov = solve(info.interim.cc),
                                                       pattern = resPattern.interim),
-                                    n = c(decision = n.decision, interim.full = n.interim.full, interim.proxy = n.interim.proxy)
+                                    n = c(decision = n.decision, interim = n.interim, interim.cc = n.interim.cc)
                                     )
     }
     
@@ -440,6 +479,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
                 n.cluster = n.cluster, ## number of clusters
                 n.vargroup = n.vargroup, ## number of variance patterns
                 variance.vargroup = variance.vargroup, ## variance-covariance matrix associated to each variance pattern
+                rho =  as.double(rho),
                 rep.full = rep.full)) ## number of observation per cluster when no missing data
 }
 
@@ -494,6 +534,29 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     }
 
     return(variance)
+}
+
+## * .getScore
+.getScore <- function(object, variance, residuals, index.variance, index.cluster){
+
+    ## ** prepare
+    n.obs <- length(index.cluster)
+    n.cluster <- length(index.variance)
+    n.allcoef <- NCOL(object)
+    name.allcoef <- colnames(object)
+    Score <- matrix(NA, nrow = n.obs, ncol = n.allcoef,
+                    dimnames = list(NULL, name.allcoef))
+    
+    ## ** compute score
+    for(iId in 1:n.cluster){ ## iId <- 7
+        iResidual <- residuals[index.cluster==iId,,drop=FALSE]
+        iX <- object[index.cluster==iId,,drop=FALSE]
+        iSigma <- variance[[index.variance[iId]]]
+        Score[index.cluster==iId,] <- sweep(solve(iSigma) %*% iX, FUN = "*", MARGIN = 1, STATS = iResidual)
+    }
+
+    ## ** export
+    return(Score)
 }
 
 ######################################################################
