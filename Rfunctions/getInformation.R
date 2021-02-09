@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb  5 2021 (13:18) 
+## Last-Updated: feb  9 2021 (10:32) 
 ##           By: Brice Ozenne
-##     Update #: 658
+##     Update #: 660
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -191,7 +191,7 @@ getInformation.ttest <- function(object, type = "estimation", variance = NULL, .
 }
 
 ## * getInformation.gls
-getInformation.gls <- function(object, name.coef, type = "estimation", method.prediction  = "pooling",
+getInformation.gls <- function(object, name.coef, type = "estimation", method.prediction  = "inflation",
                                variance = NULL, data = NULL, details = FALSE,...){
 
     ## ** normalize arguments
