@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 10 2020 (15:20) 
 ## Version: 
-## Last-Updated: feb  9 2021 (17:30) 
+## Last-Updated: feb  9 2021 (18:27) 
 ##           By: Brice Ozenne
-##     Update #: 246
+##     Update #: 249
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -47,13 +47,13 @@ library(ggplot2)
 
 
 ## * Simulation
-cpus <- 1
+cpus <- 25
 
 cl <- snow::makeSOCKcluster(cpus)
 doSNOW::registerDoSNOW(cl)
 parallel::clusterExport(cl, varlist = c("analyzeData","simData"))
 
-n.sim <- 10
+n.sim <- 1000
 ls.res <- pblapply(1:n.sim,function(iSim){    
     out <- list("0" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0, n.batch = 4)),
                 "0.1" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.1, n.batch = 4)),
@@ -70,11 +70,11 @@ ls.res <- pblapply(1:n.sim,function(iSim){
     return(as.data.table(do.call(rbind,lapply(out,"[[","info"))))
     })
 ## }, cl = cl)
-parallel::stopCluster(cl)
+pnarallel::stopCluster(cl)
 
 ## ls.res <- lapply(ls.res,"[[","info")
-saveRDS(ls.res, file = file.path(path,paste0("../results/simInfo-",n.sim,".rds")))
-## saveRDS(ls.res, file = file.path(path,paste0("../results/simInfo-",n.sim,".rds")))
+saveRDS(ls.res, file = paste0("simulation-information/simInfo-",n.sim,".rds"))
+## ls.res <- readRDS(file = paste0("simulation-information/simInfo-",n.sim,".rds"))
 
 ## * Process
 dt.info <- do.call(rbind,ls.res)
