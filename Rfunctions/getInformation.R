@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb  9 2021 (10:32) 
+## Last-Updated: feb  9 2021 (17:02) 
 ##           By: Brice Ozenne
-##     Update #: 660
+##     Update #: 690
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -327,28 +327,11 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
             stop("Argument \'method.prediction\' can only be \"pooling\" when there is only two timepoints. \n")
         }
 
-        ## get the number of observation with only the proxy
-        index.interim.full <- which(data[[cluster.var]] %in% unique(data.interim[[cluster.var]]))
-        if(NCOL(X.decision)>1 && length(setdiff(index.interim.full, index.interim))>0){ ## identify the "proxy" variable
-            ## Is having full data for each cluster at interim better than the observed data at interim for estimating the parameter of interest?
-            ## i.e. does score of the parameter of interest contains a linear combination of the score of other parameters, so that their contribution to the score of the parameter of interest will always be 0.
-            ## example Score = [Score_alpha & Score_beta] where Score_alpha = [S_1 \\ S_2] and Score_beta = [S_2 \\ 0] so sum(S_2) must be 0 and therefore the last observations do not contribute to Score_alpha
-            X.new <- X.decision[setdiff(index.interim.full, index.interim),,drop=FALSE]
-            scorefit <- lm.fit(x = X.new[,setdiff(colnames(X.new),name.coef)], y = X.new[,name.coef])
-            combin <- na.omit(coef(scorefit))
+        ## get the number of observations missing at interim for the parameter of interest but not missing for the proxy
+        n.interim.proxy <- .nProxy(n.interim = n.interim, X.interim = X.interim, n.interim.cc = n.interim.cc,
+                                   X.decision = X.decision, name.coef = name.coef, index.interim = index.interim,
+                                   data = data, data.interim = data.interim, cluster.var = cluster.var)
 
-            ## check whether,  at interim (full information), the score of the parameter of interest contains the score of the linear combination, via the design matrix 
-            X.combin <- Reduce("+",lapply(1:length(combin), function(x){X.interim[,names(combin)[x]]*combin[x]}))
-            test.0 <- (X.combin-X.interim)[which(abs(X.combin)>1e-10)]
-
-            if(all(abs(scorefit$residuals)<1e-10) && (all(abs(test.0)<1e-10))){
-                n.interim.proxy <- 0 ## number of patients without the outcome measurment and only the proxy measurement 
-            }else{
-                n.interim.proxy <- n.interim - n.interim.cc ## number of patients without the outcome measurment and only the proxy measurement
-            }
-        }else{
-            n.interim.proxy <- n.interim - n.interim.cc ## number of patients without the outcome measurment and only the proxy measurement
-        }
         ##  pool variance and deduce information
         info.current <- 1/(var.interim - (1-resPattern.decision$rho^2) * var.interim.cc * n.interim.proxy/n.interim) ## information if we had the outcome (instead of proxy) for all interim patients
         out <- info.current * (n.decision/n.interim) ## information add the new patients (if any) at interim
@@ -557,6 +540,51 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
 
     ## ** export
     return(Score)
+}
+
+## * .nProxy
+## get the number of observations missing at interim for the parameter of interest but not missing for the proxy
+.nProxy <- function(n.interim, n.interim.cc,
+                    X.decision, X.interim, name.coef, index.interim,
+                    data, data.interim, cluster.var){
+
+    ## ** if only one parameter, then any missing value is missing for the parameter of interest
+    if(NCOL(X.decision)==1){
+        return(n.interim - n.interim.cc)
+    }
+    ## else it could be that some "lines" of the design matrix are not useful to estimate the parameter of interest
+    ## and are only useful to estimate nuisance parameters.
+    
+    ## ** do we have full information about the patients included at interim?
+    ## if yes we are comparing at the cluster level so we can indeed substract the sample size
+    index.interim.full <- which(data[[cluster.var]] %in% unique(data.interim[[cluster.var]]))
+    if(length(setdiff(index.interim.full, index.interim))==0){
+        return(n.interim - n.interim.cc)
+    }
+    ## else could be that the added lines when doing full information do not benefit the parameter of interest
+    ## and therefore the sample size is the same as complete case analysis.
+    
+    ## ** Is having full data for each cluster at interim better than the observed data at interim for estimating the parameter of interest?
+    ## i.e. does score of the parameter of interest contains a linear combination of the score of other parameters, so that their contribution to the score of the parameter of interest will always be 0.
+    ## example Score = [Score_alpha & Score_beta] where Score_alpha = [S_1 \\ S_2] and Score_beta = [S_2 \\ 0] so sum(S_2) must be 0 and therefore the last observations do not contribute to Score_alpha
+    X.new <- X.decision[setdiff(index.interim.full, index.interim),,drop=FALSE]
+    scorefit <- lm.fit(x = X.new[,setdiff(colnames(X.new),name.coef),drop=FALSE], y = X.new[,name.coef])
+    if(any(abs(scorefit$residuals)>1e-10)){ ## not a linear combination
+        return(n.interim - n.interim.cc)
+    }
+    
+    ## check whether,  at interim (full information), the score of the parameter of interest contains the score of the linear combination, via the design matrix
+    combin <- na.omit(coef(scorefit))
+    X.combin <- Reduce("+",lapply(1:length(combin), function(x){
+        X.interim[,names(combin)[x],drop=FALSE]*combin[x]
+    }))
+    test.0 <- (X.combin-X.interim[, name.coef,drop=FALSE])[which(abs(X.combin)>1e-10)]
+
+    if((all(abs(test.0)<1e-10))){
+        return(0) ## number of patients without the outcome measurment and only the proxy measurement 
+    }else{
+        return(n.interim - n.interim.cc) ## number of patients without the outcome measurment and only the proxy measurement
+    }
 }
 
 ######################################################################
