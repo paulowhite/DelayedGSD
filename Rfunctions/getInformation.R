@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb  9 2021 (17:02) 
+## Last-Updated: feb 10 2021 (12:36) 
 ##           By: Brice Ozenne
-##     Update #: 690
+##     Update #: 695
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -196,7 +196,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
 
     ## ** normalize arguments
     type <- match.arg(type, c("estimation","prediction"))
-    method.prediction <- match.arg(method.prediction, c("inflation","pooling"))
+    method.prediction <- match.arg(method.prediction, c("inflation","pooling","pooling2"))
 
     if(is.null(data)){
         if(type == "estimation"){
@@ -276,7 +276,12 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
         data.interim.cc <- data[index.cc,,drop=FALSE]
 
         X.interim.cc <- model.matrix(f.gls, data = data.interim.cc)
-        resPattern.interim.cc <- .getPattern(object, data = data.interim.cc, variance = variance, name.coef = name.coef)
+        if(method.prediction=="pooling2"){
+            object2 <- update(object, data = data.interim.cc)
+            resPattern.interim.cc <- .getPattern(object2, data = data.interim.cc, variance = variance, name.coef = name.coef)
+        }else{        
+            resPattern.interim.cc <- .getPattern(object, data = data.interim.cc, variance = variance, name.coef = name.coef)
+        }
     }    
     
     ## ** compute information
@@ -287,11 +292,11 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
                                     index.cluster = resPattern.decision$index.cluster)
     var.decision <- solve(info.decision)[name.coef,name.coef]
 
-    score.decision <- .getScore(X.decision,
-                                variance = resPattern.decision$variance.vargroup,
-                                residuals = data[[all.vars(f.gls)[1]]] - X.decision %*% coef(object),
-                                index.variance = resPattern.decision$index.vargroup,
-                                index.cluster = resPattern.decision$index.cluster)
+    ## score.decision <- .getScore(X.decision,
+    ##                             variance = resPattern.decision$variance.vargroup,
+    ##                             residuals = data[[all.vars(f.gls)[1]]] - X.decision %*% coef(object),
+    ##                             index.variance = resPattern.decision$index.vargroup,
+    ##                             index.cluster = resPattern.decision$index.cluster)
 
     ## *** at interim: full information approach
     info.interim <- getInformation(X.interim,
@@ -320,7 +325,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
         out <- 1/var.interim
     }else if(method.prediction == "inflation"){ 
         out <- 1/var.decision ## same as (1/var.interim.cc) * (n.decision/n.interim.cc)
-    }else if(method.prediction == "pooling"){ 
+    }else if(method.prediction %in% c("pooling","pooling2")){ 
 
         ## test number of timepoints
         if(length(resPattern.decision$rho)>1){

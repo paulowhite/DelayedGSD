@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb  3 2021 (15:10) 
 ## Version: 
-## Last-Updated: feb  9 2021 (17:04) 
+## Last-Updated: feb 10 2021 (12:35) 
 ##           By: Brice Ozenne
-##     Update #: 18
+##     Update #: 27
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -93,7 +93,7 @@ simData <- function(n, sigma2, mu0, mu1, rho, n.batch){
 #' analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.5, n.batch = 4))$info
 #' analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0, n.batch = 4))$info
 #' analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.999, n.batch = 4))$info
-analyzeData <- function(data){
+analyzeData <- function(data, fast = TRUE){
     require(nlme)
     require(data.table)
     source("./Rfunctions/ttest.R")
@@ -101,7 +101,6 @@ analyzeData <- function(data){
 
     out <- list()
     ## *** prepare
-    n.obs.proxy <- data[,.N,by="time"]
     n.obs.outcome <- data[!is.na(outcome),.N,by="time"]
     times <- unique(data$time)
     interim.time <- 2
@@ -116,12 +115,16 @@ analyzeData <- function(data){
 
     ## **** t-test
     out$interim.ttest <- ttest(outcome ~ group, data = data.interim)
-    out$info <- c(out$info,"info.ttest" = getInformation(out$interim.ttest, type = "estimation"))
-    out$info <- c(out$info,"info.ttest2" = getInformation(out$interim.ttest, type = "prediction")) ## as.double(out$info["info.ttest"]) * pc.interim
-
+    if(fast){
+        out$info <- c(out$info,"info.ttest" = 1/out$interim.ttest$stderr^2)
+        out$info <- c(out$info,"info.ttest2" = 1/out$interim.ttest$stderr^2 * n.decision/n.obs.outcome[time==interim.time,N])
+    }else{
+        out$info <- c(out$info,"info.ttest" = getInformation(out$interim.ttest, type = "estimation"))
+        out$info <- c(out$info,"info.ttest2" = getInformation(out$interim.ttest, type = "prediction")) ## as.double(out$info["info.ttest"]) * pc.interim
+    }
+    
     ## **** mixed model
     dataL.interim <- melt(data.interim, id.vars = c("group","id","batch","time"), value.name = "value", variable.name = "type")
-    setkeyv(dataL.interim, cols = c("group", "id","time")) ## important for getVarCov to work properly
     dataL.interim$type <- relevel(dataL.interim$type, "outcome")
     out$interim.lmm <- gls(value ~ type*group,
                            data = dataL.interim,
@@ -134,22 +137,39 @@ analyzeData <- function(data){
     
     rho <- as.double(coef(out$interim.lmm$modelStruct$corStruct, unconstrain = FALSE))
     sigma <- (coef(out$interim.lmm$modelStruct$varStruct, unconstrain = FALSE, allCoef = TRUE)*sigma(out$interim.lmm))^2
-
-    out$info <- c(out$info,"info.lmm" = getInformation(out$interim.lmm, data = dataL.interim, name.coef = "grouptreatment", type = "estimation"))
-    out$info <- c(out$info,"info.inflation" = getInformation(out$interim.lmm, data = dataL.interim, name.coef = "grouptreatment", type = "prediction", method.prediction = "inflation"))
-    out$info <- c(out$info,"info.pooling" = getInformation(out$interim.lmm, data = dataL.interim, name.coef = "grouptreatment", type = "prediction", method.prediction = "pooling"))
-    out$info <- c(out$info,"info.plug" = as.double((n.decision/2)/(sigma["outcome*control"]+sigma["outcome*treatment"])))
+    
+    if(fast){
+        out$info <- c(out$info,"info.lmm" = 1/vcov(out$interim.lmm)["grouptreatment","grouptreatment"])
+    }else{
+        out$info <- c(out$info,"info.lmm" = getInformation(out$interim.lmm, data = dataL.interim, name.coef = "grouptreatment", type = "estimation"))
+    }
+    if(fast){
+        resTempo <- getInformation(out$interim.lmm, data = dataL.interim, name.coef = "grouptreatment", type = "prediction", method.prediction = "pooling2", details = TRUE)
+        out$info <- c(out$info,"info.inflation" = attr(resTempo,"details")$decision$information)
+        out$info <- c(out$info,"info.pooling2" = as.numeric(resTempo))
+    }else{
+        out$info <- c(out$info,"info.inflation" = getInformation(out$interim.lmm, data = dataL.interim, name.coef = "grouptreatment", type = "prediction", method.prediction = "inflation"))
+        out$info <- c(out$info,"info.pooling2" = getInformation(out$interim.lmm, data = dataL.interim, name.coef = "grouptreatment", type = "prediction", method.prediction = "pooling2"))
+    }
     out$info <- c(out$info,"rho.GS" = as.double(attr(data,"param")["rho"]), "rho" = rho)
-
+    
     ## *** optional decision analysis (3 months, reject or not H0)
     data.decision <- data[time == decision.time]
     out$decision.ttest <- ttest(outcome ~ group, data = data.decision)
-    out$info <- c(out$info, "info.decision" = getInformation(out$decision.ttest, data = data.decision, type = "estimation"))
+    if(fast){
+        out$info <- c(out$info, "info.decision" = 1/out$decision.ttest$stderr^2)
+    }else{
+        out$info <- c(out$info, "info.decision" = getInformation(out$decision.ttest, data = data.decision, type = "estimation"))
+    }
     
     ## *** final decision analysis (4 months, reject or not H0)
     data.final <- data[time == final.time]
     out$final.ttest <- ttest(outcome ~ group, data = data.final)
-    out$info <- c(out$info, "info.final" = getInformation(out$final.ttest, data = data.final, type = "estimation"))
+    if(fast){
+        out$info <- c(out$info, "info.final" = 1/out$final.ttest$stderr^2)
+    }else{
+        out$info <- c(out$info, "info.final" = getInformation(out$final.ttest, data = data.final, type = "estimation"))
+    }
 
     ## export
     return(out)

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 10 2020 (15:20) 
 ## Version: 
-## Last-Updated: feb  9 2021 (18:27) 
+## Last-Updated: feb 10 2021 (12:40) 
 ##           By: Brice Ozenne
-##     Update #: 249
+##     Update #: 259
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -44,16 +44,14 @@ library(ggplot2)
 ## (150)/(2*1^2)
 ## ((qnorm(0.975)+qnorm(0.8))/power.t.test(n=150,sd=1,sig.level=0.05,power=0.8,type="two.sample")$delta)^2
 
-
-
 ## * Simulation
-cpus <- 25
+cpus <- 1
 
 cl <- snow::makeSOCKcluster(cpus)
 doSNOW::registerDoSNOW(cl)
 parallel::clusterExport(cl, varlist = c("analyzeData","simData"))
 
-n.sim <- 1000
+n.sim <- 10
 ls.res <- pblapply(1:n.sim,function(iSim){    
     out <- list("0" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0, n.batch = 4)),
                 "0.1" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.1, n.batch = 4)),
@@ -110,7 +108,7 @@ gg_color_hue <- function(n) {
 ## 
 dtL.info[,method2 := factor(method,
                             levels = c("decision","ttest","ttest2","lmm", "inflation"),
-                            labels = c("decision","ttest","(3/2)*ttest","lmm", "inflation"))]
+                            labels = c("oracle","ttest","strategy 1","lmm", "strategy 2"))]
 
 ggInfo0 <- ggplot(dtL.info[method %in% c("decision","ttest","lmm")], aes(y = information, fill = method2, x = rho.GS))
 ggInfo0 <- ggInfo0 + geom_boxplot() + ylab(range(dtL.info$information))
@@ -132,10 +130,10 @@ ggError <- ggError + geom_boxplot()
 ggError <- ggError + scale_fill_manual("", values = ggthemes::colorblind_pal()(8)[-1]) + theme(text = element_text(size=18), legend.position="bottom")
 ggError <- ggError + xlab("Correlation between X and Y") + ylab("Difference with the information at decision")
 
-ggsave(ggInfo0, filename = file.path(path,"../results/fig-simInfo-info0.pdf"), width = 10)
-ggsave(ggInfo, filename = file.path(path,"../results/fig-simInfo-info.pdf"), width = 10)
-ggsave(ggError0, filename = file.path(path,"../results/fig-simInfo-error0.pdf"), width = 10)
-ggsave(ggError, filename = file.path(path,"../results/fig-simInfo-error.pdf"), width = 10)
+ggsave(ggInfo0, filename = "./simulation-information/figures/fig-simInfo-info0.pdf", width = 10)
+ggsave(ggInfo, filename = "./simulation-information/figures/fig-simInfo-info.pdf", width = 10)
+ggsave(ggError0, filename = "./simulation-information/figures/fig-simInfo-error0.pdf", width = 10)
+ggsave(ggError, filename = "./simulation-information/figures/fig-simInfo-error.pdf", width = 10)
 
 ## ggplot(dtL.info, aes(y = information, group = method, color = method, x = rho.GS)) + geom_smooth()
 
