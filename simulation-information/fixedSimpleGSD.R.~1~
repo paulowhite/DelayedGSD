@@ -1,0 +1,300 @@
+### fixedSimpleGSD.R --- 
+##----------------------------------------------------------------------
+## Author: Brice Ozenne
+## Created: sep 10 2020 (15:20) 
+## Version: 
+## Last-Updated: feb  9 2021 (17:23) 
+##           By: Brice Ozenne
+##     Update #: 245
+##----------------------------------------------------------------------
+## 
+### Commentary: 
+## 
+### Change Log:
+##----------------------------------------------------------------------
+## 
+### Code:
+
+## path 
+if(system("whoami",intern=TRUE)=="paul"){  
+    setwd("~/research/SeqDesignDelayed/DelayedGSD/")
+}else if(system("whoami",intern=TRUE)=="brice"){  
+    setwd("~/Documents/GitHub/DelayedGSD/")
+}
+source("simulation-information/FCT_fixeSimpleGSD.R")
+
+## * R packages
+library(data.table)
+library(nlme)
+library(pbapply)
+library(ggplot2)
+
+## * Parameters
+## - 2 groups
+## - 50 patients per month - max 200
+## - response at 1 month
+## - 1 interim analysis
+## - sd = 1.2268
+## - mu = c(0,0.39814)
+## power.t.test(n=150,sd=1.2268,sig.level=0.05,power=0.8,type="two.sample")$delta
+## power.t.test(n=100,sd=1,sig.level=0.05,power=0.8,type="two.sample")$delta
+
+## total information (assuming sd = 1)
+## 3n/(2sigma^2) = (z\alpha/2 + z\beta)^2/\delta^2
+## (150)/(2*1^2)
+## ((qnorm(0.975)+qnorm(0.8))/power.t.test(n=150,sd=1,sig.level=0.05,power=0.8,type="two.sample")$delta)^2
+
+
+
+## * Simulation
+cpus <- 4
+
+cl <- snow::makeSOCKcluster(cpus)
+doSNOW::registerDoSNOW(cl)
+parallel::clusterExport(cl, varlist = c("analyzeData","simData"))
+
+n.sim <- 1000
+ls.res <- pblapply(1:n.sim,function(iSim){    
+    out <- list("0" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0, n.batch = 4)),
+                "0.1" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.1, n.batch = 4)),
+                "0.2" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.2, n.batch = 4)),
+                "0.3" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.3, n.batch = 4)),
+                "0.4" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.4, n.batch = 4)),
+                "0.5" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.5, n.batch = 4)),
+                "0.6" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.6, n.batch = 4)),
+                "0.7" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.7, n.batch = 4)),
+                "0.8" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.8, n.batch = 4)),
+                "0.9" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.9, n.batch = 4)),
+                "0.99" = analyzeData(simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.99, n.batch = 4))
+                )
+    return(as.data.table(do.call(rbind,lapply(out,"[[","info"))))
+    })
+## }, cl = cl)
+parallel::stopCluster(cl)
+
+## ls.res <- lapply(ls.res,"[[","info")
+saveRDS(ls.res, file = file.path(path,paste0("../results/simInfo-",n.sim,".rds")))
+## saveRDS(ls.res, file = file.path(path,paste0("../results/simInfo-",n.sim,".rds")))
+
+## * Process
+dt.info <- do.call(rbind,ls.res)
+## setnames(dt.info, old = "rho.GS.rho", new = "rho.GS")
+dt.info[,.(estimate = mean(.SD$rho), sd = sd(.SD$rho)),by="rho.GS"]
+##     rho.GS    estimate          sd
+##  1:   0.00 0.001433857 0.072437835
+##  2:   0.10 0.097928854 0.070577009
+##  3:   0.20 0.201803075 0.066222699
+##  4:   0.30 0.301682046 0.062741845
+##  5:   0.40 0.398217878 0.059539635
+##  6:   0.50 0.499887585 0.050478667
+##  7:   0.60 0.602921105 0.046484481
+##  8:   0.70 0.701866189 0.034615644
+##  9:   0.80 0.799848634 0.024459006
+## 10:   0.90 0.900754604 0.013054795
+## 11:   0.99 0.989972019 0.001297846
+
+dtL.info <- melt(dt.info, id.vars = c("rho.GS"),
+                 measure.vars = c("info.ttest","info.ttest2","info.lmm","info.inflation","info.decision"),
+                 variable.name = "method", value.name =  "information")
+dtL.info[,method := gsub("info\\.","",method)]
+dtL.info[,error := .SD$information - dtL.info[method=="decision",information], by=method]
+
+dtL.info$method <- as.factor(dtL.info$method)
+dtL.info$rho.GS <- as.factor(dtL.info$rho.GS)
+
+## *  Display
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+## 
+dtL.info[,method2 := factor(method,
+                            levels = c("decision","ttest","ttest2","lmm", "inflation"),
+                            labels = c("decision","ttest","(3/2)*ttest","lmm", "inflation"))]
+
+ggInfo0 <- ggplot(dtL.info[method %in% c("decision","ttest","lmm")], aes(y = information, fill = method2, x = rho.GS))
+ggInfo0 <- ggInfo0 + geom_boxplot() + ylab(range(dtL.info$information))
+ggInfo0 <- ggInfo0 + scale_fill_manual("", values = ggthemes::colorblind_pal()(8)[2:4]) + theme(text = element_text(size=18), legend.position="bottom")
+ggInfo0 <- ggInfo0 + xlab("Correlation between X and Y") + ylab("Information")
+
+ggError0 <- ggplot(dtL.info[method %in% c("decision","ttest2","lmm")], aes(y = error, fill = method2, x = rho.GS))
+ggError0 <- ggError0 + geom_boxplot()
+ggError0 <- ggError0 + scale_fill_manual("", values = ggthemes::colorblind_pal()(8)[-1]) + theme(text = element_text(size=18), legend.position="bottom")
+ggError0 <- ggError0 + xlab("Correlation between X and Y") + ylab("Difference with the information at decision")
+
+ggInfo <- ggplot(dtL.info[method %in% c("decision","ttest2","inflation")], aes(y = information, fill = method2, x = rho.GS))
+ggInfo <- ggInfo + geom_boxplot()
+ggInfo <- ggInfo + scale_fill_manual("", values = ggthemes::colorblind_pal()(8)[-1]) + theme(text = element_text(size=18), legend.position="bottom")
+ggInfo <- ggInfo + xlab("Correlation between X and Y") + ylab("Information")
+
+ggError <- ggplot(dtL.info[method %in% c("decision","ttest2","inflation")], aes(y = error, fill = method2, x = rho.GS))
+ggError <- ggError + geom_boxplot()
+ggError <- ggError + scale_fill_manual("", values = ggthemes::colorblind_pal()(8)[-1]) + theme(text = element_text(size=18), legend.position="bottom")
+ggError <- ggError + xlab("Correlation between X and Y") + ylab("Difference with the information at decision")
+
+ggsave(ggInfo0, filename = file.path(path,"../results/fig-simInfo-info0.pdf"), width = 10)
+ggsave(ggInfo, filename = file.path(path,"../results/fig-simInfo-info.pdf"), width = 10)
+ggsave(ggError0, filename = file.path(path,"../results/fig-simInfo-error0.pdf"), width = 10)
+ggsave(ggError, filename = file.path(path,"../results/fig-simInfo-error.pdf"), width = 10)
+
+## ggplot(dtL.info, aes(y = information, group = method, color = method, x = rho.GS)) + geom_smooth()
+
+dtL.info[rho.GS==0,.(rep = .N, bias = mean(error), sd = sd(error), mse = mean(error^2)), by = "method"]
+##      method  rep        bias       sd        mse
+## 1:    ttest 1000 -16.6790091 2.521151 284.539190
+## 2:   ttest2 1000   0.1805445 3.078697   9.501492
+## 3:      lmm 1000 -16.6219345 2.526792 282.666998
+## 4: lmm.pred 1000   0.1749562 3.076607   9.486654
+## 5: decision 1000   0.0000000 0.000000   0.000000
+
+dtL.info[rho.GS==0.5,.(rep = .N, bias = mean(error), sd = sd(error), mse = mean(error^2)), by = "method"]
+##      method  rep        bias       sd        mse
+## 1:    ttest 1000 -16.6016397 2.345735 281.111411
+## 2:   ttest2 1000   0.2253130 2.954050   8.768453
+## 3:      lmm 1000 -13.5291813 2.447418 189.022612
+## 4: lmm.pred 1000   0.2160881 2.955008   8.770035
+## 5: decision 1000   0.0000000 0.000000   0.000000
+
+dtL.info[rho.GS==0.7,.(rep = .N, bias = mean(error), sd = sd(error), mse = mean(error^2)), by = "method"]
+##      method  rep        bias       sd        mse
+## 1:    ttest 1000 -16.4912462 2.334732 277.406723
+## 2:   ttest2 1000   0.2371105 2.809265   7.940300
+## 3:      lmm 1000  -9.9720781 2.255219 104.523269
+## 4: lmm.pred 1000   0.1599877 2.501182   6.275253
+## 5: decision 1000   0.0000000 0.000000   0.000000
+
+dtL.info[rho.GS==0.99,.(rep = .N, bias = mean(error), sd = sd(error), mse = mean(error^2)), by = "method"]
+##      method  rep         bias        sd         mse
+## 1:    ttest 1000 -16.62857387 2.4375716 282.4452826
+## 2:   ttest2 1000   0.24677064 3.0377562   9.2796308
+## 3:      lmm 1000  -0.47981494 0.6131688   0.6058224
+## 4: lmm.pred 1000   0.02080809 0.6155206   0.3789197
+## 5: decision 1000   0.00000000 0.0000000   0.0000000
+
+
+## * Extra
+set.seed(10)
+d <- simData(n = 50, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.5, n.batch = 4)[group=="treatment"]
+Uid <- unique(d[time==2,id])
+d2 <- d[time==2]
+d3 <- d[time==3 & id %in% Uid]
+
+d2L <- na.omit(melt(d2,id.vars = c("id"), measure.vars = c("proxy","outcome")))
+e.gls <- gls(value ~ variable-1, data = d2L,
+             correlation = corCompSymm(form=~1|id),
+             weights = varIdent(form=~1|variable),
+             method = "ML")
+rho <- coef(e.gls$modelStruct$corStruct, unconstrained = FALSE)
+sigma2 <- coef(e.gls$modelStruct$varStruct, unconstrained = FALSE, allCoef = TRUE)^2 * sigma(e.gls)^2
+
+(sum(d2$outcome[!is.na(d2$outcome)]) + sum((rho * sqrt(sigma2["outcome"]/sigma2["proxy"]) * (d2$proxy-coef(e.gls)["variableproxy"]))[is.na(d2$outcome)]))/sum(!is.na(d2$outcome))
+coef(e.gls)["variableoutcome"]
+(mean(d3$outcome)*NROW(d3)-sum(d3$outcome[is.na(d2$outcome)]) + sum((rho * sqrt(sigma2["outcome"]/sigma2["proxy"]) * (d2$proxy-coef(e.gls)["variableproxy"]))[is.na(d2$outcome)]))/sum(!is.na(d2$outcome))
+
+
+
+d3$pseudooutcome <- d2$pseudooutcome <- coef(e.gls)["variableoutcome"] + rho * sqrt(sigma2["outcome"]/sigma2["proxy"]) * (d2$proxy-coef(e.gls)["variableproxy"])
+d3$xi <- d3$outcome - d3$pseudooutcome
+plot(d3$pseudooutcome,d3$outcome)
+cor(d3$xi,d3$pseudooutcome)
+
+mean(d3$outcome)
+(sum(d2$outcome, na.rm=TRUE) +  sum(d3$pseudooutcome[is.na(d2$outcome)]+d3$xi[is.na(d2$outcome)]))/NROW(d3)
+(coef(e.gls)["variableoutcome"]*sum(!is.na(d2$outcome)) +  sum(coef(e.gls)["variableoutcome"]+d3$xi[is.na(d2$outcome)]))/NROW(d3)
+
+A <- coef(e.gls)["variableoutcome"]
+B <- sum(d3$xi[is.na(d2$outcome)])/NROW(d3)
+A+B
+
+
+
+
+warper <- function(n, sigma2, mu0, mu1, rho){ ## n <- 1000; sigma2 = 1.2268^2; mu0 = 0; mu1 = 0.39814; rho = 0.95;
+    d <- simData(n = n, sigma2 = sigma2, mu0 = mu0, mu1 = mu1, rho = rho, n.batch = 4)[group=="treatment"]
+    ## d <- simData(n = n, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.5, n.batch = 4)[group=="treatment"]
+    Uid <- unique(d[time==2,id])
+    d2 <- d[time==2]
+    d3 <- d[time==3 & id %in% Uid]
+
+    d2L <- na.omit(melt(d2,id.vars = c("id"), measure.vars = c("proxy","outcome")))
+    e.gls <- gls(value ~ variable-1, data = d2L,
+                 correlation = corCompSymm(form=~1|id),
+                 weights = varIdent(form=~1|variable),
+                 method = "REML")
+    rhoGLS <- coef(e.gls$modelStruct$corStruct, unconstrained = FALSE)
+    sigma2GLS <- coef(e.gls$modelStruct$varStruct, unconstrained = FALSE, allCoef = TRUE)^2 * sigma(e.gls)^2
+
+    d3$pseudooutcome <- d2$pseudooutcome <- coef(e.gls)["variableoutcome"] + rhoGLS * sqrt(sigma2GLS["outcome"]/sigma2GLS["proxy"]) * (d2$proxy-coef(e.gls)["variableproxy"])
+    d3$xi <- d3$outcome - d3$pseudooutcome
+    d3$xiTh <- d3$outcome - (mu1 + rho * (d2$proxy - mu0))
+
+    muA <- as.double(coef(e.gls)["variableoutcome"])
+    sigmaA <- vcov(e.gls)["variableoutcome","variableoutcome"]
+
+    muB <- as.double(sum(d3$xi[is.na(d2$outcome)]))/NROW(d3)
+    muBB <- as.double(sum(d3$xiTh[is.na(d2$outcome)]))/NROW(d3)
+    sigmaB <- as.double((1-rhoGLS^2)*sigma2GLS["outcome"]/sum(is.na(d2$outcome)))*(sum(is.na(d2$outcome))/NROW(d3))^2
+    sigmaBB <- sigmaB * NROW(d3)/sum(!is.na(d2$outcome))
+
+    meanXi1 <- as.double(mean(d3$outcome[is.na(d2$outcome)]))
+    meanXi2 <- as.double(coef(e.gls)["variableoutcome"])
+    meanXi3 <- as.double(rhoGLS * sqrt(sigma2GLS["outcome"]/sigma2GLS["proxy"]) * mean(d2$proxy[is.na(d2$outcome)]))
+    meanXi4 <- as.double(rhoGLS * sqrt(sigma2GLS["outcome"]/sigma2GLS["proxy"]) * coef(e.gls)["variableproxy"])
+    meanXi <- as.double(mean(d3$xi[is.na(d2$outcome)]))
+    ##      emp.varXi emp.varXi1 emp.varXi2 emp.covXi12
+    ## 1: 0.002555595 0.01547327 0.01509363  0.01400566
+
+    sigmaXi1 <- as.double(sigma2GLS["outcome"])/sum(is.na(d2$outcome))
+    sigmaXi2 <- as.double(rhoGLS^2*sigma2GLS["outcome"])/sum(is.na(d2$outcome))
+
+    sigmaXi12 <- as.double(rhoGLS^2*sigma2GLS["outcome"])/sum(is.na(d2$outcome))
+    
+    sigmaXi <- as.double((1-rhoGLS^2)*sigma2GLS["outcome"]*NROW(d3)/(sum(!is.na(d2$outcome))*sum(is.na(d2$outcome))))
+
+    ## e.lm <- lm(xi ~ 1, data = d3[is.na(d2$outcome),"xi",drop=FALSE]*(sum(is.na(d2$outcome))/NROW(d3)))
+    ## as.double(mean(d3$xi[is.na(d2$outcome)])) ; vcov(e.lm)
+    ## sigmaXi <- var(d3$xi[is.na(d2$outcome)])
+    ## sigmaXith <- (1-rhoGLS^2)*sigma2["outcome"]
+    sigmaAB <- -as.double((1-rhoGLS^2)*sigma2GLS["outcome"]*sum(is.na(d2$outcome))/(NROW(d3)*sum(!is.na(d2$outcome))))
+
+    sigma <- as.double(sigmaA - (1-rhoGLS^2)*sigma2GLS["outcome"]*sum(is.na(d2$outcome))/(NROW(d3)*sum(!is.na(d2$outcome))))
+
+    return(c(muA=muA,muB=muB,muBB=muBB,mu=muA+muB,
+             sigmaA=sigmaA,sigmaB=sigmaB,sigmaBB=sigmaBB,sigmaAB=sigmaAB,sigma=sigma,
+             meanXi=meanXi,meanXi1=meanXi1,meanXi2=meanXi2,meanXi3=meanXi3,meanXi4=meanXi4,
+             sigmaXi=sigmaXi,sigmaXi1=sigmaXi1,sigmaXi2=sigmaXi2,
+             GS=mean(d3$outcome),pseudoGS=mean(d2$outcome,na.rm=TRUE)))
+}
+
+## ls.res <- pblapply(1:500, function(x){warper(1000, rho = 0.9)}, cl = 16)
+## warper(100, sigma2 = 1.2268^2, mu0 = 0, mu1 = 0.39814, rho = 0.95)
+ls.res <- pblapply(1:500, function(x){warper(100, sigma2 = 1.2268^2, mu0 = 0.5, mu1 = 0.39814, rho = 0.95)}, cl = 4)
+dt.res <- as.data.table(do.call(rbind,ls.res))
+
+dt.res[,.(emp.varXi = var(meanXi),
+          emp.varXi1 = var(meanXi1), emp.varXi2 = var(meanXi2), emp.varXi3 = var(meanXi3), emp.varXi4 = var(meanXi4))]
+
+var(as.matrix(dt.res[,.(meanXi1, meanXi2, meanXi3, meanXi4)]))
+
+
+dt.res[,.(th.varXi = mean(sigmaXi), th.varXi1 = mean(sigmaXi1), th.varXi2 = mean(sigmaXi2))]
+
+dt.res[,.(empirical = sd(GS), theoretical = mean(sqrt(sigma)))]
+dt.res[,.(empirical = sd(muA), theoretical = mean(sqrt(sigmaA)))]
+dt.res[,.(empirical = sd(muB), empiricalB = sd(muBB), theoretical1 = mean(sqrt(sigmaB)), theoretical2 = mean(sqrt(sigmaBB)))]
+dt.res[,.(empirical = cov(muA,muB), empiricalB = cov(muA,muBB), theoretical = mean(sigmaAB))]
+
+dt.res[,cov(muA,muB)]
+dt.res[,cov(muA1,muB)]
+dt.res[,cov(muA2,muB)]
+dt.res[,cov(muA3,muB)]
+dt.res[,cov(muA4,muB)]
+
+dt.res[,sqrt(var(muA+muB))]
+dt.res[,sqrt(var(muA)+var(muB)+2*cov(muA,muB))]
+dt.res[,sqrt(var(muA)+var(muB)+2*cov(muA,muB))]
+dt.res[,var(muA)]
+dt.res[,2*cov(muA,muB)]
+
+######################################################################
+### fixedSimpleGSD.R ends here

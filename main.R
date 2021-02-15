@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 24 2020 (14:37) 
 ## Version: 
-## Last-Updated: Feb 12 2021 (21:25) 
+## Last-Updated: Feb 15 2021 (11:23) 
 ##           By: Paul Blanche
-##     Update #: 336
+##     Update #: 176
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,6 +19,8 @@ rm(list=ls())
 
 if(system("whoami",intern=TRUE)=="paul"){  
     setwd("~/research/SeqDesignDelayed/DelayedGSD/")
+}else if(system("whoami",intern=TRUE)=="brice"){  
+    setwd("~/Documents/GitHub/DelayedGSD/")
 }
 sourceDir <- function(path, trace = TRUE, ...) {
     for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
@@ -143,11 +145,19 @@ PlotProgress(d,at=thet,Delta.t=0.5)
 di <- SelectData(d,t=thet)
 di
 # Analyze the data
-#
+
 Res <- AnalyzeData(di)
-Res$estimate
-Res$se
-summary(Res$fit)
+Res <- AnalyzeData(di, ddf = "satterthwaite")
+
+
+ResInfo <- getInformation(Res$fit, data = Res$d.long, name.coef = "Z1", type = "estimation", details = TRUE)
+as.double(ResInfo) - 1/vcov(Res$fit)["Z1","Z1"]
+attr(ResInfo,"details")$decision$information
+attr(ResInfo,"details")$interim$information
+attr(ResInfo,"details")$interim.cc$information
+
+getInformation(Res$fit, data = Res$d.long, name.coef = "Z1", type = "prediction", method.prediction = "inflation")
+
 
 #--- plan boundaries ---
 PlannedB <- CalcBoundaries(kMax=2,  #max number of analyses (including final)

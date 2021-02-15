@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt 30 2020 (11:36) 
 ## Version: 
-## Last-Updated: dec 10 2020 (11:57) 
+## Last-Updated: feb  3 2021 (15:15) 
 ##           By: Brice Ozenne
-##     Update #: 29
+##     Update #: 33
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -56,12 +56,12 @@ ttest <- function(...){
     if("formula" %in% names(out$args)){
         name.outcome <- all.vars(out$args[["formula"]])[1]
         if(out$method == "One Sample t-test"){
-            out$x <- out$args[["data"]][[name.outcome]]
+            out$args$x <- out$args[["data"]][[name.outcome]]
         }else{
             name.group <- all.vars(out$args[["formula"]])[2]
-            out[c("x","y")]  <- tapply(out$args[["data"]][,name.outcome],
-                                       out$args[["data"]][,name.group],
-                                       function(iVec){list(iVec)})
+            out$args[c("x","y")]  <- tapply(out$args[["data"]][[name.outcome]],
+                                            out$args[["data"]][[name.group]],
+                                            function(iVec){list(iVec)})
         }
     }
 
