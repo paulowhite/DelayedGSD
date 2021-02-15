@@ -14,6 +14,11 @@ PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
         stop("Itype not correctly specified")
     }
     if( !(type %in% c("Z","E","P")) )  stop("Incorrect type specified")
+    if(type=="P"){
+        mydigits <- 3
+    }else{
+        mydigits=2
+    }
     # }}}
     # {{{ Values to plot
     # default (if type="Z")
@@ -52,11 +57,18 @@ PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
     points(xd,yc,col="black",pch=19,cex=1.5)
     points(xu,yl,col="red",pch=21,bg="red",cex=1.2)
     points(xu,yu,col="green3",pch=21,bg="green3",cex=1.2)
+    #---
+    specdec <- function(x,k){ format(round(x,k),nsmall=k)}
+    text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=1)
+    text(x=xu,y=yl,labels=specdec(yl,k=mydigits),col="red",pos=1)
+    text(x=xu,y=yu,labels=specdec(yu,k=mydigits),col="green3",pos=3)    
+    #---   
     abline(h=yh,lty=2,col="grey")
+    text(x=0,y=yh,labels=specdec(yh,k=mydigits),col="grey",pos=1)        
     # axes
     axis(1,at=c(0,xu,xd),labels=format(c(0,xu,xd),digits=2))
-    axis(2,at=c(yl,yu,yc,ylim,yh),
-         labels=format(c(yl,yu,yc,ylim,yh),digits=2),las=2)
+    axis(2,at=c(yl,yu,ylim),
+         labels=format(c(yl,yu,ylim),digits=2),las=2)
     # color areas
     colvectgreen <- col2rgb("green3")/255
     colvectred <- col2rgb("red")/255
