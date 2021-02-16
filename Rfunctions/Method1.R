@@ -6,7 +6,9 @@ Method1 <- function(uk,  #upper bounds for all analyses up to and including curr
                     Ik,  #Information for all analyses up to and including current stage k
                     Id,  #Observed information at decision analysis k
                     Imax,  #Maximum information
-                    sided=1){ #one or two sided
+                    sided=1,  #one or two sided
+                    cMin=-Inf # minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
+                    ){
   
   require(mvtnorm)
   
@@ -18,7 +20,7 @@ Method1 <- function(uk,  #upper bounds for all analyses up to and including curr
     stop("Function cannot handle Id >= Imax yet")
   }
   
-  message("the method assumes that positive effects are good")
+  ## message("the method assumes that positive effects are good")
   
   k <- length(uk)
   Ik <- c(Ik,Id)
@@ -42,11 +44,10 @@ Method1 <- function(uk,  #upper bounds for all analyses up to and including curr
     as.numeric(y)
     }
   
-  c <- try(uniroot(f, lower = lk[k], upper = uk[k]*1.1)$root,silent=T)
-  if(inherits(c,"try-error")){
-    warning("uniroot produced an error, switching to dfsane")
-    c <- BB::dfsane(f, par = (uk[k]*1.1+lk[k])/2, control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
-  }
-  
-  c
+    c <- try(uniroot(f, lower = lk[k], upper = uk[k]*1.1)$root,silent=T)
+    if(inherits(c,"try-error")){
+        warning("uniroot produced an error, switching to dfsane")
+        c <- BB::dfsane(f, par = (uk[k]*1.1+lk[k])/2, control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
+    }
+    max(c,cMin)
 }
