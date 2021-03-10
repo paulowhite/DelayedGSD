@@ -1,0 +1,48 @@
+### FormatAsCaseStudy.R --- 
+#----------------------------------------------------------------------
+## Author: Paul Blanche
+## Created: Mar  5 2021 (13:40) 
+## Version: 
+## Last-Updated: Mar  9 2021 (10:47) 
+##           By: Paul Blanche
+##     Update #: 5
+#----------------------------------------------------------------------
+## 
+### Commentary: 
+## 
+### Change Log:
+#----------------------------------------------------------------------
+## 
+### Code:
+
+FormatAsCase <- function(d){
+    long <- reshape(d,
+                    direction='long',
+                    varying=c('X2','X3'),
+                    idvar='id',
+                    v.names='Change')
+    long <- long[order(long$id),]
+    ## head(d)
+    ## head(long)
+    #----
+    dd <- long
+    names(dd) <- c("USUBJID","TRT01P","BASE","RANDDT","DT14","DT28","AVISIT","CHG")
+    dd$TRT01P <- factor(dd$TRT01P,levels=c(0,1),labels=c("Control","Active"))
+    dd$AVISIT <- factor(dd$AVISIT,levels=c(1,2),labels=c("Day 14","Day 28"))
+    # time unit in days: outdated, now option in the main GenData function
+    ## dd$RANDDT <- round(dd$RANDDT*14)
+    ## dd$DT14 <- round(dd$DT14*14)
+    ## dd$DT28 <- round(dd$DT28*14)
+    # round with 2 digits: outdated, now option in the main GenData function
+    ## dd$BASE <- round(dd$BASE,2)
+    ## dd$CHG <- round(dd$CHG,2)
+    ## head(dd)
+    # Add FASFL
+    IDFASFLN <- d[is.na(d$X2) & is.na(d$X3),"id"]
+    dd$FASFL <- factor(dd$USUBJID %in% IDFASFLN,levels=c(TRUE,FALSE),labels=c("N","Y"))
+    ## summary(dd)
+    dd
+}
+
+#----------------------------------------------------------------------
+### FormatAsCaseStudy.R ends here
