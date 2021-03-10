@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 25 2020 (08:14) 
 ## Version: 
-## Last-Updated: Feb 12 2021 (20:45) 
+## Last-Updated: Mar  9 2021 (10:35) 
 ##           By: Paul Blanche
-##     Update #: 167
+##     Update #: 190
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -32,6 +32,9 @@
 ##' @param cor.0j.1 correlation between outcome at baseline and at any visit after the first visit  (main outcome)
 ##' @param seed
 ##' @param MissProb Missingness probability, currently works only if N.fw=2. should be a matrix with columns=V1, rows=V2, for both missing=yes/no (in that order), in proportions.
+##' @param DigitsOutcome Number of digits to round the outcome values (NULL means no rounding)
+##' @param TimeFactor Multiply the times by a factor (e.g. 14 if time between two follow-up visit should be approx 14 days)
+##' @param DigitsTime Number of digits to round the times (NULL means no rounding)
 ##' @details zz
 ##' @return ff
 ##' @author Paul Blanche
@@ -51,7 +54,10 @@ GenData <- function(n=52,
                     cor.ij.1=0.68,
                     cor.0j.1=-0.27,
                     seed=24082020,
-                    MissProb=NULL
+                    MissProb=NULL,
+                    DigitsOutcome=NULL,
+                    TimeFactor=1,
+                    DigitsTime=NULL
                     ){
     #--
     require(mvtnorm)
@@ -110,7 +116,19 @@ GenData <- function(n=52,
         d[whichMiss[1:(FreqMiss[1,1] + FreqMiss[1,2] ) ],"X2"] <- NA
         d[whichMiss[1:(FreqMiss[1,1])],"X3"] <- NA
         d[whichMiss[(FreqMiss[1,1] + FreqMiss[1,2] +1):HowManyMiss ],"X3"] <- NA
-    }    
+    }
+
+    # round the outcome values
+    if(!is.null(DigitsOutcome)){
+        d[,paste0("X",1:NV)] <- round(d[,paste0("X",1:NV)],DigitsOutcome)
+    }
+    if(TimeFactor!=1){
+        d[,paste0("t",1:NV)] <- d[,paste0("t",1:NV)]*TimeFactor
+    }
+    if(!is.null(DigitsTime)){
+        d[,paste0("t",1:NV)] <- round(d[,paste0("t",1:NV)],DigitsTime)
+    }   
+    
     ## head(d)
     list(input=list(
              n=n, 

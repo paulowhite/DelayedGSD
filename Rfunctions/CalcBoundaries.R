@@ -21,7 +21,7 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
   }
   
   
-  message("the method assumes that positive effects are good")
+  message("In CalcBoundaries, the method assumes that positive effects are good")
   
   StandardDesign <- getDesignGroupSequential(kMax=kMax, sided = sided, alpha = alpha, beta = beta,
                                             informationRates = informationRates,

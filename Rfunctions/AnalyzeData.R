@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 25 2020 (09:23) 
 ## Version: 
-## Last-Updated: feb  5 2021 (09:34) 
-##           By: Brice Ozenne
-##     Update #: 40
+## Last-Updated: Mar  9 2021 (12:54) 
+##           By: Paul Blanche
+##     Update #: 44
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -35,9 +35,9 @@ AnalyzeData <- function(d, ddf = "nlme"){
     long$id <- factor(long$id)
     long$Z <- factor(long$Z)
     long$time.factor <- factor(long$time)
-    long$time.factor <- relevel(long$time.factor,ref=N.fw-1)
-    head(long[order(long$id),],n=10)
-    summary(long)
+    long$time.factor <- relevel(long$time.factor,ref=N.fw-1) # relvel to make the treatment coefficient have the interpretation of threatment effect at end of follow-up
+    ## head(long[order(long$id),],n=10)
+    ## summary(long)
     
     ctrl <- glsControl(opt='optim')
     
@@ -69,7 +69,7 @@ AnalyzeData <- function(d, ddf = "nlme"){
     if(ddf=="nlme"){
         out <- list(d.long=long,
                     fit=m,
-                    pavlue=2*(pnorm(-abs(coef(m)["Z1"]/sqrt(m$varBeta["Z1","Z1"])))),
+                    pvalue=2*(pnorm(-abs(coef(m)["Z1"]/sqrt(m$varBeta["Z1","Z1"])))),
                     estimate=coef(m)["Z1"],
                     se=sqrt(m$varBeta["Z1","Z1"]),
                     Info=1/m$varBeta["Z1","Z1"])
@@ -81,7 +81,7 @@ AnalyzeData <- function(d, ddf = "nlme"){
         
         out <- list(d.long=long,
                     fit=m,
-                    pavlue=e.satterthwaite$p.value[index],
+                    pvalue=e.satterthwaite$p.value[index],
                     estimate=e.satterthwaite$estimate[index],
                     se=e.satterthwaite$SE[index],
                     Info=1/e.satterthwaite$SE[index]^2)
