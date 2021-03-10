@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 28 2020 (14:40) 
 ## Version: 
-## Last-Updated: Mar  9 2021 (13:55) 
+## Last-Updated: Mar 10 2021 (13:59) 
 ##           By: Paul Blanche
-##     Update #: 69
+##     Update #: 85
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -36,6 +36,7 @@ Decision <- function(analysis_res,  #results from AnalyzeData
                      Ik,  #all I_k (information) from first interim to final analysis (observed where possible)
                      Id=NULL,  #expected or observed information RATIO at each decision analysis
                      PositiveIsGood=TRUE, # whether positive effect is good (i.e. positive trial)
+                     Trace=TRUE, # whether to print some messages
                      plot=T){  #should the boundaries and results be plotted?
     if(is.null(Id) & !((analysis=="interim" & planned_bnds$method==1) | analysis=="final")){
         stop("Id must be specified.")
@@ -54,8 +55,10 @@ Decision <- function(analysis_res,  #results from AnalyzeData
                                  gammaA=planned_bnds$gammaA,  #rho parameter for alpha error spending function
                                  gammaB=planned_bnds$gammaB,  #rho parameter for beta error spending function
                                  method=planned_bnds$method,  #use method 1 or 2 from paper H&J
+                                 cNotBelowFixedc=planned_bnds$cNotBelowFixedc, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
                                  delta=planned_bnds$delta,  #effect that the study is powered for
-                                 Id=Id)  #(expected) information ratio at each decision analysis
+                                 Id=Id,  #(expected) information ratio at each decision analysis
+                                 Trace=FALSE)
     }else{
         StandardDesign <- getDesignGroupSequential(kMax=planned_bnds$kMax,
                                                    sided = planned_bnds$sided,
@@ -71,9 +74,10 @@ Decision <- function(analysis_res,  #results from AnalyzeData
     Z <- analysis_res$estimate/analysis_res$se
     if(!PositiveIsGood){
         Z <- -Z
-        message("Negative effect is good: schange sign of Z")
+        if(Trace){message("Negative effect is good: schange sign of Z")}
     }
     if(analysis=="interim"){
+        details <- c(u=Bounds$uk[k],l=Bounds$lk[k])
         if(Z>Bounds$uk[k]){
             decision="Efficacy"
         } else if (Z<Bounds$lk[k]){
@@ -83,12 +87,14 @@ Decision <- function(analysis_res,  #results from AnalyzeData
         }
     } else if(analysis=="decision"){
         ## print(paste0("c=",Bounds$ck[k]))
+        details <- c(c=Bounds$ck[k])
         if(Z>Bounds$ck[k]){
             decision="Efficacy"
         } else {
             decision="Futility"
         }
     } else if(analysis=="final"){
+        details <- c(critical=StandardDesign$criticalValues[k])
         if(Z>StandardDesign$criticalValues[k]){
             decision="Efficacy"
         } else {
@@ -106,9 +112,8 @@ Decision <- function(analysis_res,  #results from AnalyzeData
             points(analysis_res$Info/planned_bnds$Imax,Z)  #at some point we may wish to add that all previous analyses are plotted as well
         }
     }
-  
-  decision
-  
+    out <- list(decision=decision,details=details)
+    out
 }
 
 #would be nice if we can have a predict_info function to avoid that Id needs to be an argument
