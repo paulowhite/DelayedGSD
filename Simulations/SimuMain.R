@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: Mar 10 2021 (14:12) 
-##           By: Paul Blanche
-##     Update #: 375
+## Last-Updated: mar 11 2021 (12:22) 
+##           By: Brice Ozenne
+##     Update #: 386
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,6 +15,7 @@
 ## 
 ### Code:
 
+library(rpact)
 
 rm(list=ls())
 
@@ -78,6 +79,9 @@ if(system("whoami",intern=TRUE)=="paul"){
     pathToLoad <- "~/research/SeqDesignDelayed/DelayedGSD/Rfunctions/"
     pathToSave <- "~/research/SeqDesignDelayed/DelayedGSD/Simulations/output/"
     name <- paste0(name,"test")
+    i <- 1
+}else if(system("whoami",intern=TRUE)=="brice"){  
+    pathToLoad <- "~/Documents/GitHub/DelayedGSD/Rfunctions"
     i <- 1
 }
 # if I am on the biostat server
@@ -195,8 +199,16 @@ for(j in allj){
     ddi <- FormatAsCase(di) # needed ????
     ## head(d[d$id==52,])
     # }}}
-    # {{{ analyze data at at interim
+    ## {{{ analyze data at at interim
     ResInterim <- AnalyzeData(di) #  Log-restricted-likelihood: -189.561
+    ResInterim$Info ## info at interim
+    ResInterim$Info.fullData ## info at decision (if stop at interim and include no more patient)
+    ## info at the end of the study
+     ## WARNING: does not account for drop-out amont the non-yet observed individuals
+    d.final.predictible <- wide2long(d, rm.na = TRUE, id.na = setdiff(d$id,di$id))
+    ResInterim$Info.final <- getInformation(ResInterim$fit, name.coef = "Z1", type = "prediction", method.prediction = "inflation",
+                                            data = d.final.predictible, n.boot = 1000)
+    
     # save (potentially) important results
     Z.interim <- ResInterim$estimate/ResInterim$se
     est.interim <- ResInterim$estimate
