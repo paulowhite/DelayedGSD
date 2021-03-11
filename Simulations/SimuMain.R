@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: mar 11 2021 (12:22) 
+## Last-Updated: mar 11 2021 (17:54) 
 ##           By: Brice Ozenne
-##     Update #: 386
+##     Update #: 387
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -204,10 +204,12 @@ for(j in allj){
     ResInterim$Info ## info at interim
     ResInterim$Info.fullData ## info at decision (if stop at interim and include no more patient)
     ## info at the end of the study
-     ## WARNING: does not account for drop-out amont the non-yet observed individuals
+    ## WARNING: does not account for drop-out amont the non-yet observed individuals
     d.final.predictible <- wide2long(d, rm.na = TRUE, id.na = setdiff(d$id,di$id))
     ResInterim$Info.final <- getInformation(ResInterim$fit, name.coef = "Z1", type = "prediction", method.prediction = "inflation",
-                                            data = d.final.predictible, n.boot = 1000)
+                                            data = d.final.predictible, n.boot = 0) ## using weights
+    ## getInformation(ResInterim$fit, name.coef = "Z1", type = "prediction", method.prediction = "inflation",
+    ##                                     data = d.final.predictible, n.boot = 1000) ## using non parametric bootstrap
     
     # save (potentially) important results
     Z.interim <- ResInterim$estimate/ResInterim$se

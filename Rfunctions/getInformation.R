@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: mar 11 2021 (12:13) 
+## Last-Updated: mar 11 2021 (17:53) 
 ##           By: Brice Ozenne
-##     Update #: 730
+##     Update #: 755
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -99,7 +99,7 @@
 #'             data.frame(id = paste0("id",1:n),group=0,time=1,value=X[,2]),
 #'             data.frame(id = paste0("id",n+1:n),group=1,time=0,value=Y[,1]),
 #'             data.frame(id = paste0("id",n+1:n),group=1,time=1,value=Y[,2]))
-#' 
+#'
 #'
 #' ## gls
 #' e.gls <- gls(value~time-1, data = df[df$group==0,],
@@ -107,13 +107,21 @@
 #'              weights = varIdent(form=~1|time))
 #' getInformation(e.gls, name.coef = "time")  ## 1/vcov(e.gls)
 #' getInformation(e.gls, name.coef = "time", variance = list(diag(1:2)))
-#' 
+#'
+#' ## with interaction
 #' e.gls <- gls(value~time*group, data = df,
 #'              correlation = corSymm(form=~1|id),
 #'              weights = varIdent(form=~1|time*group))
 #' getInformation(e.gls, name.coef = "time:group") ## 1/vcov(e.gls)
 #' getInformation(e.gls, name.coef = "time", variance = list(diag(1:2),diag(1:2)))
-#' 
+#'
+#' ## with random ordering
+#' df2 <- df[sample.int(NROW(df)),,drop=FALSE]
+#' e2.gls <- gls(value~time*group, data = df2,
+#'              correlation = corSymm(form=~1|id),
+#'              weights = varIdent(form=~1|time*group))
+#' getInformation(e2.gls, name.coef = "time:group") ## 1/vcov(e2.gls)
+#' getInformation(e.gls, name.coef = "time", variance = list(diag(1:2),diag(1:2)))
 
 ## * getInformation.matrix
 getInformation.matrix <- function(object, variance, ...){
@@ -123,19 +131,25 @@ getInformation.matrix <- function(object, variance, ...){
     dots <- list(...)
     index.variance <- dots$index.variance
     index.cluster <- dots$index.cluster
-
+    weight <- dots$weight
+    
     ## ** prepare
+    precision <- lapply(variance,solve)
     n.cluster <- length(index.variance)
     n.allcoef <- NCOL(object)
     name.allcoef <- colnames(object)
     Info <- matrix(0, nrow = n.allcoef, ncol = n.allcoef,
                    dimnames = list(name.allcoef, name.allcoef))
-    
+
     ## ** compute information
     for(iId in 1:n.cluster){ ## iId <- 200
         iX <- object[index.cluster==iId,,drop=FALSE]
-        iSigma <- variance[[index.variance[iId]]]
-        Info <- Info + t(iX) %*% solve(iSigma) %*% iX
+        iOmega <- precision[[index.variance[iId]]]
+        if(!is.null(weight)){
+            Info <- Info + weight[iId] * (t(iX) %*% iOmega %*% iX)
+        }else{
+            Info <- Info + (t(iX) %*% iOmega %*% iX)
+        }
     }
 
     ## ** export
@@ -198,7 +212,7 @@ getInformation.ttest <- function(object, type = "estimation", variance = NULL, .
 
 ## * getInformation.gls
 getInformation.gls <- function(object, name.coef, type = "estimation", method.prediction  = "inflation",
-                               variance = NULL, data = NULL, details = FALSE, n.boot = 0, trace.boot = TRUE, cl = NULL, ...){
+                               variance = NULL, data = NULL, details = FALSE, n.boot = NA, trace.boot = TRUE, cl = NULL, ...){
 
     ## ** normalize arguments
     type <- match.arg(type, c("estimation","prediction"))
@@ -249,42 +263,76 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     ## keep all observations despite missing values in the response
     name.regressor <- all.vars(update(f.gls,0~.))
     testNA.regressor <- any(is.na(data[,name.regressor]))
+
     if(testNA.regressor){
-        if(n.boot<=0){
+        if(is.na(n.boot)){
             stop("Missing values in the design matrix. \n",
-                 "Consider setting \"n.boot\" to a strictly positive value to use imputation to deal with missing values. \n")
+                 "Consider setting \"n.boot\" to 0 (re-weight observed values) or to a strictly positive value (multiple imputations) to deal with missing values. \n")
         }
         
-        data2 <- data
-        for(iR in name.regressor){
-            if(any(is.na(data[[iR]]))){
-                data2[[iR]][is.na(data[[iR]])] <- Inf
+        name.regressorNA <- name.regressor[sapply(name.regressor, function(iR){any(is.na(data[[iR]]))})]
+        name.regressorNNA <- setdiff(name.regressor,name.regressorNA)
+        test.idNA <- rowSums(is.na(data[,name.regressorNA,drop=FALSE]))>0
+        
+        index.splitNA <- split((1:NROW(data))[test.idNA],interaction(data[test.idNA,name.regressorNNA,drop=FALSE]))
+        n.splitNA <- sapply(index.splitNA, length)
+        n.split <- length(index.splitNA)
+        index.splitNNA <- split((1:NROW(data))[!test.idNA],interaction(data[!test.idNA,name.regressorNNA,drop=FALSE]))
+        n.splitNNA <- sapply(index.splitNNA, length)
+        
+        if(n.boot>0){
+            ## Put Inf instead of NA to represent missing values in the covariates
+            data2 <- data
+            for(iR in name.regressor){
+                if(any(is.na(data[[iR]]))){
+                    data2[[iR]][is.na(data[[iR]])] <- Inf
+                }
             }
-        }
-        X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data2, na.action = na.pass))
-
+            
+            X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data2, na.action = na.pass))
+            resPattern.decision <- .getPattern(object, data = data, variance = variance, name.coef = name.coef)
+            weight <- NULL
+            X.splitNNA <- lapply(split(as.data.frame(X.decision[test.idNA==FALSE,,drop=FALSE]),interaction(data[test.idNA==FALSE,name.regressorNNA,drop=FALSE])),
+                                 as.matrix)
+        }else{
+            X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data[!test.idNA,,drop=FALSE], na.action = na.pass))
+            weight.data <- rep(NA, times = NROW(data))
+            weight.data[unlist(index.splitNNA)] <- unlist(mapply(x = index.splitNNA, y = n.splitNA, z = n.splitNNA, FUN = function(x,y,z){rep((y+z)/z, times = length(x))}))
+            weight <- weight.data[!test.idNA]
+            ## table(weight, interaction(as.data.frame(X.decision[,c("Z1","time.factor1")])))
+            resPattern.decision <- .getPattern(object, data = data[!test.idNA,,drop=FALSE], variance = variance, name.coef = name.coef)
+        }            
     }else{
         X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data, na.action = na.pass))
+        resPattern.decision <- .getPattern(object, data = data, variance = variance, name.coef = name.coef)
+        weight <- NULL
         ## instead of 
         ## X <- model.matrix(stats::formula(object), data = data)
         ## to keep rows with missing data
     }
-    resPattern.decision <- .getPattern(object, data = data, variance = variance, name.coef = name.coef)
 
     ## *** at interim: full information approach
     ## keep all observations without missing values in the response
     X.interim <- model.matrix(f.gls, data = data)
 
     index.interim <- which(!is.na(data[[all.vars(f.gls)[1]]]))
-    if(any(abs(X.decision[index.interim,]-X.interim)>1e-10)){ ## Sanity check
-        warning("Something went wrong when selecting the data at interim. \n")
+    if(testNA.regressor && n.boot == 0){
+        if(NROW(X.decision) != NROW(X.interim) || any(abs(X.decision-X.interim)>1e-10)){ ## Sanity check
+            warning("Something went wrong when selecting the data at interim. \n",
+                    "Could be due to missing values in the regressors. \n")
+        }
+    }else{
+        if(any(abs(X.decision[index.interim,]-X.interim)>1e-10)){ ## Sanity check
+            warning("Something went wrong when selecting the data at interim. \n",
+                    "Could be due to missing values in the regressors. \n")
+        }
     }
     if(NROW(X.interim)>0){
-    data.interim <- data[index.interim,,drop=FALSE]
-    resPattern.interim <- .getPattern(object, data = data.interim, variance = variance, name.coef = name.coef)
+        data.interim <- data[index.interim,,drop=FALSE]
+        resPattern.interim <- .getPattern(object, data = data.interim, variance = variance, name.coef = name.coef)
 
-    ## number of observation per cluster at interim
-    resPattern.interim$nobs.vargroup <- setNames(sapply(resPattern.interim$variance.vargroup,NCOL)[resPattern.interim$index.vargroup], names(resPattern.interim$index.vargroup)) 
+        ## number of observation per cluster at interim
+        resPattern.interim$nobs.vargroup <- setNames(sapply(resPattern.interim$variance.vargroup,NCOL)[resPattern.interim$index.vargroup], names(resPattern.interim$index.vargroup)) 
     }
     
     ## *** at interim: complete case approach
@@ -311,25 +359,14 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     ## ** compute information
     
     ## *** at decision
-    if(testNA.regressor==FALSE){
+    if(testNA.regressor==FALSE || n.boot==0){
         info.decision <- getInformation(X.decision,
                                         variance = resPattern.decision$variance.vargroup,
                                         index.variance = resPattern.decision$index.vargroup,
-                                        index.cluster = resPattern.decision$index.cluster)
+                                        index.cluster = resPattern.decision$index.cluster,
+                                        weight = weight)
         var.decision <- solve(info.decision)[name.coef,name.coef]
     }else{
-        name.regressorNA <- name.regressor[sapply(name.regressor, function(iR){any(is.na(data[[iR]]))})]
-        name.regressorNNA <- setdiff(name.regressor,name.regressorNA)
-        test.idNA <- rowSums(is.na(data[,name.regressorNA,drop=FALSE]))>0
-
-        
-        index.splitNA <- split((1:NROW(X.decision))[test.idNA],interaction(data[test.idNA,name.regressorNNA,drop=FALSE]))
-        n.splitNA <- sapply(index.splitNA, length)
-        n.split <- length(index.splitNA)
-        X.splitNNA <- lapply(split(as.data.frame(X.decision[test.idNA==FALSE,,drop=FALSE]),interaction(data[test.idNA==FALSE,name.regressorNNA,drop=FALSE])),
-                             as.matrix)
-        n.splitNNA <- sapply(X.splitNNA, NROW)
-
         Ainfo.decision <- array(NA, dim = c(NCOL(X.decision),NCOL(X.decision),n.boot),
                                 dimnames = list(colnames(X.decision),colnames(X.decision),NULL))
         Avar.decision <- rep(NA, n.boot)
