@@ -7,9 +7,10 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
                            gammaB=2,  #rho parameter for beta error spending function
                            method=1,  #use method 1 or 2 from paper H&J
                            cNotBelowFixedc=FALSE, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
-                           delta=1.5,  #effect that the study is powered for
-                           Id=0.55){  #(expected) information ratio at each decision analysis
-  
+                           delta=1.5, #effect that the study is powered for
+                           Id=0.55,   #(expected) information ratio at each decision analysis
+                           Trace=TRUE){  # whether to print some messages
+                            
   require(rpact)
   
   if(sided!=1){
@@ -21,7 +22,7 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
   }
   
   
-  message("the method assumes that positive effects are good")
+  if(Trace){message("In CalcBoundaries, the method assumes that positive effects are good")}
   
   StandardDesign <- getDesignGroupSequential(kMax=kMax, sided = sided, alpha = alpha, beta = beta,
                                             informationRates = informationRates,
@@ -73,6 +74,6 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
   }
   
   list("uk"=uk,"lk"=lk,"ck"=ck,"Ik"=informationRates*Imax,"Id"=Id,"Imax"=Imax,
-       "alpha"=alpha,kMax=kMax,sided=sided,beta=beta,gammaA=gammaA,gammaB=gammaB,method=method,delta=delta)
+       "alpha"=alpha,kMax=kMax,sided=sided,beta=beta,gammaA=gammaA,gammaB=gammaB,method=method,delta=delta,cNotBelowFixedc=cNotBelowFixedc)
 }
 

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb 10 2021 (12:36) 
+## Last-Updated: mar 11 2021 (12:13) 
 ##           By: Brice Ozenne
-##     Update #: 695
+##     Update #: 730
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -31,9 +31,12 @@
 #' Otherwise it should be a list containing the theoretical value of the variance-covariance matrix for each treatment group.
 #' @param data [data.frame] The dataset relative to which the information should be computed. See details section.
 #' @param details [logical] Should intermediate results be output. See details section.
+#' @param n.boot [integer] Number of non-parametric bootstrap samples used to impute missing values in the covariates.
+#' @param trace.boot [logical] Should a progress bar be display to follow the execution of the non-parametric boostrap.
+#' @param cl enable the use of several cpus when running the non-parametric bootstrap (argument passed to \code{pbapply::pblapply}).
 #' @param ... not used. For compatibility with the generic details.
-
-#' @method Argument \bold{data}: the dataset may contain missing value in the outcome but no in the covariates. Missing value in the outcome indicates that the information is not available at the interim analysis but will be come available at decision.
+#' 
+#' @details Argument \bold{data}: the dataset may contain missing value in the outcome but no in the covariates. Missing value in the outcome indicates that the information is not available at the interim analysis but will be come available at decision.
 #'
 #'
 #' Argument \bold{details}: when using gls models, an attribute detail is added to the output which contain a list:\itemize{
@@ -43,6 +46,9 @@
 #' \item n: sample size at decision, interim with complete observation, interim with only partial observations
 #' }
 #' 
+#' Argument \bold{n.boot}: missing values are imputed using a non-parametric boostrap stratified on the covariates with fully observed covariates. It implicitely assumes
+#' (i) that fully observed covariates are categorical and the number possible of combinations is small
+#' (ii) that either no value is missing or all values are missing for the covariates being missing for some individuals. 
 #' @export
 `getInformation` <- function(object, ...) UseMethod("getInformation")
 
@@ -192,7 +198,7 @@ getInformation.ttest <- function(object, type = "estimation", variance = NULL, .
 
 ## * getInformation.gls
 getInformation.gls <- function(object, name.coef, type = "estimation", method.prediction  = "inflation",
-                               variance = NULL, data = NULL, details = FALSE,...){
+                               variance = NULL, data = NULL, details = FALSE, n.boot = 0, trace.boot = TRUE, cl = NULL, ...){
 
     ## ** normalize arguments
     type <- match.arg(type, c("estimation","prediction"))
@@ -241,15 +247,29 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     ## ** design matrix and covariance pattern
     ## *** at decision
     ## keep all observations despite missing values in the response
-    X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data, na.action = na.pass))
-    ## instead of 
-    ## X <- model.matrix(stats::formula(object), data = data)
-    ## to keep rows with missing data
-    resPattern.decision <- .getPattern(object, data = data, variance = variance, name.coef = name.coef)
+    name.regressor <- all.vars(update(f.gls,0~.))
+    testNA.regressor <- any(is.na(data[,name.regressor]))
+    if(testNA.regressor){
+        if(n.boot<=0){
+            stop("Missing values in the design matrix. \n",
+                 "Consider setting \"n.boot\" to a strictly positive value to use imputation to deal with missing values. \n")
+        }
+        
+        data2 <- data
+        for(iR in name.regressor){
+            if(any(is.na(data[[iR]]))){
+                data2[[iR]][is.na(data[[iR]])] <- Inf
+            }
+        }
+        X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data2, na.action = na.pass))
 
-    if(any(is.na(X.decision))){
-        stop("Cannot handle missing values in the design matrix. \n")
+    }else{
+        X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data, na.action = na.pass))
+        ## instead of 
+        ## X <- model.matrix(stats::formula(object), data = data)
+        ## to keep rows with missing data
     }
+    resPattern.decision <- .getPattern(object, data = data, variance = variance, name.coef = name.coef)
 
     ## *** at interim: full information approach
     ## keep all observations without missing values in the response
@@ -259,14 +279,18 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     if(any(abs(X.decision[index.interim,]-X.interim)>1e-10)){ ## Sanity check
         warning("Something went wrong when selecting the data at interim. \n")
     }
+    if(NROW(X.interim)>0){
     data.interim <- data[index.interim,,drop=FALSE]
     resPattern.interim <- .getPattern(object, data = data.interim, variance = variance, name.coef = name.coef)
 
     ## number of observation per cluster at interim
     resPattern.interim$nobs.vargroup <- setNames(sapply(resPattern.interim$variance.vargroup,NCOL)[resPattern.interim$index.vargroup], names(resPattern.interim$index.vargroup)) 
-
+    }
+    
     ## *** at interim: complete case approach
-    if(resPattern.decision$rep.full==1){
+    if(NROW(X.interim)==0){
+        X.interim.cc <- X.interim
+    }else if(resPattern.decision$rep.full==1){
         X.interim.cc <- X.interim
         resPattern.interim.cc <- resPattern.interim
     }else{
@@ -285,13 +309,57 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     }    
     
     ## ** compute information
+    
     ## *** at decision
-    info.decision <- getInformation(X.decision,
+    if(testNA.regressor==FALSE){
+        info.decision <- getInformation(X.decision,
+                                        variance = resPattern.decision$variance.vargroup,
+                                        index.variance = resPattern.decision$index.vargroup,
+                                        index.cluster = resPattern.decision$index.cluster)
+        var.decision <- solve(info.decision)[name.coef,name.coef]
+    }else{
+        name.regressorNA <- name.regressor[sapply(name.regressor, function(iR){any(is.na(data[[iR]]))})]
+        name.regressorNNA <- setdiff(name.regressor,name.regressorNA)
+        test.idNA <- rowSums(is.na(data[,name.regressorNA,drop=FALSE]))>0
+
+        
+        index.splitNA <- split((1:NROW(X.decision))[test.idNA],interaction(data[test.idNA,name.regressorNNA,drop=FALSE]))
+        n.splitNA <- sapply(index.splitNA, length)
+        n.split <- length(index.splitNA)
+        X.splitNNA <- lapply(split(as.data.frame(X.decision[test.idNA==FALSE,,drop=FALSE]),interaction(data[test.idNA==FALSE,name.regressorNNA,drop=FALSE])),
+                             as.matrix)
+        n.splitNNA <- sapply(X.splitNNA, NROW)
+
+        Ainfo.decision <- array(NA, dim = c(NCOL(X.decision),NCOL(X.decision),n.boot),
+                                dimnames = list(colnames(X.decision),colnames(X.decision),NULL))
+        Avar.decision <- rep(NA, n.boot)
+
+        warper <- function(iBoot){
+            X.decision2 <- X.decision
+            for(iSplit in 1:n.split){ ## iSplit <- 1
+                X.decision2[index.splitNA[[iSplit]],] <- X.splitNNA[[iSplit]][sample.int(n = n.splitNNA[iSplit], size = n.splitNA[iSplit], replace = TRUE),,drop=FALSE]
+            }
+            iInfo <- getInformation(X.decision2,
                                     variance = resPattern.decision$variance.vargroup,
                                     index.variance = resPattern.decision$index.vargroup,
                                     index.cluster = resPattern.decision$index.cluster)
-    var.decision <- solve(info.decision)[name.coef,name.coef]
+            iVar <- solve(iInfo)[name.coef,name.coef]
+            return(list(info = iInfo, var = iVar))
+        }
 
+        if(trace.boot){
+            require(pbapply)
+            out.boot <- pblapply(1:n.boot, FUN = warper, cl = cl)
+        }else{
+            if(!is.null(cl)){warning("Argument \'cl\' ignored when argument \'trace.boot\' is FALSE. \n")}
+            out.boot <- lapply(1:n.boot, FUN = warper)
+        }
+        ls.info <- lapply(out.boot,"[[","info")
+        info.decision <- Reduce("+",ls.info)/n.boot
+        var.boot.decision <- do.call(rbind,lapply(out.boot,"[[","var"))
+        var.decision <- mean(var.boot.decision)
+        attr(info.decision,"bootstrap") <- ls.info
+    }
     ## score.decision <- .getScore(X.decision,
     ##                             variance = resPattern.decision$variance.vargroup,
     ##                             residuals = data[[all.vars(f.gls)[1]]] - X.decision %*% coef(object),
@@ -299,27 +367,39 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     ##                             index.cluster = resPattern.decision$index.cluster)
 
     ## *** at interim: full information approach
-    info.interim <- getInformation(X.interim,
-                                   variance = resPattern.interim$variance.vargroup,
-                                   index.variance = resPattern.interim$index.vargroup,
-                                   index.cluster = resPattern.interim$index.cluster)
-    var.interim <- solve(info.interim)[name.coef,name.coef]
-
+    if(NROW(X.interim)>0){
+        info.interim <- getInformation(X.interim,
+                                       variance = resPattern.interim$variance.vargroup,
+                                       index.variance = resPattern.interim$index.vargroup,
+                                       index.cluster = resPattern.interim$index.cluster)
+        var.interim <- solve(info.interim)[name.coef,name.coef]
+    }
+    
     ## *** at interim: complete case approach
-    info.interim.cc <- getInformation(X.interim.cc,
-                                      variance = resPattern.interim.cc$variance.vargroup,
-                                      index.variance = resPattern.interim.cc$index.vargroup,
-                                      index.cluster = resPattern.interim.cc$index.cluster)
-    var.interim.cc <- solve(info.interim.cc)[name.coef,name.coef]
+    if(NROW(X.interim.cc)>0){
+        info.interim.cc <- getInformation(X.interim.cc,
+                                          variance = resPattern.interim.cc$variance.vargroup,
+                                          index.variance = resPattern.interim.cc$index.vargroup,
+                                          index.cluster = resPattern.interim.cc$index.cluster)
+        var.interim.cc <- solve(info.interim.cc)[name.coef,name.coef]
+    }
     ## object.cc <- update(object, data = data.interim.cc)
     ## coef(object.cc)
     ## coef(object)
     
     ## ** sample size
     n.decision <- resPattern.decision$n.cluster ## number of patients at decision
-    n.interim <- resPattern.interim$n.cluster ## number of patients at interim (with at least one observation proxy or outcome)
-    n.interim.cc <- resPattern.interim.cc$n.cluster ## number of patients at interim with complete data
-
+    if(NROW(X.interim)>0){ ## number of patients at interim (with at least one observation proxy or outcome)
+        n.interim <- resPattern.interim$n.cluster
+    }else{
+        n.interim <- 0 
+    }
+    if(NROW(X.interim.cc)>0){ ## number of patients at interim with complete data
+        n.interim.cc <- resPattern.interim.cc$n.cluster
+    }else{
+        n.interim.cc <- 0
+    }
+    
     ## ** predict information
     if(type == "estimation"){
         out <- 1/var.interim
@@ -347,14 +427,20 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
         attr(out,"details") <- list(decision = list(information = 1/solve(info.decision)[name.coef,name.coef],
                                                     vcov = solve(info.decision),
                                                     pattern = resPattern.decision),
-                                    interim = list(information = 1/solve(info.interim)[name.coef,name.coef],
-                                                   vcov = solve(info.interim),
-                                                   pattern = resPattern.interim),
-                                    interim.cc = list(information = 1/solve(info.interim.cc)[name.coef,name.coef],
-                                                      vcov = solve(info.interim.cc),
-                                                      pattern = resPattern.interim),
+                                    interim = NULL,
+                                    interim.cc = NULL,
                                     n = c(decision = n.decision, interim = n.interim, interim.cc = n.interim.cc)
                                     )
+        if(NROW(X.interim)>0){
+            attr(out,"details")$interim <- list(information = 1/solve(info.interim)[name.coef,name.coef],
+                                                vcov = solve(info.interim),
+                                                pattern = resPattern.interim)
+        }
+        if(NROW(X.interim.cc)>0){
+            attr(out,"details")$interim.cc <- list(information = 1/solve(info.interim.cc)[name.coef,name.coef],
+                                                   vcov = solve(info.interim.cc),
+                                                   pattern = resPattern.interim.cc)
+        }
     }
     
     return(out)
