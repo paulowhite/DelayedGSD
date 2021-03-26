@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: mar 11 2021 (17:53) 
+## Last-Updated: mar 26 2021 (23:51) 
 ##           By: Brice Ozenne
-##     Update #: 755
+##     Update #: 913
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -31,9 +31,6 @@
 #' Otherwise it should be a list containing the theoretical value of the variance-covariance matrix for each treatment group.
 #' @param data [data.frame] The dataset relative to which the information should be computed. See details section.
 #' @param details [logical] Should intermediate results be output. See details section.
-#' @param n.boot [integer] Number of non-parametric bootstrap samples used to impute missing values in the covariates.
-#' @param trace.boot [logical] Should a progress bar be display to follow the execution of the non-parametric boostrap.
-#' @param cl enable the use of several cpus when running the non-parametric bootstrap (argument passed to \code{pbapply::pblapply}).
 #' @param ... not used. For compatibility with the generic details.
 #' 
 #' @details Argument \bold{data}: the dataset may contain missing value in the outcome but no in the covariates. Missing value in the outcome indicates that the information is not available at the interim analysis but will be come available at decision.
@@ -46,9 +43,6 @@
 #' \item n: sample size at decision, interim with complete observation, interim with only partial observations
 #' }
 #' 
-#' Argument \bold{n.boot}: missing values are imputed using a non-parametric boostrap stratified on the covariates with fully observed covariates. It implicitely assumes
-#' (i) that fully observed covariates are categorical and the number possible of combinations is small
-#' (ii) that either no value is missing or all values are missing for the covariates being missing for some individuals. 
 #' @export
 `getInformation` <- function(object, ...) UseMethod("getInformation")
 
@@ -80,13 +74,13 @@
 #' ## gls
 #' library(nlme)
 #'
-#' e.gls <- gls(value~1, data = df[df$group==0,])
-#' getInformation(e.gls, name.coef = "(Intercept)")
-#' getInformation(e.gls, name.coef = "(Intercept)", variance = matrix(1,1,1))
+#' e1.gls <- gls(value~1, data = df[df$group==0,])
+#' getInformation(e1.gls, name.coef = "(Intercept)")
+#' getInformation(e1.gls, name.coef = "(Intercept)", variance = matrix(1,1,1))
 #' 
-#' e.gls <- gls(value~group, data = df, weights = varIdent(form=~1|group))
-#' getInformation(e.gls, name.coef = "group")
-#' getInformation(e.gls, name.coef = "group", variance = list(matrix(1,1,1),matrix(2,1,1)))
+#' e2.gls <- gls(value~group, data = df, weights = varIdent(form=~1|group))
+#' getInformation(e2.gls, name.coef = "group")
+#' getInformation(e2.gls, name.coef = "group", variance = list(matrix(1,1,1),matrix(2,1,1)))
 #' 
 #' #### Two endpoints ####
 #' ## simulate data
@@ -211,19 +205,12 @@ getInformation.ttest <- function(object, type = "estimation", variance = NULL, .
 }
 
 ## * getInformation.gls
-getInformation.gls <- function(object, name.coef, type = "estimation", method.prediction  = "inflation",
-                               variance = NULL, data = NULL, details = FALSE, n.boot = NA, trace.boot = TRUE, cl = NULL, ...){
+getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
+                               newdata = NULL, variance = NULL, ...){
 
     ## ** normalize arguments
-    type <- match.arg(type, c("estimation","prediction"))
-    method.prediction <- match.arg(method.prediction, c("inflation","pooling","pooling2"))
-
     if(is.null(data)){
-        if(type == "estimation"){
-            data <- try(nlme::getData(object), silent = TRUE)
-        }else{
-            data <- try(eval(object$call$data), silent = TRUE)
-        }
+        data <- try(nlme::getData(object), silent = TRUE)
         if(inherits(data,"try-error")){
             stop("Could not retrieve the data used to fit the gls model. \n",
                  "Consider passing the data via the \'data\' argument. \n")
@@ -237,7 +224,189 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     if(!is.null(object$modelStruct$corStruct) && !inherits(object$modelStruct$corStruct, what = c("corSymm","corCompSymm"))){
         stop("Only handles \"corSymm\" and \"corCompSymm\" correlation structures \n.")
     }
+
+    if(!is.null(newdata) && details){
+        stop("Cannot compute information for a new data when argument \'details\' is TRUE \n")
+    }
+    if(!is.null(variance) && details){
+        stop("Cannot compute information for user-defined covariance values when argument \'details\' is TRUE \n")
+    }
     
+    ## ** extract elements from model
+    ## *** formula
+    f.gls <- stats::formula(object)
+    outcome.var <- all.vars(f.gls)[1]
+    cluster.var <- utils::tail(all.vars(stats::formula(object$modelStruct$corStruct)),1)
+
+    if(length(cluster.var)>0){
+        if(is.factor(data[[cluster.var]])){
+            data[[cluster.var]] <- droplevels(data[[cluster.var]])
+            level.cluster <- levels(data[[cluster.var]])
+        }else{
+            level.cluster <- sort(unique(data[[cluster.var]]))
+        }
+    }else{
+        level.cluster <- 1:NROW(data)
+    }
+    n.cluster <- length(level.cluster)
+    
+    ## *** coefficients
+    name.allcoef <- names(coef(object))
+    n.allcoef <- length(name.allcoef)
+    name.coef <- match.arg(name.coef, name.allcoef)
+
+    ## ** design matrix and covariance pattern
+    ## *** at decision
+
+    ## design matrix
+    X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data, na.action = na.pass)) ## instead of X <- model.matrix(stats::formula(object), data = data) to keep rows with missing data        
+
+    ## covariance pattern
+    resPattern.decision <- .getPattern(object, data = data, variance = NULL)
+
+    ## number of observation per cluster at decision
+    resPattern.decision$nobs.vargroup <- setNames(sapply(resPattern.decision$variance.vargroup,NCOL)[resPattern.decision$index.vargroup], names(resPattern.decision$index.vargroup))
+
+    ## *** at interim: full information approach
+    ## dataset
+    index.interim <- which(!is.na(data[[outcome.var]]))
+    data.interim <- data[index.interim,,drop=FALSE]
+
+    ## design matrix
+    X.interim <- model.matrix(f.gls, data = data)
+
+    ## covariance pattern
+    resPattern.interim <- .getPattern(object, data = data.interim, variance = NULL)
+
+    ## number of observation per cluster at interim
+    resPattern.interim$nobs.vargroup <- setNames(sapply(resPattern.interim$variance.vargroup,NCOL)[resPattern.interim$index.vargroup], names(resPattern.interim$index.vargroup))
+
+    ## clusters
+    if(length(cluster.var)>0){
+        if(is.factor(data.interim[[cluster.var]])){
+            data.interim[[cluster.var]] <- droplevels(data.interim[[cluster.var]])
+            level.cluster.interim <- levels(data.interim[[cluster.var]])
+        }else{
+            level.cluster.interim <- sort(unique(data.interim[[cluster.var]]))
+        }
+    }else{
+        level.cluster.interim <- 1:NROW(data.interim)
+    }
+    n.cluster.interim <- length(level.cluster.interim)
+
+    ## *** at interim: complete case approach
+    if(resPattern.decision$rep.full==1){
+        X.interim.cc <- X.interim
+        resPattern.interim.cc <- resPattern.interim
+        data.interim.cc <- data.interim
+    }else{
+        ## dataset (keep all observations for which the cluster has no missing values in the response)
+        cluster.cc <- names(resPattern.interim$nobs.vargroup[resPattern.interim$nobs.vargroup==resPattern.decision$rep.full])
+        index.cc <- which(data[[cluster.var]] %in% cluster.cc)
+        data.interim.cc <- data[index.cc,,drop=FALSE]
+
+        ## design matrix
+        X.interim.cc <- model.matrix(f.gls, data = data.interim.cc)
+
+        ## covariance pattern
+        resPattern.interim.cc <- .getPattern(object, data = data.interim.cc, variance = NULL)
+
+        ## number of observation per cluster in the complete case
+        resPattern.interim.cc$nobs.vargroup <- setNames(sapply(resPattern.interim.cc$variance.vargroup,NCOL)[resPattern.interim.cc$index.vargroup], names(resPattern.interim.cc$index.vargroup))
+    }    
+        
+    ## *** sanity checks
+    if(any(abs(X.decision[index.interim,]-X.interim)>1e-10)){ ## Sanity check
+        warning("Something went wrong when selecting the data at interim. \n",
+                "Could be due to missing values in the regressors. \n")
+    }
+    if(abs(NROW(X.interim)-NROW(data.interim))>1e-10){ ## Sanity check
+        warning("Something went wrong when selecting the data at interim. \n",
+                "Could be due to missing values in the regressors. \n")
+    }
+    if(n.cluster != resPattern.decision$n.cluster){
+        warning("Something went wrong when identifying the clusters. \n")
+    }
+    if(n.cluster.interim != resPattern.interim$n.cluster){
+        warning("Something went wrong when identifying the clusters at interim. \n")
+    }
+
+    
+    ## ** compute information
+
+    ## *** at decision
+    info.decision <- getInformation(X.decision,
+                                    variance = resPattern.decision$variance.vargroup,
+                                    index.variance = resPattern.decision$index.vargroup,
+                                    index.cluster = resPattern.decision$index.cluster)
+    var.decision <- solve(info.decision)[name.coef,name.coef]
+
+    ## *** at interim: full information approach
+    info.interim <- getInformation(X.interim,
+                                   variance = resPattern.interim$variance.vargroup,
+                                   index.variance = resPattern.interim$index.vargroup,
+                                   index.cluster = resPattern.interim$index.cluster)
+    var.interim <- solve(info.interim)[name.coef,name.coef]
+    
+    ## *** at interim: complete case approach
+    info.interim.cc <- getInformation(X.interim.cc,
+                                      variance = resPattern.interim.cc$variance.vargroup,
+                                      index.variance = resPattern.interim.cc$index.vargroup,
+                                      index.cluster = resPattern.interim.cc$index.cluster)
+    var.interim.cc <- solve(info.interim.cc)[name.coef,name.coef]
+    
+    ## ** sample size
+    n.decision <- resPattern.decision$n.cluster ## number of patients at decision (with at least one observable proxy or outcome).
+    n.interim <- resPattern.interim$n.cluster ## number of patients at interim (with at least one observation proxy or outcome). Same as decision except in the case of pipeline patients
+    n.interim.cc <- resPattern.interim.cc$n.cluster ## number of patients at interim with complete data
+    
+    ## ** export
+    if(!is.null(attr(data,"df.allobs"))){
+        n.all <- as.double(length(unique(attr(data,"df.allobs")[[cluster.var]])))
+    }else{
+        n.all <- n.decision
+    }
+    out <- list(decision = list(data = data,
+                                X = X.decision,
+                                pattern = resPattern.decision,
+                                vcov = solve(info.decision)),
+                interim = list(data = data.interim,
+                               X = X.interim,
+                               pattern = resPattern.interim,
+                               vcov = solve(info.interim)),
+                interim.cc = list(data = data.interim.cc,
+                                  X = X.interim.cc,
+                                  pattern = resPattern.interim.cc,
+                                  vcov = solve(info.interim.cc)),
+                n = c(total = n.all, ## all patients in the original dataset: all patient including those who dropped out early and have no observable outcome
+                      decision = n.decision,  ## no missing data analysis: all patients with at least one observable outcome (i.e. including those with not yet observed values)
+                      interim = n.interim, ## full information analysis: all patients with at least one observed outcome
+                      interim.cc = n.interim.cc), ## complete case analysis: all patients with all observed outcomes
+                info = c(decision = 1/solve(info.decision)[name.coef,name.coef], interim = 1/solve(info.interim)[name.coef,name.coef], interim.cc = 1/solve(info.interim.cc)[name.coef,name.coef]),
+                formula.mean = f.gls, name.coef = name.coef, cluster.var = cluster.var
+                )
+    if(details){
+        return(out)
+    }else if(is.null(newdata) && is.null(variance)){        
+        return(setNames(1/solve(info.interim)[name.coef,name.coef], name.coef))
+    }else{
+
+        if(is.null(newdata)){
+            newdata <- try(eval(object$call$data), silent = TRUE)
+            if(inherits(data,"try-error")){
+                stop("Could not retrieve the data used to fit the gls model. \n",
+                     "Consider passing the data via the \'newdata\' argument. \n")
+            }
+        }
+        return(getInformation.getInformationGLS(c(out, list(fit = object)), newdata = newdata, variance = variance))
+    }
+    return(out)
+}
+
+## * getInformation.getInformationGLS
+getInformation.getInformationGLS <- function(object, newdata = NULL, variance = NULL, weighting = FALSE, ...){
+
+    ## ** normalize arguments
     if(!is.null(variance)){
         if(!is.list(variance)){
             variance <- list(variance)
@@ -248,243 +417,103 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
         
     }
 
-    ## ** extract elements from model
-    ## *** formula
-    f.gls <- stats::formula(object)
-    cluster.var <- utils::tail(all.vars(stats::formula(object$modelStruct$corStruct)),1)
-    
-    ## *** coefficients
-    name.allcoef <- names(coef(object))
-    n.allcoef <- length(name.allcoef)
-    name.coef <- match.arg(name.coef, name.allcoef)
-
-    ## ** design matrix and covariance pattern
-    ## *** at decision
-    ## keep all observations despite missing values in the response
+    ## ** extra from object
+    cluster.var <- object$cluster.var
+    f.gls <- object$formula.mean
     name.regressor <- all.vars(update(f.gls,0~.))
-    testNA.regressor <- any(is.na(data[,name.regressor]))
+    name.coef <- object$name.coef
+    test.missing <- object$n["total"]!=object$n["decision"]
 
-    if(testNA.regressor){
-        if(is.na(n.boot)){
-            stop("Missing values in the design matrix. \n",
-                 "Consider setting \"n.boot\" to 0 (re-weight observed values) or to a strictly positive value (multiple imputations) to deal with missing values. \n")
+    if(!is.null(attr(newdata,"df.allobs"))){ ## if individuals excluded because only missing data- get them back
+        data.estimate <- attr(object$decision$data, "df.allobs")
+        if(is.factor(data.estimate[[cluster.var]])){
+            level.cluster.estimate <- levels(droplevels(data.estimate[[cluster.var]]))
+        }else{
+            level.cluster.estimate <- unique(data.estimate[[cluster.var]])
         }
-        
-        name.regressorNA <- name.regressor[sapply(name.regressor, function(iR){any(is.na(data[[iR]]))})]
+    }else{
+        level.cluster.estimate <- names(object$decision$pattern$nobs.vargroup)
+        data.estimate <- object$decision$data
+    }
+    n.estimate <- length(level.cluster.estimate)
+    
+    ## ** design matrix
+    ## keep all observations despite missing values in the response
+    testNA.regressor <- any(is.na(newdata[,name.regressor]))
+    
+    if(testNA.regressor || test.missing){
+
+        if(weighting == FALSE){
+            stop("Missing values in the regressors or cluster with no observation. \n",
+                 "Consider setting the argument weighting to TRUE to compute the information \n")
+        }
+        if(!is.null(attr(newdata,"df.allobs"))){
+            newdata.full <- attr(newdata,"df.allobs")
+        }else{
+            newdata.full <- newdata
+        }
+        ## regressors where there are missing values
+        name.regressorNA <- name.regressor[sapply(name.regressor, function(iR){any(is.na(newdata[[iR]]))})]
+        ## index of the dataset with missing values in the regressors - to be excluded 
+        test.idNA <- rowSums(is.na(newdata[,name.regressorNA,drop=FALSE]))>0
+        ## regressors where there are no missing values
         name.regressorNNA <- setdiff(name.regressor,name.regressorNA)
-        test.idNA <- rowSums(is.na(data[,name.regressorNA,drop=FALSE]))>0
-        
-        index.splitNA <- split((1:NROW(data))[test.idNA],interaction(data[test.idNA,name.regressorNNA,drop=FALSE]))
-        n.splitNA <- sapply(index.splitNA, length)
-        n.split <- length(index.splitNA)
-        index.splitNNA <- split((1:NROW(data))[!test.idNA],interaction(data[!test.idNA,name.regressorNNA,drop=FALSE]))
-        n.splitNNA <- sapply(index.splitNNA, length)
-        
-        if(n.boot>0){
-            ## Put Inf instead of NA to represent missing values in the covariates
-            data2 <- data
-            for(iR in name.regressor){
-                if(any(is.na(data[[iR]]))){
-                    data2[[iR]][is.na(data[[iR]])] <- Inf
-                }
+        test.cstRegressorCluster <- sapply(name.regressorNNA, function(iReg){ all(tapply(newdata[[iReg]], newdata[[cluster.var]], function(iX){length(unique(iX))})==1) })
+        ## regressors where there are no missing values and that take constant values within clusters (used to stratify)
+        name.regressorNNA2 <- name.regressorNNA[test.cstRegressorCluster]
+        ## weight used to compensate for the missing values
+        if(length(name.regressorNNA2)==0){ ## no prior knowledge about the missing individuals
+            ratio <- length(unique(newdata.full$id))/object$n["total"]
+            weight <- setNames(rep(ratio, times = n.estimate), level.cluster.estimate)
+        }else{ ## some prior knowledge about the missing individuals (e.g. randomization group)
+            ls.levels.newdata <- lapply(name.regressorNNA2, function(iReg){ tapply(newdata.full[[iReg]], newdata.full[[cluster.var]], function(iX){unique(iX)})==1 })
+            strata.cluster.newdata <- interaction(as.data.frame(do.call(cbind, ls.levels.newdata)))
+
+            ls.levels.estimate <- lapply(name.regressorNNA2, function(iReg){ tapply(data.estimate[[iReg]], data.estimate[[cluster.var]], function(iX){unique(iX)})==1 })
+            strata.cluster.estimate <- factor(interaction(as.data.frame(do.call(cbind, ls.levels.estimate))), levels = levels(strata.cluster.newdata))
+
+            if(any(is.na(table(strata.cluster.estimate))) || any(table(strata.cluster.estimate)==0)){
+                stop("Unexpected strata value for the weights \n",
+                     "Mismatch between the values for the regressors use to fit the model and those of the new dataset.\n ")
             }
-            
-            X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data2, na.action = na.pass))
-            resPattern.decision <- .getPattern(object, data = data, variance = variance, name.coef = name.coef)
-            weight <- NULL
-            X.splitNNA <- lapply(split(as.data.frame(X.decision[test.idNA==FALSE,,drop=FALSE]),interaction(data[test.idNA==FALSE,name.regressorNNA,drop=FALSE])),
-                                 as.matrix)
-        }else{
-            X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data[!test.idNA,,drop=FALSE], na.action = na.pass))
-            weight.data <- rep(NA, times = NROW(data))
-            weight.data[unlist(index.splitNNA)] <- unlist(mapply(x = index.splitNNA, y = n.splitNA, z = n.splitNNA, FUN = function(x,y,z){rep((y+z)/z, times = length(x))}))
-            weight <- weight.data[!test.idNA]
-            ## table(weight, interaction(as.data.frame(X.decision[,c("Z1","time.factor1")])))
-            resPattern.decision <- .getPattern(object, data = data[!test.idNA,,drop=FALSE], variance = variance, name.coef = name.coef)
-        }            
+
+            ## weight proportional to the expected vs. observed number of patients in the strata
+            weight <- (table(strata.cluster.newdata)/table(strata.cluster.estimate))[as.numeric(strata.cluster.estimate)]
+        }
+        ## design matrix
+        X.newdata <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = newdata[!test.idNA,,drop=FALSE], na.action = na.pass))
+        ## X.newdata - object$decision$X
+        ## covariance pattern
+        resPattern.newdata <- .getPattern(object$fit, data = newdata[!test.idNA,,drop=FALSE], variance = variance)
+        ## nobject$decision$pattern
+
     }else{
-        X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data, na.action = na.pass))
-        resPattern.decision <- .getPattern(object, data = data, variance = variance, name.coef = name.coef)
+        ## design matrix
+        X.newdata <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = newdata, na.action = na.pass)) ## instead of X <- model.matrix(stats::formula(object$fit), data = data) to keep rows with missing data
+        ## covariance pattern
+        resPattern.newdata <- .getPattern(object$fit, data = newdata, variance = variance)
+        ## weights
         weight <- NULL
-        ## instead of 
-        ## X <- model.matrix(stats::formula(object), data = data)
-        ## to keep rows with missing data
     }
+    ## number of observation per cluster at decision
+    resPattern.newdata$nobs.vargroup <- setNames(sapply(resPattern.newdata$variance.vargroup,NCOL)[resPattern.newdata$index.vargroup], names(resPattern.newdata$index.vargroup))
 
-    ## *** at interim: full information approach
-    ## keep all observations without missing values in the response
-    X.interim <- model.matrix(f.gls, data = data)
-
-    index.interim <- which(!is.na(data[[all.vars(f.gls)[1]]]))
-    if(testNA.regressor && n.boot == 0){
-        if(NROW(X.decision) != NROW(X.interim) || any(abs(X.decision-X.interim)>1e-10)){ ## Sanity check
-            warning("Something went wrong when selecting the data at interim. \n",
-                    "Could be due to missing values in the regressors. \n")
-        }
-    }else{
-        if(any(abs(X.decision[index.interim,]-X.interim)>1e-10)){ ## Sanity check
-            warning("Something went wrong when selecting the data at interim. \n",
-                    "Could be due to missing values in the regressors. \n")
-        }
-    }
-    if(NROW(X.interim)>0){
-        data.interim <- data[index.interim,,drop=FALSE]
-        resPattern.interim <- .getPattern(object, data = data.interim, variance = variance, name.coef = name.coef)
-
-        ## number of observation per cluster at interim
-        resPattern.interim$nobs.vargroup <- setNames(sapply(resPattern.interim$variance.vargroup,NCOL)[resPattern.interim$index.vargroup], names(resPattern.interim$index.vargroup)) 
-    }
-    
-    ## *** at interim: complete case approach
-    if(NROW(X.interim)==0){
-        X.interim.cc <- X.interim
-    }else if(resPattern.decision$rep.full==1){
-        X.interim.cc <- X.interim
-        resPattern.interim.cc <- resPattern.interim
-    }else{
-        ## keep all observations for which the cluster has no missing values in the response
-        cluster.cc <- names(resPattern.interim$nobs.vargroup[resPattern.interim$nobs.vargroup==resPattern.decision$rep.full])
-        index.cc <- which(data[[cluster.var]] %in% cluster.cc)
-        data.interim.cc <- data[index.cc,,drop=FALSE]
-
-        X.interim.cc <- model.matrix(f.gls, data = data.interim.cc)
-        if(method.prediction=="pooling2"){
-            object2 <- update(object, data = data.interim.cc)
-            resPattern.interim.cc <- .getPattern(object2, data = data.interim.cc, variance = variance, name.coef = name.coef)
-        }else{        
-            resPattern.interim.cc <- .getPattern(object, data = data.interim.cc, variance = variance, name.coef = name.coef)
-        }
-    }    
-    
-    ## ** compute information
-    
-    ## *** at decision
-    if(testNA.regressor==FALSE || n.boot==0){
-        info.decision <- getInformation(X.decision,
-                                        variance = resPattern.decision$variance.vargroup,
-                                        index.variance = resPattern.decision$index.vargroup,
-                                        index.cluster = resPattern.decision$index.cluster,
-                                        weight = weight)
-        var.decision <- solve(info.decision)[name.coef,name.coef]
-    }else{
-        Ainfo.decision <- array(NA, dim = c(NCOL(X.decision),NCOL(X.decision),n.boot),
-                                dimnames = list(colnames(X.decision),colnames(X.decision),NULL))
-        Avar.decision <- rep(NA, n.boot)
-
-        warper <- function(iBoot){
-            X.decision2 <- X.decision
-            for(iSplit in 1:n.split){ ## iSplit <- 1
-                X.decision2[index.splitNA[[iSplit]],] <- X.splitNNA[[iSplit]][sample.int(n = n.splitNNA[iSplit], size = n.splitNA[iSplit], replace = TRUE),,drop=FALSE]
-            }
-            iInfo <- getInformation(X.decision2,
-                                    variance = resPattern.decision$variance.vargroup,
-                                    index.variance = resPattern.decision$index.vargroup,
-                                    index.cluster = resPattern.decision$index.cluster)
-            iVar <- solve(iInfo)[name.coef,name.coef]
-            return(list(info = iInfo, var = iVar))
-        }
-
-        if(trace.boot){
-            require(pbapply)
-            out.boot <- pblapply(1:n.boot, FUN = warper, cl = cl)
-        }else{
-            if(!is.null(cl)){warning("Argument \'cl\' ignored when argument \'trace.boot\' is FALSE. \n")}
-            out.boot <- lapply(1:n.boot, FUN = warper)
-        }
-        ls.info <- lapply(out.boot,"[[","info")
-        info.decision <- Reduce("+",ls.info)/n.boot
-        var.boot.decision <- do.call(rbind,lapply(out.boot,"[[","var"))
-        var.decision <- mean(var.boot.decision)
-        attr(info.decision,"bootstrap") <- ls.info
-    }
-    ## score.decision <- .getScore(X.decision,
-    ##                             variance = resPattern.decision$variance.vargroup,
-    ##                             residuals = data[[all.vars(f.gls)[1]]] - X.decision %*% coef(object),
-    ##                             index.variance = resPattern.decision$index.vargroup,
-    ##                             index.cluster = resPattern.decision$index.cluster)
-
-    ## *** at interim: full information approach
-    if(NROW(X.interim)>0){
-        info.interim <- getInformation(X.interim,
-                                       variance = resPattern.interim$variance.vargroup,
-                                       index.variance = resPattern.interim$index.vargroup,
-                                       index.cluster = resPattern.interim$index.cluster)
-        var.interim <- solve(info.interim)[name.coef,name.coef]
-    }
-    
-    ## *** at interim: complete case approach
-    if(NROW(X.interim.cc)>0){
-        info.interim.cc <- getInformation(X.interim.cc,
-                                          variance = resPattern.interim.cc$variance.vargroup,
-                                          index.variance = resPattern.interim.cc$index.vargroup,
-                                          index.cluster = resPattern.interim.cc$index.cluster)
-        var.interim.cc <- solve(info.interim.cc)[name.coef,name.coef]
-    }
-    ## object.cc <- update(object, data = data.interim.cc)
-    ## coef(object.cc)
-    ## coef(object)
-    
-    ## ** sample size
-    n.decision <- resPattern.decision$n.cluster ## number of patients at decision
-    if(NROW(X.interim)>0){ ## number of patients at interim (with at least one observation proxy or outcome)
-        n.interim <- resPattern.interim$n.cluster
-    }else{
-        n.interim <- 0 
-    }
-    if(NROW(X.interim.cc)>0){ ## number of patients at interim with complete data
-        n.interim.cc <- resPattern.interim.cc$n.cluster
-    }else{
-        n.interim.cc <- 0
-    }
-    
     ## ** predict information
-    if(type == "estimation"){
-        out <- 1/var.interim
-    }else if(method.prediction == "inflation"){ 
-        out <- 1/var.decision ## same as (1/var.interim.cc) * (n.decision/n.interim.cc)
-    }else if(method.prediction %in% c("pooling","pooling2")){ 
-
-        ## test number of timepoints
-        if(length(resPattern.decision$rho)>1){
-            stop("Argument \'method.prediction\' can only be \"pooling\" when there is only two timepoints. \n")
-        }
-
-        ## get the number of observations missing at interim for the parameter of interest but not missing for the proxy
-        n.interim.proxy <- .nProxy(n.interim = n.interim, X.interim = X.interim, n.interim.cc = n.interim.cc,
-                                   X.decision = X.decision, name.coef = name.coef, index.interim = index.interim,
-                                   data = data, data.interim = data.interim, cluster.var = cluster.var)
-
-        ##  pool variance and deduce information
-        info.current <- 1/(var.interim - (1-resPattern.decision$rho^2) * var.interim.cc * n.interim.proxy/n.interim) ## information if we had the outcome (instead of proxy) for all interim patients
-        out <- info.current * (n.decision/n.interim) ## information add the new patients (if any) at interim
-    }
+    info.newdata <- getInformation(X.newdata,
+                                   variance = resPattern.newdata$variance.vargroup,
+                                   index.variance = resPattern.newdata$index.vargroup,
+                                   index.cluster = resPattern.newdata$index.cluster,
+                                   weight = weight)
+    var.newdata <- solve(info.newdata)[name.coef,name.coef]
 
     ## ** export
-    if(details){
-        attr(out,"details") <- list(decision = list(information = 1/solve(info.decision)[name.coef,name.coef],
-                                                    vcov = solve(info.decision),
-                                                    pattern = resPattern.decision),
-                                    interim = NULL,
-                                    interim.cc = NULL,
-                                    n = c(decision = n.decision, interim = n.interim, interim.cc = n.interim.cc)
-                                    )
-        if(NROW(X.interim)>0){
-            attr(out,"details")$interim <- list(information = 1/solve(info.interim)[name.coef,name.coef],
-                                                vcov = solve(info.interim),
-                                                pattern = resPattern.interim)
-        }
-        if(NROW(X.interim.cc)>0){
-            attr(out,"details")$interim.cc <- list(information = 1/solve(info.interim.cc)[name.coef,name.coef],
-                                                   vcov = solve(info.interim.cc),
-                                                   pattern = resPattern.interim.cc)
-        }
-    }
-    
+    out <- 1/var.newdata 
     return(out)
+
 }
 
 ## * .getPattern
-.getPattern <- function(object, data, name.coef, variance = NULL){
+.getPattern <- function(object, data, variance = NULL){
 
     ## ** reinitialize correlation/variance structure according to data
     if(!is.null(object$modelStruct$corStruct)){
@@ -503,7 +532,7 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
         varStructNew <- Initialize(varStructNew, data = data)
         vargroups <- getGroups(varStructNew)
     }
-    
+
     ## ** number and position of the clusters among the observations
     if(is.null(object$modelStruct$corStruct)){ ## no correlation structure
         index.cluster <- 1:NROW(data)
@@ -561,7 +590,6 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     rep.full <- max(sapply(Sigma.pattern, length))
     Sigma.pattern.full <- Sigma.pattern[sapply(Sigma.pattern, length) == rep.full]
     names(Sigma.pattern.full) <- sapply(Sigma.pattern.full, paste, collapse = "|")
-
     variance <- .getResVcov(object, variance = variance, rho = rho, Sigma.pattern = Sigma.pattern.full, rep.full = rep.full)
 
     ## ** (missing data) residual variance-covariance matrix    
@@ -647,28 +675,6 @@ getInformation.gls <- function(object, name.coef, type = "estimation", method.pr
     return(variance)
 }
 
-## * .getScore
-.getScore <- function(object, variance, residuals, index.variance, index.cluster){
-
-    ## ** prepare
-    n.obs <- length(index.cluster)
-    n.cluster <- length(index.variance)
-    n.allcoef <- NCOL(object)
-    name.allcoef <- colnames(object)
-    Score <- matrix(NA, nrow = n.obs, ncol = n.allcoef,
-                    dimnames = list(NULL, name.allcoef))
-    
-    ## ** compute score
-    for(iId in 1:n.cluster){ ## iId <- 7
-        iResidual <- residuals[index.cluster==iId,,drop=FALSE]
-        iX <- object[index.cluster==iId,,drop=FALSE]
-        iSigma <- variance[[index.variance[iId]]]
-        Score[index.cluster==iId,] <- sweep(solve(iSigma) %*% iX, FUN = "*", MARGIN = 1, STATS = iResidual)
-    }
-
-    ## ** export
-    return(Score)
-}
 
 ## * .nProxy
 ## get the number of observations missing at interim for the parameter of interest but not missing for the proxy
