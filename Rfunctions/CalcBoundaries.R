@@ -41,6 +41,8 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
   lk <- c(StandardDesign$futilityBounds,uk[kMax])
   ck <- rep(0,kMax-1)
   
+  #browser()
+  
   if(method==1){
     
       for(i in 1:(kMax-1)){
