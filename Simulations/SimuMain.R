@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: mar 11 2021 (12:22) 
+## Last-Updated: mar 26 2021 (23:50) 
 ##           By: Brice Ozenne
-##     Update #: 386
+##     Update #: 404
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -152,7 +152,7 @@ PlannedB2 <- CalcBoundaries(kMax=kMax,  #max number of analyses (including final
 
 # }}}
 
-for(j in allj){
+for(j in allj){ ## j <- 1
     startComp <- Sys.time()
     # {{{ TRACE info (e.g. to check the Rout)
     print(paste0("j=",which(j==allj)," out of ",NMC, " (i.e. j=",j," in [",(i-1)*NMC + 1,";",i*NMC,"], as job id is i=",i,")"))
@@ -196,25 +196,26 @@ for(j in allj){
     # {{{ make data available at interim
     thet <- d$t2[ceiling(n*PropForInterim)] + theDelta.t
     di <- SelectData(d,t=thet)
+    ## sum(di$missing2==0)+sum(di$missing3==0)
     ddi <- FormatAsCase(di) # needed ????
     ## head(d[d$id==52,])
     # }}}
     ## {{{ analyze data at at interim
     ResInterim <- AnalyzeData(di) #  Log-restricted-likelihood: -189.561
-    ResInterim$Info ## info at interim
-    ResInterim$Info.fullData ## info at decision (if stop at interim and include no more patient)
+    ##ResInterim ## info at interim same as solve(vcov(ResInterim$fit)["Z1","Z1"])
     ## info at the end of the study
-     ## WARNING: does not account for drop-out amont the non-yet observed individuals
-    d.final.predictible <- wide2long(d, rm.na = TRUE, id.na = setdiff(d$id,di$id))
-    ResInterim$Info.final <- getInformation(ResInterim$fit, name.coef = "Z1", type = "prediction", method.prediction = "inflation",
-                                            data = d.final.predictible, n.boot = 1000)
-    
+    ResInterim$info["final"] <- (n / NROW(di)) * as.double(ResInterim$getInformation["decision"])
+    ## ## alternative computation:
+    ## ## - not know who will be assigned to which treatment group (same at (n / NROW(di)))
+    ## getInformation(ResInterim, newdata = wide2long(d, rm.na = TRUE, id.na = setdiff(d$id,di$id), Z.id.na = TRUE), weighting = TRUE)
+    ## ## - knowing who will be assigned to which treatment group
+    ## getInformation(ResInterim, newdata = wide2long(d, rm.na = TRUE, id.na = setdiff(d$id,di$id), Z.id.na = FALSE), weighting = TRUE)
     # save (potentially) important results
-    Z.interim <- ResInterim$estimate/ResInterim$se
     est.interim <- ResInterim$estimate
     se.interim <- ResInterim$se
-    Info.interim <- ResInterim$Info
-    PrCtInfo.interim <- ResInterim$Info/PlannedB1$Imax # Information rate at interim (denominator is targetted Imax)
+    Info.interim <- ResInterim$Info ## same as ResInterim$getInformation["interim"]
+    Z.interim <- est.interim/se.interim
+    PrCtInfo.interim <- Info.interim/PlannedB1$Imax # Information rate at interim (denominator is targetted Imax)
     ## dittes <- di[di$id <=52,] just for checking how missing data are handles for subjects with missing at both follow-up times
     ## ResInterimtes <- AnalyzeData(dittes) # OK, log-likelihood is the same
     # }}}
@@ -233,7 +234,7 @@ for(j in allj){
                                   PlannedB1,  #results from CalcBoundaries
                                   k=1, #at which phase are we?
                                   analysis="interim", #is it an interim or decision or final analysis
-                                  Ik=c(ResInterim$Info,PlannedB1$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
+                                  Ik=c(Info.interim,PlannedB1$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
                                   Id=NULL,  #expected or observed information at each decision analysis
                                   PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
                                   Trace=FALSE, # whether to print some messages
@@ -247,7 +248,7 @@ for(j in allj){
                                   PlannedB2,  #results from CalcBoundaries
                                   k=1, #at which phase are we?
                                   analysis="interim", #is it an interim or decision or final analysis
-                                  Ik=c(ResInterim$Info,PlannedB2$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
+                                  Ik=c(Info.interim,PlannedB2$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
                                   Id=NULL,  #expected or observed information at each decision analysis
                                   PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
                                   Trace=FALSE, # whether to print some messages
@@ -269,8 +270,8 @@ for(j in allj){
                                        PlannedB1,  #results from CalcBoundaries
                                        k=1, #at which phase are we?
                                        analysis="decision", #is it an interim or decision or final analysis
-                                       Ik=c(ResInterim$Info,PlannedB1$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
-                                       Id=max(ResDecision$Info,ResInterim$Info+0.01)/PlannedB1$Imax,  #expected or observed information RATIO at each decision analysis
+                                       Ik=c(Info.interim,PlannedB1$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
+                                       Id=max(ResDecision$Info,Info.interim+0.01)/PlannedB1$Imax,  #expected or observed information RATIO at each decision analysis
                                        PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
                                        Trace=FALSE, # whether to print some messages
                                        plot=FALSE)  #should the boundaries and results be plotted?
@@ -278,8 +279,8 @@ for(j in allj){
                                        PlannedB2,  #results from CalcBoundaries
                                        k=1, #at which phase are we?
                                        analysis="decision", #is it an interim or decision or final analysis
-                                       Ik=c(ResInterim$Info,PlannedB2$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
-                                       Id=max(ResDecision$Info,ResInterim$Info+0.01)/PlannedB2$Imax,  #expected or observed information RATIO at each decision analysis
+                                       Ik=c(Info.interim,PlannedB2$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
+                                       Id=max(ResDecision$Info,Info.interim+0.01)/PlannedB2$Imax,  #expected or observed information RATIO at each decision analysis
                                        PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
                                        Trace=FALSE, # whether to print some messages
                                        plot=FALSE)  #should the boundaries and results be plotted?
@@ -312,7 +313,7 @@ for(j in allj){
                                     PlannedB1,  #results from CalcBoundaries
                                     k=2, #at which phase are we?
                                     analysis="final", #is it an interim or decision or final analysis
-                                    Ik=c(ResInterim$Info,ResFinal$Info),  #all I_k (information) from first interim to final analysis (observed where possible)
+                                    Ik=c(Info.interim,ResFinal$Info),  #all I_k (information) from first interim to final analysis (observed where possible)
                                     Id=NULL,  #expected or observed information at each decision analysis
                                     PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
                                     Trace=FALSE, # whether to print some messages
@@ -324,7 +325,7 @@ for(j in allj){
                                     PlannedB2,  #results from CalcBoundaries
                                     k=2, #at which phase are we?
                                     analysis="final", #is it an interim or decision or final analysis
-                                    Ik=c(ResInterim$Info,ResFinal$Info),  #all I_k (information) from first interim to final analysis (observed where possible)
+                                    Ik=c(Info.interim,ResFinal$Info),  #all I_k (information) from first interim to final analysis (observed where possible)
                                     Id=NULL,  #expected or observed information at each decision analysis
                                     PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
                                     Trace=FALSE, # whether to print some messages

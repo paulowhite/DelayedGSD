@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (13:40) 
 ## Version: 
-## Last-Updated: Mar  9 2021 (10:47) 
-##           By: Paul Blanche
-##     Update #: 5
+## Last-Updated: mar 26 2021 (15:32) 
+##           By: Brice Ozenne
+##     Update #: 11
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -16,7 +16,8 @@
 ### Code:
 
 FormatAsCase <- function(d){
-    long <- reshape(d,
+    rm.col <- setdiff(names(d),paste0("missing",1:3))
+    long <- reshape(d[,rm.col,drop=FALSE],
                     direction='long',
                     varying=c('X2','X3'),
                     idvar='id',

@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 28 2020 (16:33) 
 ## Version: 
-## Last-Updated: Aug 28 2020 (17:00) 
-##           By: Paul Blanche
-##     Update #: 28
+## Last-Updated: mar 26 2021 (15:04) 
+##           By: Brice Ozenne
+##     Update #: 43
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -47,14 +47,33 @@
 ##'
 ##' 
 SelectData <- function(d,t,Delta.t=0.500001){
-    N.fw <- length(grep("t",names(d)))
-    dd <- d[d$t1 <= t - Delta.t,]
-    for(j in 2:N.fw){
+
+    ## find columns in the dataset d corresponding to the outcome and the time
+    col.outcome <- grep("X",names(d), value = TRUE)
+    col.times <- grep("t",names(d), value = TRUE)
+    n.times <- length(col.times)
+
+    ## add indicator of missing values
+    col.missing <- gsub("^t","missing",col.times)
+    test.na <- 1.0 * is.na(d[,col.outcome,drop=FALSE]) ## 1.0 * to convert to numeric
+    colnames(test.na) <- col.missing
+    d.augm <- cbind(d, test.na)
+
+    ## subset according to time
+    dd <- d.augm[which(d.augm$t1 <= t - Delta.t),,drop=FALSE]
+
+    ## add missing value according to time as the baseline can be observed but some of the follow-up value may be not
+    for(j in 2:n.times){
         whereNA <- which(dd[,paste0("t",j)] > t - Delta.t)
+        dd[whereNA,col.missing[[j]]] <- -1
         dd[whereNA,paste0("t",j)] <- NA
         dd[whereNA,paste0("X",j)] <- NA
     }
-    dd
+
+    ## keep arguments
+    attr(dd,"t") <- t
+    attr(dd,"Delta.t") <- Delta.t
+    return(dd)
 }
 
 
