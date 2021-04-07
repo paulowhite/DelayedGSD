@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: mar 11 2021 (12:22) 
-##           By: Brice Ozenne
-##     Update #: 386
+## Last-Updated: Mar 26 2021 (13:13) 
+##           By: Paul Blanche
+##     Update #: 401
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -30,18 +30,18 @@ myseed <- 140786598
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
-informationRates <- c(0.5,1)  #planned or observed information rates
+informationRates <- c(0.5,1)  #planned  information rates
 gammaA <- 2  # rho parameter for alpha error spending function
 gammaB <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
-Id <- 0.55  #(expected) information ratio at each decision analysis
+Id <- 0.55  #(expected) information rate at each decision analysis
 #
 #---- to generate data -----------
 #
 block <- c(1,1,0,0) 
-allsd <- c(2.5,2.1,2.4)
-mean0 <- c(10,0,0) # 
-delta <- c(0,-0.6,-0.8) # 
+allsd <- c(2.5,2.1,2.4) # sd, first from baseline measurement, then the two changes from baseline
+mean0 <- c(10,0,0) # mean placebo group (again, first is absolute value, then change from baseline)
+delta <- c(0,-0.6,-0.8) # treatment effect
 ar <- (0.86*2)*2 # orginial accrual rate from data from Corine is 0.86 per week, hence we multiply by 2 for by 14 days. As to low, we further multiply by 2
 cor011 <- -0.15 # ~ from data from Corine
 corij1 <- 0.68  # ~ from data from Corine
@@ -195,7 +195,7 @@ for(j in allj){
     # }}}
     # {{{ make data available at interim
     thet <- d$t2[ceiling(n*PropForInterim)] + theDelta.t
-    di <- SelectData(d,t=thet)
+    di <- SelectData(d,t=thet,Delta.t=theDelta.t)
     ddi <- FormatAsCase(di) # needed ????
     ## head(d[d$id==52,])
     # }}}
@@ -203,11 +203,14 @@ for(j in allj){
     ResInterim <- AnalyzeData(di) #  Log-restricted-likelihood: -189.561
     ResInterim$Info ## info at interim
     ResInterim$Info.fullData ## info at decision (if stop at interim and include no more patient)
+
+    ResInterim$Info.fullData/(nrow(di)/n) # should be similar to below d.final.predictible below
+    
     ## info at the end of the study
-     ## WARNING: does not account for drop-out amont the non-yet observed individuals
+    ## WARNING: does not account for drop-out amont the non-yet observed individuals
     d.final.predictible <- wide2long(d, rm.na = TRUE, id.na = setdiff(d$id,di$id))
-    ResInterim$Info.final <- getInformation(ResInterim$fit, name.coef = "Z1", type = "prediction", method.prediction = "inflation",
-                                            data = d.final.predictible, n.boot = 1000)
+    ## ResInterim$Info.final <- getInformation(ResInterim$fit, name.coef = "Z1", type = "prediction", method.prediction = "inflation",
+                                            ## data = d.final.predictible, n.boot = 1000)
     
     # save (potentially) important results
     Z.interim <- ResInterim$estimate/ResInterim$se
@@ -217,15 +220,6 @@ for(j in allj){
     PrCtInfo.interim <- ResInterim$Info/PlannedB1$Imax # Information rate at interim (denominator is targetted Imax)
     ## dittes <- di[di$id <=52,] just for checking how missing data are handles for subjects with missing at both follow-up times
     ## ResInterimtes <- AnalyzeData(dittes) # OK, log-likelihood is the same
-    # }}}
-
-
-    # {{{ Predict info at Decision if we stop at interim, based on current data (for method 2 only)
-    ## getInformation(Res$fit,
-                   ## data = Res$d.long,
-                   ## name.coef = "Z1",
-                   ## type = "prediction",
-                   ## method.prediction = "inflation")
     # }}}
     
     # {{{ Decision at Interim
@@ -301,7 +295,6 @@ for(j in allj){
         se.decision <- NA
         Info.decision <- NA
         PrCtInfo.decision  <-  NA
-
     }
     # }}}
 
