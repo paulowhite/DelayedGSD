@@ -3,15 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-<<<<<<< HEAD
-## Last-Updated: Apr  7 2021 (15:00) 
-##           By: Paul Blanche
-##     Update #: 403
-=======
-## Last-Updated: mar 26 2021 (23:50) 
+## Last-Updated: Apr 26 2021 (16:46) 
 ##           By: Brice Ozenne
-##     Update #: 404
->>>>>>> dbb538b98faa6692e5665c67e40d8617366d8a81
+##     Update #: 406
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -86,7 +80,7 @@ if(system("whoami",intern=TRUE)=="paul"){
     pathToSave <- "~/research/SeqDesignDelayed/DelayedGSD/Simulations/output/"
     name <- paste0(name,"test")
     i <- 1
-}else if(system("whoami",intern=TRUE)=="brice"){  
+}else if(system("whoami",intern=TRUE)=="bozenne"){  
     pathToLoad <- "~/Documents/GitHub/DelayedGSD/Rfunctions"
     i <- 1
 }
@@ -196,7 +190,7 @@ for(j in allj){ ## j <- 1
     # {{{ reformat data like those of Corine
     ## Make data long format
     dd <- FormatAsCase(d)
-    head(dd)
+    ## head(dd)
     ## summary(dd)
     # }}}
     # {{{ make data available at interim
