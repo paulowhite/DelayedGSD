@@ -28,8 +28,7 @@ FinalPvalue <- function(Id,  #Information at all decision analyses up to stage w
   
   ## message("the method assumes that positive effects are good")
   k <- length(Id)
-  I_all <- c(rbind(Ik, Id))
-  
+  I_all <- c(rbind(Ik, Id))  
   m <- length(I_all)
   sigmaZm <- diag(1,m)
   for(i in 1:m){
@@ -46,74 +45,80 @@ FinalPvalue <- function(Id,  #Information at all decision analyses up to stage w
   pval <- 0
   
   if(estimate*sqrt(Id[k]) >= ck[k]){  #In case efficacy is concluded, only efficacious results at earlier IA are more extreme
-    for(i in 1:k){
-      if(i==k){
-        pval <- pval +  pmvnorm(lower = c(lk[0:(i-1)],uk[i],estimate*sqrt(Id[k]),rep(-Inf,m-1-i)),  #prob to stop for eff at analysis k and conclude more extreme result
-                                upper = c(uk[0:(i-1)],rep(Inf,m-i+1)),
-                                mean=theta,
-                                sigma= sigmaZm) +
-                        pmvnorm(lower = c(lk[0:(i-1)],-Inf,estimate*sqrt(Id[k]),rep(-Inf,m-1-i)),   #prob to stop for fut at analysis k and switch to eff with more extreme result
-                                upper = c(uk[0:(i-1)],lk[i],rep(Inf,m-i)),
-                                mean=theta,
-                                sigma= sigmaZm)
-      } else if(i %in% index){
-        next #results for larger information levels are never more extreme than smaller information levels with results above c
-      } else if(i==kMax){
-        pval <- pval + pmvnorm(lower = c(lk[0:(i-1)],estimate*sqrt(Ik[kMax])),  #prob to continue until final analysis and obtain a higher result than the observed
-                               upper = c(uk[0:(i-1)],Inf),
-                               mean=theta,
-                               sigma= sigmaZm)
-      } else {
-        pval <- pval +  pmvnorm(lower = c(lk[0:(i-1)],uk[i],ck[i],rep(-Inf,m-1-i)),  #prob to stop for eff at analysis i and conclude eff
-                                upper = c(uk[0:(i-1)],rep(Inf,m-i+1)),
-                                mean=theta,
-                                sigma= sigmaZm) +
-                        pmvnorm(lower = c(lk[0:(i-1)],-Inf,ck[1],rep(-Inf,m-1-i)),   #prob to stop for fut at analysis i and switch to eff
-                                upper = c(uk[0:(i-1)],lk[i],rep(Inf,m-i)),
-                                mean=theta,
-                                sigma= sigmaZm)
+      for(i in 1:k){
+          if(i==k){
+              if(i==kMax){ ## is it the final analysis
+                  pval <- pval + pmvnorm(lower = c(lk[0:(i-1)],estimate*sqrt(Ik[kMax])),  #prob to continue until final analysis and obtain a higher result than the observed
+                                         upper = c(uk[0:(i-1)],Inf),
+                                         mean=theta,
+                                         sigma= sigmaZm)
+              }else{ ## or a decision analysis
+                  pval <- pval +  pmvnorm(lower = c(lk[0:(i-1)],uk[i],estimate*sqrt(Id[k]),rep(-Inf,m-1-i)),  #prob to stop for eff at analysis k and conclude more extreme result
+                                          upper = c(uk[0:(i-1)],rep(Inf,m-i+1)),
+                                          mean=theta,
+                                          sigma= sigmaZm) +
+                      pmvnorm(lower = c(lk[0:(i-1)],-Inf,estimate*sqrt(Id[k]),rep(-Inf,m-1-i)),   #prob to stop for fut at analysis k and switch to eff with more extreme result
+                              upper = c(uk[0:(i-1)],lk[i],rep(Inf,m-i)),
+                              mean=theta,
+                              sigma= sigmaZm)
+              }
+          } else if(i %in% index){
+              next #results for larger information levels are never more extreme than smaller information levels with results above c
+          } else {
+              pval <- pval +  pmvnorm(lower = c(lk[0:(i-1)],uk[i],ck[i],rep(-Inf,m-1-i)),  #prob to stop for eff at analysis i and conclude eff
+                                      upper = c(uk[0:(i-1)],rep(Inf,m-i+1)),
+                                      mean=theta,
+                                      sigma= sigmaZm) +
+                  pmvnorm(lower = c(lk[0:(i-1)],-Inf,ck[i],rep(-Inf,m-1-i)),   #prob to stop for fut at analysis i and switch to eff
+                          upper = c(uk[0:(i-1)],lk[i],rep(Inf,m-i)),
+                          mean=theta,
+                          sigma= sigmaZm)
+          }
       }
-    }
   } else {  #In case futility is concluded, calculate 1-obtaining a less extreme result, i.e. 1-prob of concluding futility at earlier IA
-    for(i in 1:k){
-      if(i==k){
-        pval <- pval +  pmvnorm(lower = c(lk[0:(i-1)],uk[i],rep(-Inf,m-i)),  #prob to stop for eff at analysis k and conclude less extreme result
-                                upper = c(uk[0:(i-1)],Inf,estimate*sqrt(Id[k]),rep(Inf,m-i-1)),
-                                mean=theta,
-                                sigma= sigmaZm) +
-                        pmvnorm(lower = c(lk[0:(i-1)],-Inf,rep(-Inf,m-i)),   #prob to stop for fut at analysis k and conclude less extreme result
-                                upper = c(uk[0:(i-1)],lk[i],estimate*sqrt(Id[k]),rep(Inf,m-i-1)),
-                                mean=theta,
-                                sigma= sigmaZm)
-      } else if (i %in% index){ #results for larger information levels are always more extreme if observed result < c
-        #i cannot be kMax in this case, since Id[k] would be Id[kMax] in the definition of the index
-        pval <- pval +  pmvnorm(lower = c(lk[1:(i-1)],uk[i],-Inf,rep(-Inf,m-1-i)),  #prob to stop for eff at analysis i and then obtain whichever result
-                                upper = c(uk[1:(i-1)],rep(Inf,m-i+1)),
-                                mean=theta,
-                                sigma= sigmaZm) +
-          pmvnorm(lower = c(lk[1:(i-1)],-Inf,-Inf,rep(-Inf,m-1-i)),   #prob to stop for fut at analysis i and then obtain whichever result
-                  upper = c(uk[1:(i-1)],lk[i],rep(Inf,m-i)),
-                  mean=theta,
-                  sigma= sigmaZm)
-      } else if (i==kMax){
-        pval <- pval + pmvnorm(lower = c(lk[0:(i-1)],-Inf),  #prob to continue until final analysis and obtain a lower result than the observed
-                               upper = c(uk[0:(i-1)],estimate*sqrt(Ik[kMax])),
-                               mean=theta,
-                               sigma= sigmaZm)
-      } else {
-        pval <- pval +  pmvnorm(lower = c(lk[0:(i-1)],uk[i],rep(-Inf,m-i)),  #prob to stop for eff at analysis i and switch to fut
-                                upper = c(uk[0:(i-1)],Inf,ck[i],rep(Inf,m-i-1)),
-                                mean=theta,
-                                sigma= sigmaZm) +
-                        pmvnorm(lower = c(lk[0:(i-1)],-Inf,rep(-Inf,m-i)),   #prob to stop for fut at analysis i and conclude fut
-                                upper = c(uk[0:(i-1)],lk[i],ck[1],rep(Inf,m-i-1)),
-                                mean=theta,
-                                sigma= sigmaZm)
+      for(i in 1:k){
+          if(i==k){
+              if (i==kMax){## is it the final analysis
+                  pval <- pval + pmvnorm(lower = c(lk[0:(i-1)],-Inf),  #prob to continue until final analysis and obtain a lower result than the observed
+                                         upper = c(uk[0:(i-1)],estimate*sqrt(Ik[kMax])),
+                                         mean=theta,
+                                         sigma= sigmaZm)
+              }else{## or a decision analysis
+                  pval <- pval +  pmvnorm(lower = c(lk[0:(i-1)],uk[i],rep(-Inf,m-i)),  #prob to stop for eff at analysis k and conclude less extreme result
+                                          upper = c(uk[0:(i-1)],Inf,estimate*sqrt(Id[k]),rep(Inf,m-i-1)),
+                                          mean=theta,
+                                          sigma= sigmaZm) +
+                      pmvnorm(lower = c(lk[0:(i-1)],-Inf,rep(-Inf,m-i)),   #prob to stop for fut at analysis k and conclude less extreme result
+                              upper = c(uk[0:(i-1)],lk[i],estimate*sqrt(Id[k]),rep(Inf,m-i-1)),
+                              mean=theta,
+                              sigma= sigmaZm)
+              }
+          } else if (i %in% index){ #results for larger information levels are always more extreme if observed result < c
+                                        #i cannot be kMax in this case, since Id[k] would be Id[kMax] in the definition of the index
+              next
+              ## pval <- pval +  pmvnorm(lower = c(lk[1:(i-1)],uk[i],-Inf,rep(-Inf,m-1-i)),  #prob to stop for eff at analysis i and then obtain whichever result
+              ##                         upper = c(uk[1:(i-1)],rep(Inf,m-i+1)),
+              ##                         mean=theta,
+              ##                         sigma= sigmaZm) +
+              ##     pmvnorm(lower = c(lk[1:(i-1)],-Inf,-Inf,rep(-Inf,m-1-i)),   #prob to stop for fut at analysis i and then obtain whichever result
+              ##             upper = c(uk[1:(i-1)],lk[i],rep(Inf,m-i)),
+              ##             mean=theta,
+              ##             sigma= sigmaZm)
+          } else {
+              pval <- pval +  pmvnorm(lower = c(lk[0:(i-1)],uk[i],rep(-Inf,m-i)),  #prob to stop for eff at analysis i and switch to fut
+                                      upper = c(uk[0:(i-1)],Inf,ck[i],rep(Inf,m-i-1)),
+                                      mean=theta,
+                                      sigma= sigmaZm) +
+                  pmvnorm(lower = c(lk[0:(i-1)],-Inf,rep(-Inf,m-i)),   #prob to stop for fut at analysis i and conclude fut
+                          upper = c(uk[0:(i-1)],lk[i],ck[i],rep(Inf,m-i-1)),
+                          mean=theta,
+                          sigma= sigmaZm)
+          }
       }
-    }
-    pval <- 1-pval
+      pval <- 1-pval
   }
-  pval
+  
+  return(pval)
 }
 
 
