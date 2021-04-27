@@ -248,10 +248,10 @@ FinalPvalue2 <- function(Id,
   ## message("the method assumes that positive effects are good")
   k <- length(Id)
   I_all <- as.vector(rbind(Ik, Id))  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
-  index_tempo <- as.vector(rbind(rep(1,length(Ik)), rep(2,length(Ik))))
+  index_tempo <- as.vector(rbind(rep(1,length(Ik)), rep(2,length(Id))))
   index_interim <- which(index_tempo==1) ## 1, 3, ...
   index_decision <- which(index_tempo==2) ## 2, 4, ...
-  index_final <- index_decision[length(ck)] ## NA when the study is stopped before final
+  index_final <- index_decision[kMax] ## NA when the study is stopped before final
 
   m <- length(I_all)
   sigmaZm <- diag(1,m)
