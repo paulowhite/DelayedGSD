@@ -1,6 +1,7 @@
 PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
                            type="Z",    #type of boundaries to plot (Z-statistic (Z), p-value (P), effect (E))
-                           Itype="rate"){   #information scale on x-axis (rate or absolute (abs))  
+                           Itype="rate",#information scale on x-axis (rate or absolute (abs))  
+                           main=NULL){  #to specify a plot title
     # {{{ Preliminaries 
     if(Itype=="rate"){
         Ival <- CalcBndObj$Ik/CalcBndObj$Imax
@@ -52,7 +53,7 @@ PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
     # }}}
     # {{{ Plot
     plot(xu,yu,type="l",lty=2,lwd=2,ylim=ylim,col="green3",xlab=xlb,ylab=ylab,axes=FALSE,
-         xlim=c(0,max(xu)))
+         xlim=c(0,max(xu)),main=main)
     lines(xu,yl,col="red",lwd=2,lty=2)
     points(xd,yc,col="black",pch=19,cex=1.5)
     points(xu,yl,col="red",pch=21,bg="red",cex=1.2)

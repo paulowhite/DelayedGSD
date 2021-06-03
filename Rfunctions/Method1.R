@@ -7,8 +7,8 @@ Method1 <- function(uk,  #upper bounds for all analyses up to and including curr
                     Id,  #Observed information at decision analysis k
                     Imax,  #Maximum information
                     sided=1,  #one or two sided
-                    cMin=-Inf # minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
-                    ){
+                    cMin=-Inf, # minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
+                    bindingFutility=TRUE){  #whether the futility stopping rule is binding
   
     require(mvtnorm)
     
@@ -32,16 +32,32 @@ Method1 <- function(uk,  #upper bounds for all analyses up to and including curr
         }
     }
   
-    f <- function(x){
-        y <- pmvnorm(lower = c(lk[0:(k-1)],uk[k],-Inf),
+    if(bindingFutility){
+      f <- function(x){
+          y <- pmvnorm(lower = c(lk[0:(k-1)],uk[k],-Inf),
+                       upper = c(uk[0:(k-1)],Inf,x),
+                       mean=rep(0,k+1),
+                       sigma= sigmaZk) - 
+              pmvnorm(lower = c(lk[0:(k-1)],-Inf,x),
+                      upper = c(uk[0:(k-1)],lk[k],Inf),
+                      mean=rep(0,k+1),
+                      sigma= sigmaZk)
+          as.numeric(y)
+      }
+    } else {
+      lk2 <- rep(-Inf,length(lk))
+      
+      f <- function(x){
+        y <- pmvnorm(lower = c(lk2[0:(k-1)],uk[k],-Inf),
                      upper = c(uk[0:(k-1)],Inf,x),
                      mean=rep(0,k+1),
                      sigma= sigmaZk) - 
-            pmvnorm(lower = c(lk[0:(k-1)],-Inf,x),
-                    upper = c(uk[0:(k-1)],lk[k],Inf),
-                    mean=rep(0,k+1),
-                    sigma= sigmaZk)
+          pmvnorm(lower = c(lk2[0:(k-1)],-Inf,x),
+                  upper = c(uk[0:(k-1)],lk[k],Inf),
+                  mean=rep(0,k+1),
+                  sigma= sigmaZk)
         as.numeric(y)
+      }
     }
   
     c <- try(uniroot(f, lower = lk[k], upper = uk[k]*1.1)$root,silent=T)

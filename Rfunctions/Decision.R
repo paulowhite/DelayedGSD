@@ -37,6 +37,7 @@ Decision <- function(analysis_res,  #results from AnalyzeData
                      Id=NULL,  #expected or observed information RATIO at each decision analysis
                      PositiveIsGood=TRUE, # whether positive effect is good (i.e. positive trial)
                      Trace=TRUE, # whether to print some messages
+                     bindingFutility=TRUE,
                      plot=T){  #should the boundaries and results be plotted?
     if(is.null(Id) & !((analysis=="interim" & planned_bnds$method==1) | analysis=="final")){
         stop("Id must be specified.")
@@ -58,17 +59,29 @@ Decision <- function(analysis_res,  #results from AnalyzeData
                                  cNotBelowFixedc=planned_bnds$cNotBelowFixedc, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
                                  delta=planned_bnds$delta,  #effect that the study is powered for
                                  Id=Id,  #(expected) information ratio at each decision analysis
-                                 Trace=FALSE)
+                                 Trace=FALSE,
+                                 bindingFutility = bindingFutility)
     }else{
-        StandardDesign <- getDesignGroupSequential(kMax=planned_bnds$kMax,
-                                                   sided = planned_bnds$sided,
-                                                   alpha = planned_bnds$alpha,
-                                                   beta = planned_bnds$beta,
-                                                   informationRates = Ik/max(Ik),
-                                                   typeOfDesign="asKD",
-                                                   typeBetaSpending="bsKD",
-                                                   gammaA=gammaA,
-                                                   gammaB=gammaB)    
+        #StandardDesign <- getDesignGroupSequential(kMax=planned_bnds$kMax,
+        #                                           sided = planned_bnds$sided,
+        #                                           alpha = planned_bnds$alpha,
+        #                                           beta = planned_bnds$beta,
+        #                                           informationRates = Ik/max(Ik),
+        #                                           typeOfDesign="asKD",
+        #                                           typeBetaSpending="bsKD",
+        #                                           gammaA=gammaA,
+        #                                           gammaB=gammaB)    
+      if(bindingFutility){
+        StandardDesign <- gsDesign(k=k, test.type=3,alpha=planned_bnds$alpha,beta=planned_bnds$beta,
+                                   timing=Ik/max(Ik),   #Need to double check that this is OK
+                                   sfu=sfPower,sfupar=planned_bnds$gammaA,
+                                   sfl=sfPower,sflpar=planned_bnds$gammaB)
+      } else {
+        StandardDesign <- gsDesign(k=k, test.type=4,alpha=planned_bnds$alpha,beta=planned_bnds$beta,
+                                   timing=Ik/max(Ik),
+                                   sfu=sfPower,sfupar=planned_bnds$gammaA,
+                                   sfl=sfPower,sflpar=planned_bnds$gammaB)
+      }
     }
 
     Z <- analysis_res$estimate/analysis_res$se
@@ -94,8 +107,10 @@ Decision <- function(analysis_res,  #results from AnalyzeData
             decision="Futility"
         }
     } else if(analysis=="final"){
-        details <- c(critical=StandardDesign$criticalValues[k])
-        if(Z>StandardDesign$criticalValues[k]){
+        #details <- c(critical=StandardDesign$criticalValues[k])
+        details <- c(critical=StandardDesign$upper$bound[k])
+        #if(Z>StandardDesign$criticalValues[k]){
+        if(Z>StandardDesign$upper$bound[k]){
             decision="Efficacy"
         } else {
             decision="Futility"
@@ -106,7 +121,7 @@ Decision <- function(analysis_res,  #results from AnalyzeData
   
     if(plot){
         if(analysis=="final"){
-            stop("Cannot produce the plot yet, when analysis=final.")
+            warning("Cannot produce the plot yet, when analysis=final.")
         }else{
             PlotBoundaries(Bounds)
             points(analysis_res$Info/planned_bnds$Imax,Z)  #at some point we may wish to add that all previous analyses are plotted as well

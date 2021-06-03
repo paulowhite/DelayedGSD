@@ -9,6 +9,7 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
                            cNotBelowFixedc=FALSE, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
                            delta=1.5, #effect that the study is powered for
                            Id=0.55,   #(expected) information ratio at each decision analysis
+                           bindingFutility=TRUE,  #whether the futility stopping rule is binding
                            Trace=TRUE){  # whether to print some messages
                             
   require(rpact)
@@ -24,12 +25,28 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
   
   if(Trace){message("In CalcBoundaries, the method assumes that positive effects are good")}
   
-  StandardDesign <- getDesignGroupSequential(kMax=kMax, sided = sided, alpha = alpha, beta = beta,
-                                            informationRates = informationRates,
-                                            typeOfDesign="asKD",
-                                            typeBetaSpending="bsKD",gammaA=gammaA,gammaB=gammaB)
+  #it looks like Rpact cannot handle binding futility rules... I have switched to using gsDesign
+  #StandardDesign <- getDesignGroupSequential(kMax=kMax, sided = sided, alpha = alpha, beta = beta,
+  #                                          informationRates = informationRates,
+  #                                          typeOfDesign="asKD",
+  #                                          typeBetaSpending="bsKD",gammaA=gammaA,gammaB=gammaB, 
+  #                                          bindingFutility = bindingFutility)
   
-  R <- getDesignCharacteristics(StandardDesign)$inflationFactor
+  if(bindingFutility){
+    StandardDesign <- gsDesign(k=kMax, test.type=3,alpha=alpha,beta=beta,
+                               timing=informationRates,
+                               sfu=sfPower,sfupar=gammaA,
+                               sfl=sfPower,sflpar=gammaB)
+  } else {
+    StandardDesign <- gsDesign(k=kMax, test.type=4,alpha=alpha,beta=beta,
+                               timing=informationRates,
+                               sfu=sfPower,sfupar=gammaA,
+                               sfl=sfPower,sflpar=gammaB)
+  }
+  
+  
+  #R <- getDesignCharacteristics(StandardDesign)$inflationFactor
+  R <- StandardDesign$n.I[kMax]
   Imax <- ((qnorm(1-alpha)+qnorm(1-beta))/delta)^2*R
   Id <- Id*Imax
   
@@ -37,8 +54,10 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
     stop("Function cannot handle Id >= Imax yet")
   }
     
-  uk <- StandardDesign$criticalValues
-  lk <- c(StandardDesign$futilityBounds,uk[kMax])
+  #uk <- StandardDesign$criticalValues
+  #lk <- c(StandardDesign$futilityBounds,uk[kMax])
+  uk <- StandardDesign$upper$bound
+  lk <- StandardDesign$lower$bound
   ck <- rep(0,kMax-1)
   
   #browser()
@@ -51,7 +70,8 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
                            Ik=(informationRates*Imax)[1:i],
                            Id=Id[i],
                            Imax=Imax,
-                           cMin=ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf))
+                           cMin=ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf),
+                           bindingFutility=bindingFutility)
       }
     
   } else if(method==2){
@@ -64,7 +84,8 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
                                  Id=Id[i],
                                  Imax=Imax,
                                  delta=delta,
-                                 cMin=ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf))
+                                 cMin=ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf),
+                                 bindingFutility=bindingFutility)
           ck[i] <- delayedBnds$critval
           lk[i] <- delayedBnds$lkd
       }
@@ -74,6 +95,6 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
   }
   
   list("uk"=uk,"lk"=lk,"ck"=ck,"Ik"=informationRates*Imax,"Id"=Id,"Imax"=Imax,
-       "alpha"=alpha,kMax=kMax,sided=sided,beta=beta,gammaA=gammaA,gammaB=gammaB,method=method,delta=delta,cNotBelowFixedc=cNotBelowFixedc)
+       "alpha"=alpha,kMax=kMax,sided=sided,beta=beta,gammaA=gammaA,gammaB=gammaB,method=method,delta=delta,cNotBelowFixedc=cNotBelowFixedc,bindingFutility=bindingFutility)
 }
 

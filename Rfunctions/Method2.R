@@ -7,12 +7,17 @@ Method2 <- function(uk,  #upper bounds for all analyses up to and including curr
                     Imax, #planned maximum information
                     delta, #planned effect
                     sided=1,  #whether the test is 1 or 2-sided
-                    cMin=-Inf){  # minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
+                    cMin=-Inf,  # minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
+                    bindingFutility=TRUE){  #whether the futility stopping rule is binding
   
   require(mvtnorm)
   
   if(sided!=1){
     stop("Function cannot handle two-sided tests yet")
+  }
+  
+  if(!bindingFutility){
+    stop("Function cannot handle non-binding futility for Method 2")
   }
   
   ## message("the method assumes that positive effects are good")
