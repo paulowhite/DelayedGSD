@@ -72,8 +72,8 @@ par(mfrow=c(2,3))
 
 
 #Decision regarding recruitment at interim analysis
-Decision(IA,b1,Id=0.55,k=1,analysis="interim",Ik=c(IA$Info,b1$Imax))  
-Decision(IA,b2,Id=0.55,k=1,analysis="interim",Ik=c(IA$Info,b2$Imax))    
+Decision(IA,b1,Id=IA$getInformation["decision"]/b1$Imax,k=1,analysis="interim",Ik=c(IA$Info,b1$Imax))  
+Decision(IA,b2,Id=IA$getInformation["decision"]/b2$Imax,k=1,analysis="interim",Ik=c(IA$Info,b2$Imax))    
 
 #Decision at decision analysis
 xx_d <- x$d[x$d$id%in%xx$id,]
