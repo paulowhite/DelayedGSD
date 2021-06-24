@@ -1,7 +1,12 @@
 PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
                            type="Z",    #type of boundaries to plot (Z-statistic (Z), p-value (P), effect (E))
                            Itype="rate",#information scale on x-axis (rate or absolute (abs))  
-                           main=NULL){  #to specify a plot title
+                           main=NULL,   #to specify a plot title
+                           xlim = NULL, # range of the x axis
+                           ylim = NULL, # range of the y axis
+                           legend=TRUE,  #should a caption be added?
+                           legend.ncol=1, # number of column in the caption
+                           legend.cex=1){ 
     # {{{ Preliminaries 
     if(Itype=="rate"){
         Ival <- CalcBndObj$Ik/CalcBndObj$Imax
@@ -31,8 +36,7 @@ PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
     yh <- qnorm(1-CalcBndObj$alpha)
     whereleg <- "bottomleft"
     ylab <- "Stopping boundary (Z-statistic)"
-    ylim <- c(-1,3)
-
+ 
     if(type=="P"){
         whereleg <- "topleft"
         ylab <- "Stopping boundary (P-value)"
@@ -40,7 +44,6 @@ PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
         yl <- 1-pnorm(CalcBndObj$lk)
         yc <- 1-pnorm(CalcBndObj$ck)
         yh <- CalcBndObj$alpha
-        ylim <- c(0,1)    
     }
     if(type=="E"){
         ylab <- "Stopping boundary (Effect estimate)"
@@ -48,12 +51,21 @@ PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
         yl <- CalcBndObj$lk/sqrt(CalcBndObj$Ik)
         yc <- CalcBndObj$c/sqrt(CalcBndObj$Id)
         yh <- qnorm(1-CalcBndObj$alpha)/sqrt(CalcBndObj$Ik[length(CalcBndObj$Ik)])
-        ylim <- c(min(yl)-0.5,max(yu)+0.5)
     }
+    if(is.null(ylim)){
+        ylim <- switch(type,
+                       "P" = c(0,1),
+                       "E" = c(min(yl)-0.5,max(yu)+0.5),
+                       c(-1,3))
+    }
+    if(is.null(xlim)){
+        xlim <- c(0,max(xu))
+    }
+    
     # }}}
     # {{{ Plot
     plot(xu,yu,type="l",lty=2,lwd=2,ylim=ylim,col="green3",xlab=xlb,ylab=ylab,axes=FALSE,
-         xlim=c(0,max(xu)),main=main)
+         xlim=xlim,main=main)
     lines(xu,yl,col="red",lwd=2,lty=2)
     points(xd,yc,col="black",pch=19,cex=1.5)
     points(xu,yl,col="red",pch=21,bg="red",cex=1.2)
@@ -88,6 +100,10 @@ PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
             y=c(yu[1],yu,rep(ifelse(type!="P",max(ylim),min(ylim)),length(yu)+1)),
             col=myrgbcolgreen,border=NA)
     # legend   
+    if(legend){
+        if(length(legend.cex)==1){
+            legend.cex <- rep(legend.cex,2)
+        }
     legend(whereleg,
            c("Stopping bound for efficacy",
              "Stopping bound for futility",
@@ -97,7 +113,11 @@ PlotBoundaries <- function(CalcBndObj,  #object from CalcBoundaries
            pch=c(21,21,NA,19),
            col=c("green3","red","grey","black"),
            pt.bg = c("green3","red",NA,NA),
-           bg="white")
+           bg="white",
+           cex=legend.cex[1],
+           pt.cex=legend.cex[2], 
+           ncol = legend.ncol)
+    }
     # }}}    
 }
 
