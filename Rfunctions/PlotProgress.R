@@ -20,7 +20,7 @@ PlotProgress <- function(d,Delta.t=0.500001,at=NA){
     n <- nrow(d) # final sample size
     allt <- unique(c(0,sort(as.matrix(d[,grep("t",names(d))]))))
     N.fw <- length(grep("t",names(d)))
-    tmax <- max(d[,grep("t",names(d))]) + Delta.t # duration of trial (i.e. time of last collected data, eventually with additional delay Delta.t to do data management)
+    tmax <- max(d[,grep("t",names(d))],na.rm=T) + Delta.t # duration of trial (i.e. time of last collected data, eventually with additional delay Delta.t to do data management)
     allt <- c(allt,max(allt)+seq(from=0,to=1.5*Delta.t,by=min(diff(allt))))
     plot(x=c(0,tmax),y=c(0,n),col="white",xlab="Time since study start",ylab="Sample size",axes=FALSE)
     axis(1)

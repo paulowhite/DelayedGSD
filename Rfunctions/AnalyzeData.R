@@ -96,7 +96,7 @@ AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
 print.getInformationGLS <- function(x, ...){
     cat("       Analysis via the gls function \n \n ")
     cat("  Estimated treatment effect: ",x$name.coef," \n",sep = "")
-    print(c("estimate" = x$coef, "se" = x$se, "df" = x$df, "p.value" = x$p.value))
+    print(c("estimate" = x$estimate, "se" = x$se, "df" = x$df, "p.value" = x$p.value))
     cat("\n  Number of clusters \n")
     print(x$n)
     cat("\n  Estimated information \n")

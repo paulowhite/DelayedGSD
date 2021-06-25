@@ -124,7 +124,7 @@ Decision <- function(analysis_res,  #results from AnalyzeData
             warning("Cannot produce the plot yet, when analysis=final.")
         }else{
             PlotBoundaries(Bounds)
-            points(analysis_res$Info/planned_bnds$Imax,Z)  #at some point we may wish to add that all previous analyses are plotted as well
+            points(analysis_res$Info/planned_bnds$Imax,Z,pch=4,cex=1.5)  #at some point we may wish to add that all previous analyses are plotted as well
         }
     }
     out <- list(decision=decision,details=details)

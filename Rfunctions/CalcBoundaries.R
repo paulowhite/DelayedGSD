@@ -94,7 +94,7 @@ CalcBoundaries <- function(kMax=2,  #max number of analyses (including final)
     stop(("Please specify method=1 or method=2"))
   }
   
-  list("uk"=uk,"lk"=lk,"ck"=ck,"Ik"=informationRates*Imax,"Id"=Id,"Imax"=Imax,
+  list("uk"=uk,"lk"=lk,"ck"=ck,"Ik"=informationRates*Imax,"Id"=Id,"Imax"=Imax,"InflationFactor"=R,
        "alpha"=alpha,kMax=kMax,sided=sided,beta=beta,gammaA=gammaA,gammaB=gammaB,method=method,delta=delta,cNotBelowFixedc=cNotBelowFixedc,bindingFutility=bindingFutility)
 }
 
