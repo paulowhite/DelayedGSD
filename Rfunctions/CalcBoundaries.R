@@ -5,18 +5,28 @@
 ##' @param sided one or two-sided
 ##' @param alpha type I error
 ##' @param beta type II error
-##' @param InfoR.i planned or observed information rates for the interim analyses
+##' @param InfoR.i planned or observed information rates at interim analysis, including the final analysis.
 ##' @param gammaA rho parameter for alpha error spending function
 ##' @param gammaB rho parameter for beta error spending function
 ##' @param method use method 1 or 2 from paper H&J
 ##' @param cNotBelowFixedc whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
 ##' @param delta effect that the study is powered for
-##' @param InfoR.d (expected) information rate at each decision analysis
+##' @param InfoR.d (expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.
 ##' @param bindingFutility whether the futility stopping rule is binding
-##' @param Trace whether to print some messages
+##' @param trace whether to print some messages
 ##'
 ##' @examples
-##' ## add example
+##' CalcBoundaries(kMax=2,
+##'               sided=1,
+##'               alpha=0.025,  
+##'               beta=0.2,  
+##'               InfoR.i=c(0.5,1),
+##'               gammaA=2,
+##'               gammaB=2,
+##'               method=1,
+##'               cNotBelowFixedc=TRUE,
+##'               delta=1.5,
+##'               InfoR.d=0.55)  
 ##' 
 ##' @export
 CalcBoundaries <- function(kMax=2,  
@@ -31,11 +41,12 @@ CalcBoundaries <- function(kMax=2,
                            delta=1.5, 
                            InfoR.d=0.55,   
                            bindingFutility=TRUE,  #
-                           Trace=TRUE){  
-                            
-  require(rpact)
+                           trace=TRUE){  
+
+    require(gsDesign)
 
     ## ** normalize user input
+    call <- match.call() ## keep track of how the user run the function
     if(sided!=1){
         stop("Function cannot handle two-sided tests yet")
     }
@@ -48,19 +59,19 @@ CalcBoundaries <- function(kMax=2,
         stop("Please specify method=1 or method=2")
     }
     
-    if(Trace){message("In CalcBoundaries, the method assumes that positive effects are good")}
+    if(trace){message("In CalcBoundaries, the method assumes that positive effects are good")}
  
     ## ** compute boundaries at interim
     if(bindingFutility){
-        StandardDesign <- gsDesign(k=kMax, test.type=3,alpha=alpha,beta=beta,
-                                   timing=InfoR.i,
-                                   sfu=sfPower,sfupar=gammaA,
-                                   sfl=sfPower,sflpar=gammaB)
+        StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=3,alpha=alpha,beta=beta,
+                                             timing=InfoR.i,
+                                             sfu=sfPower,sfupar=gammaA,
+                                             sfl=sfPower,sflpar=gammaB)
     } else {
-        StandardDesign <- gsDesign(k=kMax, test.type=4,alpha=alpha,beta=beta,
-                                   timing=InfoR.i,
-                                   sfu=sfPower,sfupar=gammaA,
-                                   sfl=sfPower,sflpar=gammaB)
+        StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=4,alpha=alpha,beta=beta,
+                                             timing=InfoR.i,
+                                             sfu=sfPower,sfupar=gammaA,
+                                             sfl=sfPower,sflpar=gammaB)
     }
   
   
@@ -114,7 +125,8 @@ CalcBoundaries <- function(kMax=2,
 
 
     ## ** output
-    out <- list(uk = uk, 
+    out <- list(call = call,
+                uk = uk, 
                 lk = lk,
                 ck = ck,
                 Info.i = InfoR.i*Info.max,
