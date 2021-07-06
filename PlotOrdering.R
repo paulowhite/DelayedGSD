@@ -1,3 +1,20 @@
+rm(list=ls())
+
+if(system("whoami",intern=TRUE)=="paul"){  
+    setwd("~/research/SeqDesignDelayed/DelayedGSD/")
+}else if(system("whoami",intern=TRUE)=="brice"){  
+    setwd("~/Documents/GitHub/DelayedGSD/")
+}
+sourceDir <- function(path, trace = TRUE, ...) {
+    for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
+        if(trace) cat(nm,":")
+        source(file.path(path, nm), ...)
+        if(trace) cat("\n")
+    }
+}
+sourceDir("Rfunctions/")
+
+
 bnds <- CalcBoundaries(kMax=3,informationRates = c(0.5,0.75,1),Id=c(0.55,0.8))
 
 plot(bnds$Ik,bnds$lk,col="red",pch=21,bg="red",ylim=c(0,max(bnds$uk+0.5)),xlab="Information",ylab="Stopping boundary (Z-statistic)")
