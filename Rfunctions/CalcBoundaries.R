@@ -46,6 +46,7 @@ CalcBoundaries <- function(kMax=2,
     require(gsDesign)
 
     ## ** normalize user input
+    call <- match.call() ## keep track of how the user run the function
     if(sided!=1){
         stop("Function cannot handle two-sided tests yet")
     }
@@ -124,7 +125,8 @@ CalcBoundaries <- function(kMax=2,
 
 
     ## ** output
-    out <- list(uk = uk, 
+    out <- list(call = call,
+                uk = uk, 
                 lk = lk,
                 ck = ck,
                 Info.i = InfoR.i*Info.max,

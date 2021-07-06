@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 25 2020 (09:23) 
 ## Version: 
-## Last-Updated: mar 26 2021 (23:48) 
+## Last-Updated: Jul  6 2021 (11:23) 
 ##           By: Brice Ozenne
-##     Update #: 195
+##     Update #: 210
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,6 +22,18 @@
 #' @param ddf [character] method used to compute the degrees of freedom of the Wald statistic.
 #' Can be \code{satterthwaite} or \code{nlme}.
 #' @param getinfo [logical] should the information be computed at interim and decision? Otherwise no information is computed.
+#' 
+#' @examples
+#' ## simulate data in the wide format
+#' set.seed(1)
+#' dataW <- GenData(n=104)$d
+#'
+#' ## estimate mixed model
+#' AnalyzeData(dataW, getinfo = FALSE)
+#' AnalyzeData(dataW, getinfo = TRUE)
+#'
+
+
 AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
 
     require(nlme)
@@ -35,27 +47,29 @@ AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
     ## ** fit gls model
     ctrl <- glsControl(opt='optim')
     
-    m <- gls(X~baseline*visit + Z*visit,
-             data=long,
-             correlation=corSymm(form=~visit.num|id), 
-             varIdent(form=~1|visit),method="REML",
-             na.action = na.exclude)
+    m <- nlme::gls(X ~ baseline*visit + Z*visit,
+                   data = long,
+                   correlation = nlme::corSymm(form=~visit.num|id), 
+                   weights = nlme::varIdent(form=~1|visit),
+                   method = "REML",
+                   na.action = na.exclude)
 
     ## ** store estimate from the gls model    
     out <- list(d.long=long,
                 fit=m,
+                Info = 1/m$varBeta["Z1","Z1"], 
                 estimate = as.double(coef(m)["Z1"]),
                 se = as.double(sqrt(m$varBeta["Z1","Z1"])),
-                Info = 1/m$varBeta["Z1","Z1"], 
+                statistic = NA,
                 df = NA,
                 p.value = NA
                 )
+    out$statistic <- abs(out$estimate)/out$se
 
     ## computation of the p-value  
     if(ddf=="nlme"){ ## with weird estimator of the degree of freedom from nlme::gls 
-        iStat <- abs(out$estimate)/out$se
         out$df <- as.double(m$dims$N - m$dims$p)
-        out$p.value <- as.double(2*(1-pt(iStat, df = out$df)))
+        out$p.value <- as.double(2*(1-pt(out$statistic, df = out$df)))
         ## summary(m)$tTable["Z1","p-value"]
     }else{ ## or using satterthwaite approximation
         require(emmeans)
@@ -96,16 +110,19 @@ AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
 print.getInformationGLS <- function(x, ...){
     cat("       Analysis via the gls function \n \n ")
     cat("  Estimated treatment effect: ",x$name.coef," \n",sep = "")
-    print(c("estimate" = x$estimate, "se" = x$se, "df" = x$df, "p.value" = x$p.value))
-    cat("\n  Number of clusters \n")
-    print(x$n)
-    cat("\n  Estimated information \n")
-    print(x$getInformation)
-    cat("\n",
-        "total     : all patients including who dropped out early and have no observable outcome \n",
-        "decision  : patients with at least one observable outcome, including those with not yet observed values \n",
-        "interim   : patients with at least one observed outcome \n",
-        "interim.cc: patients with at no missing outcome \n")
+    print(c("estimate" = x$estimate, "se" = x$se, "statistic" = x$statistic, "df" = x$df, "p.value" = x$p.value))
+    if(!is.null(x$getInformation)){
+        cat("\n  Number of clusters \n")
+        print(x$n)
+        cat("\n  Estimated information \n")
+        print(x$getInformation)
+        cat("\n",
+            "total     : all patients including who dropped out early and have no observable outcome \n",
+            "decision  : patients with at least one observable outcome, including those with not yet observed values \n",
+            "interim   : patients with at least one observed outcome \n",
+            "interim.cc: patients with at no missing outcome \n")
+    }
+    return(NULL)
 }
 
 ## * wide2long
