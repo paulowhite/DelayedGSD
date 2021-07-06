@@ -5,7 +5,7 @@
 ##' @param sided one or two-sided
 ##' @param alpha type I error
 ##' @param beta type II error
-##' @param InfoR.i planned or observed information rates
+##' @param InfoR.i planned or observed information rates for the interim analyses
 ##' @param gammaA rho parameter for alpha error spending function
 ##' @param gammaB rho parameter for beta error spending function
 ##' @param method use method 1 or 2 from paper H&J
