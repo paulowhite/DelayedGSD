@@ -1,6 +1,6 @@
 ## * FinalCI
-FinalCI <- function(Id,  #Information at all decision analyses up to stage where study was stopped
-                    Ik,  #Information at all interim analyses up to stage where study was stopped
+FinalCI <- function(Info.d,  #Information at all decision analyses up to stage where study was stopped
+                    Info.i,  #Information at all interim analyses up to stage where study was stopped
                     ck,   #decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
                     lk,  #lower bounds up to stage where study was stopped
                     uk,  #upper bounds up to stage where study was stopped
@@ -11,8 +11,8 @@ FinalCI <- function(Id,  #Information at all decision analyses up to stage where
                     optimizer = "optimise"){ #the observed treatment estimate at decision
 
   f <- function(delta){
-    FinalPvalue(Id=Id,
-                 Ik=Ik,
+    FinalPvalue(Info.d=Info.d,
+                 Info.i=Info.i,
                  ck=ck,
                  lk=lk,
                  uk=uk,
@@ -23,8 +23,8 @@ FinalCI <- function(Id,  #Information at all decision analyses up to stage where
   }
 
   g <- function(delta){
-    1-FinalPvalue(Id=Id,
-                 Ik=Ik,
+    1-FinalPvalue(Info.d=Info.d,
+                 Info.i=Info.i,
                  ck=ck,
                  lk=lk,
                  uk=uk,
@@ -35,13 +35,13 @@ FinalCI <- function(Id,  #Information at all decision analyses up to stage where
   }
 
     if(optimizer=="optimise"){
-        lbnd <- optimise(function(x){f(x)^2},lower=estimate-4*sqrt(1/Id[length(Id)]),upper=estimate+0.5*sqrt(1/Id[length(Id)]))
-        ubnd <- optimise(function(x){g(x)^2},lower=estimate-0.5*sqrt(1/Id[length(Id)]),upper=estimate+4*sqrt(1/Id[length(Id)]))
+        lbnd <- optimise(function(x){f(x)^2},lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]))
+        ubnd <- optimise(function(x){g(x)^2},lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]))
         out <- c(lower = lbnd$minimum, upper = ubnd$minimum)
         attr(out,"error") <- c(lower = lbnd$objective, upper = ubnd$objective)
     }else if(optimizer=="uniroot"){
-        lbnd <- uniroot(f,lower=estimate-4*sqrt(1/Id[length(Id)]),upper=estimate+0.5*sqrt(1/Id[length(Id)]))
-        ubnd <- uniroot(g,lower=estimate-0.5*sqrt(1/Id[length(Id)]),upper=estimate+4*sqrt(1/Id[length(Id)]))
+        lbnd <- uniroot(f,lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]))
+        ubnd <- uniroot(g,lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]))
         out <- c(lower = lbnd$root, upper = ubnd$root)
         attr(out,"error") <- c(lower = lbnd$f.root, upper = ubnd$f.root)
         attr(out,"iter") <- c(lower = lbnd$iter, upper = ubnd$iter)

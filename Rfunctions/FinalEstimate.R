@@ -1,5 +1,5 @@
-FinalEstimate <- function(Id,  #Information at all decision analyses up to stage where study was stopped
-                          Ik,  #Information at all interim analyses up to stage where study was stopped
+FinalEstimate <- function(Info.d,  #Information at all decision analyses up to stage where study was stopped (should include information at final analysis if stopped at final analysis)
+                          Info.i,  #Information at all interim analyses up to stage where study was stopped
                           ck,   #decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
                           lk,  #lower bounds up to stage where study was stopped
                           uk,  #upper bounds up to stage where study was stopped
@@ -8,8 +8,8 @@ FinalEstimate <- function(Id,  #Information at all decision analyses up to stage
                           estimate){ #the observed treatment estimate at decision
   
   f <- function(delta){
-    (FinalPvalue(Id=Id,
-                Ik=Ik,
+    (FinalPvalue(Info.d=Info.d,
+                Info.i=Info.i,
                 ck=ck,
                 lk=lk,
                 uk=uk,
@@ -19,7 +19,7 @@ FinalEstimate <- function(Id,  #Information at all decision analyses up to stage
                 delta=delta) - 0.5)^2
   }
   
-  res <- optimise(f,lower=estimate-2*sqrt(1/Id[length(Id)]),upper=estimate+2*sqrt(1/Id[length(Id)]))
+  res <- optimise(f,lower=estimate-2*sqrt(1/Info.d[length(Info.d)]),upper=estimate+2*sqrt(1/Info.d[length(Info.d)]))
   
   res$minimum
 }

@@ -23,7 +23,7 @@ Method2 <- function(uk,  #upper bounds for all analyses up to and including curr
   ## message("the method assumes that positive effects are good")
   
   if(Id >= Imax){
-    stop("Function cannot handle Id >= Imax yet")
+    stop("Function cannot handle Id >= Imax yet")  ##UPDATE, SEE METHOD 1 WHERE THIS IS HANDLED
   }
   
   k <- length(uk)

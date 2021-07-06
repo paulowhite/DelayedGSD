@@ -2,8 +2,8 @@
 ## * FinalPvalue (documentation)
 ##' @title P-value at Decision
 ##' @description  Compute the p-value at the end of the trial.
-##' @param Id Information at all decision analyses up to stage where study was stopped
-##' @param Ik Information at all interim analyses up to stage where study was stopped
+##' @param Info.d Information at all decision analyses up to stage where study was stopped (should include the information at the final analysis if stopped at final analysis)
+##' @param Info.i Information at all interim analyses up to stage where study was stopped
 ##' @param ck decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
 ##' @param lk lower bounds up to stage where study was stopped
 ##' @param uk upper bounds up to stage where study was stopped
@@ -52,8 +52,8 @@
 ##' pval1 + pval2 ## 0.00625 
 ##' 
 ##' ## p-value using FinalPvalue
-##' FinalPvalue(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate)
-##' FinalPvalue2(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate)
+##' FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate)
+##' FinalPvalue2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate)
 ##' 
 ##' ## p-value using rpact
 ##' 
@@ -91,18 +91,18 @@
 ##' pval1 + pval2 ## 0.009819342 
 ##' 
 ##' ## p-value using FinalPvalue
-##' FinalPvalue(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate)
-##' FinalPvalue2(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate) ## [1] 0.009819408
+##' FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate)
+##' FinalPvalue2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate) ## [1] 0.009819408
 ##' 
 ##' ## confidence interval using FinalPvalue
-##' FinalPvalue2(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, delta = 0.0737)
-##' 1-FinalPvalue2(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, delta = 0.729)
+##' FinalPvalue2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, delta = 0.0737)
+##' 1-FinalPvalue2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, delta = 0.729)
 ##'
-##' FinalCI2(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate) ## [1] 0.07371176 0.72920245
+##' FinalCI2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate) ## [1] 0.07371176 0.72920245
 ##'
 ##' library(microbenchmark)
-##' microbenchmark(optimise = FinalCI2(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, optimizer = "optimise"),
-##'               uniroot = FinalCI2(Id = Info.var, Ik = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, optimizer = "uniroot") 
+##' microbenchmark(optimise = FinalCI2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, optimizer = "optimise"),
+##'               uniroot = FinalCI2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, optimizer = "uniroot") 
 ##' )
 ##' ## Unit: milliseconds
 ##' ##      expr      min       lq     mean   median       uq      max neval cld
@@ -118,8 +118,8 @@
 ##' pval1 + pval2 ## 0.00625 
 
 ## * FinalPvalue (code)
-FinalPvalue <- function(Id,  
-                        Ik,  
+FinalPvalue <- function(Info.d,  
+                        Info.i,  
                         ck,   
                         lk,  
                         uk,  
@@ -134,9 +134,9 @@ FinalPvalue <- function(Id,
     }
   
   ## message("the method assumes that positive effects are good")
-  k <- length(Id)
-  I_all <- as.vector(rbind(Ik, Id))  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
-  index_tempo <- as.vector(rbind(rep(1,length(Ik)), rep(2,length(Id))))
+  k <- length(Info.d)
+  I_all <- as.vector(rbind(Info.i, Info.d))  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
+  index_tempo <- as.vector(rbind(rep(1,length(Info.i)), rep(2,length(Info.d))))
   index_interim <- which(index_tempo==1) ## 1, 3, ...
   index_decision <- which(index_tempo==2) ## 2, 4, ...
   index_final <- index_decision[kMax] ## NA when the study is stopped before final
@@ -151,9 +151,9 @@ FinalPvalue <- function(Id,
   }
   
   theta <- delta * sqrt(I_all)
-  statistic <- estimate * sqrt(Id)
+  statistic <- estimate * sqrt(Info.d)
   
-  index_infoPB <- which(Id > Id[k])  #find decision information levels that are higher than final information levels.
+  index_infoPB <- which(Info.d > Info.d[k])  #find decision information levels that are higher than final information levels.
   
   pval <- 0
   if(statistic[k] >= ck[k]){  #In case efficacy is concluded, only efficacious results at earlier IA are more extreme
@@ -232,7 +232,7 @@ FinalPvalue <- function(Id,
                                          sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
               }
           } else if (i %in% index_infoPB){ #results for larger information levels are always more extreme if observed result < c
-                                        #i cannot be kMax in this case, since Id[k] would be Id[kMax] in the definition of the index
+                                        #i cannot be kMax in this case, since Info.d[k] would be Info.d[kMax] in the definition of the index
               next
           } else {## or an interim analysis where we continued (interim 1:i, decision i)
               iIndex <- c(index_interim[1:i], index_decision[i])

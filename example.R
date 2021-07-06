@@ -28,12 +28,12 @@ b1 <- CalcBoundaries(kMax=theK,  #max number of analyses (including final)
                      sided=1,  #one or two-sided
                      alpha=theAlpha,  #type I error
                      beta=theBeta,  #type II error
-                     informationRates=c(0.5,1),  #planned or observed information rates
+                     InfoR.i=c(0.5,1),  #planned or observed information rates
                      gammaA=2,  #rho parameter for alpha error spending function
                      gammaB=2,  #rho parameter for beta error spending function
                      method=1,  #use method 1 or 2 from paper H&J
                      delta=theDelta,  #effect that the study is powered for
-                     Id=0.55)
+                     InfoR.d=0.55)
 PlotBoundaries(b1)
 
 #planned sample size
