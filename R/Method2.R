@@ -38,7 +38,7 @@ Method2 <- function(uk,
   }
   
   k <- length(uk)
-  Info.all <- c(Ik,Id)
+  Info.all <- c(Info.i,Info.d)
   sigmaZk <- diag(1,k+1)
   for(i in 1:(k+1)){
     for(j in i:(k+1)){
@@ -62,7 +62,7 @@ Method2 <- function(uk,
       pmvnorm(lower = c(lk[0:(k-1)],-Inf,-Inf),
               upper = c(uk[0:(k-1)],x,c),
               mean=theta,
-              sigma= sigmaZk) - (ErrorSpend(I=Info.d,Imax=Info.max,beta_or_alpha=0.2,rho=2)-ErrorSpend(I=Info.all[k],Imax=Info.max,beta_or_alpha=0.2,rho=2))},
+              sigma= sigmaZk) - (ErrorSpend(I=Info.d,Info.max=Info.max,beta_or_alpha=0.2,rho=2)-ErrorSpend(I=Info.all[k],Info.max=Info.max,beta_or_alpha=0.2,rho=2))},
     lower = -10,
     upper = uk[k]*0.999)$root #can't be exactly uk[k] since upper bound for method1 function and then the lower and upper bound would be equal
   
