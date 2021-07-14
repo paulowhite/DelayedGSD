@@ -51,7 +51,7 @@ CalcBoundaries(
 Calculate boundaries (interim and decision) for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach
 }
 \examples{
-CalcBoundaries(kMax=2,
+myBound <- CalcBoundaries(kMax=2,
               sided=1,
               alpha=0.025,  
               beta=0.2,  
@@ -61,6 +61,7 @@ CalcBoundaries(kMax=2,
               method=1,
               cNotBelowFixedc=TRUE,
               delta=1.5,
-              InfoR.d=0.55)  
-
+              InfoR.d=0.55)
+myBound
+plot(myBound)
 }

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: Jul 14 2021 (10:55) 
+## Last-Updated: Jul 14 2021 (16:38) 
 ##           By: Brice Ozenne
-##     Update #: 914
+##     Update #: 930
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -20,6 +20,9 @@
 #' @description Extract information relative to a parameter.
 #'
 #' @param object a \code{ttest} object or a \code{gls} object.
+#' @param planned [character] Should only the information used to plan the trial be output (\code{"only"}),
+#' or only the estimated information (\code{FALSE}),
+#' or the estimated information when available and otherwise the information used to plan the trial.
 #' @param name.coef [character] For which coefficient the information should be computed (only relevant for gls models).
 #' @param type [character] Should the information be estimated only for the observed data (\code{"estimation"}, excluding missing values)
 #' or for the full dataset  (\code{"prediction"}, including missing values).
@@ -508,6 +511,79 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
 
     ## ** export
     out <- 1/var.newdata 
+    return(out)
+
+}
+
+## * getInformation.delayedGSD
+getInformation.delayedGSD <- function(object, planned = TRUE, ...){
+
+    ## ** check user input
+    if(!identical(planned,"only") && !is.logical(planned)){
+        stop("Argument \'planned\' should be TRUE, FALSE, or \"only\". \n")
+    }
+
+    ## ** extract information from object
+    kMax <- object$kMax
+    k <- object$stage$k
+    decision <- object$stage$decision
+
+    ## ** prepare output
+    out <- list(Info.i = NULL,
+                Info.d = NULL,
+                Info.max = object$Info.max,
+                uk = NULL,
+                lk = NULL,
+                ck = NULL,
+                delta = NULL,
+                index.lmm = NULL)
+
+    ## ** extract information, boundaries, and estimated effect
+
+    if(identical(planned,"only") || k==0){
+        out$Info.i <- object$planned$Info.i
+        out$Info.d <- object$planned$Info.d
+        out$uk <- object$planned$uk
+        out$lk <- object$planned$lk
+        out$ck <- object$planned$ck
+    }else{
+        if(planned){
+            out$Info.i <- object$Info.i
+            out$Info.d <- object$Info.d
+            out$uk <- object$uk
+            out$lk <- object$lk
+            out$ck <- object$ck
+            if(k==kMax){
+                out$index.lmm <- 1:kMax
+            }else if(decision>0){
+                out$index.lmm <- 1:(k+1)
+            }else{
+                out$index.lmm <- 1:k
+            }
+        }else{
+            out$lk <- c(object$lk[1:k], rep(NA, kMax-k))
+            out$uk <- c(object$uk[1:k], rep(NA, kMax-k))
+            out$Info.i <- c(object$Info.i[1:k], rep(NA, kMax-k))
+            out$ck <- rep(NA,kMax-1)
+            out$Info.d <- rep(NA,kMax-1)
+            if(k==kMax){
+                out$index.lmm <- 1:kMax
+            }else if(decision>0){
+                out$ck[k] <- object$ck[k]
+                out$Info.d[k] <- object$Info.d[k]
+                out$index.lmm <- 1:(k+1)
+            }else{
+                out$index.lmm <- 1:k
+            }
+            
+        }
+
+        out$delta <- do.call(rbind,lapply(object$lmm[out$index.lmm], function(iLMM){
+            unlist(iLMM[c("estimate","statistic","p.value")])
+        }))
+    }
+
+    ## ** export
     return(out)
 
 }

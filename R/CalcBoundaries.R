@@ -62,7 +62,7 @@ CalcBoundaries <- function(kMax=2,
     if(method %in% 1:2 == FALSE){
         stop("Please specify method=1 or method=2")
     }
-    
+
     if(trace){message("In CalcBoundaries, the method assumes that positive effects are good")}
  
     ## ** compute boundaries at interim
@@ -131,12 +131,15 @@ CalcBoundaries <- function(kMax=2,
 
     ## ** output
     out <- list(call = call,
+                stage = data.frame(k = 0, decision = FALSE),
+                conclusion = matrix(as.character(NA), nrow = 3, ncol = kMax, dimnames = list(c("interim","reason.interim","decision"),NULL)),
                 uk = uk, 
                 lk = lk,
                 ck = ck,
                 Info.i = InfoR.i*Info.max,
                 Info.d = Info.d,
                 Info.max = Info.max,
+                lmm = vector(mode = "list", length = kMax),
                 InflationFactor = R,
                 alpha = alpha,
                 kMax = kMax,
@@ -148,7 +151,13 @@ CalcBoundaries <- function(kMax=2,
                 delta = delta,
                 cNotBelowFixedc = cNotBelowFixedc,
                 cMin = cMin,
-                bindingFutility = bindingFutility)
+                bindingFutility = bindingFutility,
+                planned = list(uk = uk,
+                               lk = lk,
+                               ck = ck,
+                               Info.i = InfoR.i*Info.max,
+                               Info.d = Info.d,
+                               delta = delta))
     class(out) <- append("delayedGSD",class(out))
     return(out)
 }

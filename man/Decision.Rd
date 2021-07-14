@@ -5,38 +5,35 @@
 \title{Evaluate decision at an interim, decision or final analysis of a group sequential design with delayed endpoints}
 \usage{
 Decision(
-  analysis_res,
-  planned_bnds,
-  k = 1,
+  lmm,
+  boundaries,
+  k,
   analysis = "interim",
-  Info.i,
-  InfoR.d = NULL,
   PositiveIsGood = TRUE,
-  Trace = TRUE,
-  bindingFutility = TRUE,
-  plot = T
+  trace = TRUE,
+  plot = TRUE
 )
 }
 \arguments{
-\item{analysis_res}{object of class ?? from AnalyzeData}
+\item{lmm}{object of class lmmGSD from AnalyzeData}
 
-\item{planned_bnds}{object of class ?? from CalcBoundaries}
+\item{boundaries}{object of class delayedGSD from CalcBoundaries}
 
 \item{k}{the stage at which the decision is to be made}
 
 \item{analysis}{is it an interim, decision or final analysis}
 
+\item{PositiveIsGood}{whether a positive effect is considered beneficial (TRUE/FALSE)}
+
+\item{plot}{whether the updated boundaries and the result should be plotted}
+
 \item{Info.i}{the observed (where possible) or expected information at each interim and the final analysis}
 
 \item{InfoR.d}{the expected or observed information ratio at each decision analysis}
 
-\item{PositiveIsGood}{whether a positive effect is considered beneficial (TRUE/FALSE)}
-
 \item{Trace}{whether to print some messages}
 
 \item{bindingFutility}{whether to use binding futility boundaries (use TRUE for binding)}
-
-\item{plot}{whether the updated boundaries and the result should be plotted}
 }
 \value{
 ff
@@ -45,10 +42,41 @@ ff
 Maps the statistical results at an interim, decision or final analysis into a decision regarding whether to stop recruitment (interim) or whether to reject the null hypothesis (decision/final). Stopping boundaries are updated based on observed information and correct p-values, confidence intervals and point estimates are given.
 }
 \details{
-zz
+Function that maps the statistical results at interim (or final) analysis into decision to reject, or continue or stop inclusind subjects.
 }
 \examples{
-x <- rnorm(10)
+
+#### Planning #####
+theAlpha <- 0.025
+theBeta <- 0.2
+theDelta <- 1.5
+theK <- 2
+theN <- 82
+
+b1 <- CalcBoundaries(kMax=theK,
+                     sided=1,
+                     alpha=theAlpha,
+                     beta=theBeta,
+                     InfoR.i=c(0.5,1),
+                     gammaA=2,
+                     gammaB=2,
+                     method=1,
+                     delta=theDelta,
+                     InfoR.d=0.55)
+
+#### Simulate data ####
+set.seed(10)
+theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  #generate data with all data for in case trial completes
+
+theAR <- 10  #accrual rate (pt per month)
+theDelay <- 0.7500001  #time in months to process data
+tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do IA
+
+theObsData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)  #data at IA when deciding whether to continue recruitment
+
+#### Analyse data at interim ####
+lmm.interim <- AnalyzeData(theObsData)
+IA <- Decision(lmm = lmm.interim, boundaries = b1, k = 1, analysis = "interim") 
 }
 \author{
 Paul Blanche

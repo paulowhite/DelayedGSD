@@ -17,31 +17,12 @@
 #' @param lwd.arrows [numeric, >0] thickness of the arrow.
 #'
 #' @examples
-#' ## content of the file PlotOrdering
 #' bnds <- CalcBoundaries(kMax=3, InfoR.i = c(0.5,0.75,1), InfoR.d = c(0.55,0.8))
 #' plot(bnds, type = "Z")
 #' plot(bnds, type = "Z", add.arrows = TRUE)
 #' plot(bnds, type = "Z", add.arrows = TRUE, lwd.arrow=2,ylim=c(0.35,2.6), xlim=c(0.5,1.1),legend=FALSE)
 #' plot(bnds, type = "E")
 #' plot(bnds, type = "P")
-#'
-#' plot(bnds$Info.i,bnds$lk,col="red",pch=21,bg="red",ylim=c(0,max(bnds$uk+0.5)),xlab="Information",ylab="Stopping boundary (Z-statistic)")
-#' lines(bnds$Info.i,bnds$lk,col="red",lty=2)
-#' points(bnds$Info.i,bnds$uk,col="green",lty=2,pch=21,bg="green")
-#' lines(bnds$Info.i,bnds$uk,col="green",lty=2)
-#' points(bnds$Info.d,bnds$ck,pch=4)
-#' arrows(x0=bnds$Info.d[1],y0=0,x1=bnds$Info.d[1],y1=bnds$ck[1]-0.1,lty=1,length=0.1)
-#' arrows(x0=bnds$Info.d[1],y0=bnds$ck[1]-0.1,x1=bnds$Info.d[2],y1=0,lty=1,length=0.1)
-#' arrows(x0=bnds$Info.d[2],y0=0,x1=bnds$Info.d[2],y1=bnds$ck[2]-0.1,lty=1,length=0.1)
-#' arrows(x0=bnds$Info.d[2],y0=bnds$ck[2]-0.1,x1=bnds$Info.i[3],y1=0,lty=1,length=0.1)
-#' arrows(x0=bnds$Info.i[3],y0=0,x1=bnds$Info.i[3],y1=3,lty=1,length=0.1)
-#' arrows(x0=bnds$Info.i[3],y0=3,x1=bnds$Info.d[2],y1=bnds$ck[2]+0.1,lty=1,length=0.1)
-#' arrows(x0=bnds$Info.d[2],y0=bnds$ck[2]+0.1,x1=bnds$Info.d[2],y1=3,lty=1,length=0.1)
-#' arrows(x0=bnds$Info.d[2],y0=3,x1=bnds$Info.d[1],y1=bnds$ck[1]+0.1,lty=1,length=0.1)
-#' arrows(x0=bnds$Info.d[1],y0=bnds$ck[1]+0.1,x1=bnds$Info.d[1],y1=3,lty=1,length=0.1)
-
-#consider whether we want to somehow integrate the plotting function of the Rpact package and add to that, but it
-#seems to be a lot of work, since their options for plotting on different scales do not seem to work well
 
 ## * plot.delayedGSD (code)
 #' @export
@@ -49,7 +30,8 @@ plot.delayedGSD <- function(x,
                             y,
                             type="Z",   
                             Itype="rate",
-                            main=NULL,   
+                            planned=TRUE,
+                            main = NULL,   
                             xlim = NULL, 
                             ylim = NULL, 
                             legend=TRUE,  
@@ -75,15 +57,43 @@ plot.delayedGSD <- function(x,
     
                                         # {{{ Preliminaries
 
+    specdec <- function(x,k){ format(round(x,k),nsmall=k)}
+
     ## extract from object
-    Info.i <- x$Info.i
-    Info.d <- x$Info.d
-    Info.max <- x$Info.max
     alpha <- x$alpha
-    uk <- x$uk
-    lk <- x$lk
-    ck <- x$ck
+    kMax <- x$kMax
+    k <- x$stage$k
+    decision <- x$stage$decision
+    test.planning <- identical(planned,"only") || (k==0)
+
+    ls.info <- getInformation(x, planned = planned)
+    Info.i <- ls.info$Info.i
+    Info.d <- ls.info$Info.d
+    Info.max <- ls.info$Info.max
+    uk <- ls.info$uk
+    lk <- ls.info$lk
+    ck <- ls.info$ck
+    if(!test.planning){
+        delta <- switch(type,
+                        "Z" = ls.info$delta[,"statistic"],
+                        "E" = ls.info$delta[,"estimate"],
+                        "P" = ls.info$delta[,"p.value"])
+    }else{
+        delta <- NULL
+    }
     
+    if(is.null(main)){
+        if(test.planning){
+            main <- "Planning"
+        }else if(k==kMax){
+            main <- paste0("Final analysis (stage ",k,")")
+        }else if(decision>0){
+            main <- paste0("Decision analysis at stage ",k)
+        }else{
+            main <- paste0("Interim analysis at stage ",k)
+        }
+    }
+
     ## prepare
     if(Itype=="rate"){
         Ival <- Info.i/Info.max
@@ -144,8 +154,17 @@ plot.delayedGSD <- function(x,
     points(xd,yc,col="black",pch=19,cex=1.5)
     points(xu,yl,col="red",pch=21,bg="red",cex=1.2)
     points(xu,yu,col="green3",pch=21,bg="green3",cex=1.2)
+    if(!is.null(delta)){
+        xdelta <- xu[1:k]
+        if(decision>0 && k<kMax){
+            xdelta <- c(xdelta,xd[k])
+        }
+        lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
+        points(xdelta,delta,col="purple",pch=22,bg="green3",cex=1.2)
+        text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple",pos=1)
+        
+    }
                                         #---
-    specdec <- function(x,k){ format(round(x,k),nsmall=k)}
     text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=1)
     text(x=xu,y=yl,labels=specdec(yl,k=mydigits),col="red",pos=1)
     text(x=xu,y=yu,labels=specdec(yu,k=mydigits),col="green3",pos=3)    
@@ -178,15 +197,29 @@ plot.delayedGSD <- function(x,
         if(length(legend.cex)==1){
             legend.cex <- rep(legend.cex,2)
         }
+        
+        text.legend <- c("Stopping bound for efficacy",
+                         "Stopping bound for futility",
+                         "Critical value fixed design",
+                         "Decision boundary")
+        lty.legend  <- c(2,2,2,NA)
+        pch.legend  <- c(21,21,NA,19)
+        col.legend  <- c("green3","red","grey","black")
+        pt.bg.legend <- c("green3","red",NA,NA)
+        if(!is.null(delta)){
+            text.legend <- c(text.legend,"Current estimate")
+            lty.legend <- c(lty.legend,3)
+            pch.legend <- c(pch.legend,22)
+            col.legend <- c(col.legend,"purple")
+            pt.bg.legend <- c(pt.bg.legend,"purple")
+        }
+        
         legend(whereleg,
-               c("Stopping bound for efficacy",
-                 "Stopping bound for futility",
-                 "Critical value fixed design",
-                 "Decision boundary"),
-               lty=c(2,2,2,NA),
-               pch=c(21,21,NA,19),
-               col=c("green3","red","grey","black"),
-               pt.bg = c("green3","red",NA,NA),
+               legend = text.legend,
+               lty = lty.legend,
+               pch = pch.legend,
+               col = col.legend,
+               pt.bg = pt.bg.legend,
                bg="white",
                cex=legend.cex[1],
                pt.cex=legend.cex[2], 

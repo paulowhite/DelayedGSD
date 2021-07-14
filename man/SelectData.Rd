@@ -40,7 +40,6 @@ PlotProgress(x$d,at=thet)
 y <- SelectData(x$d,t=thet)
 y
 
-
 }
 \author{
 Paul Blanche

@@ -2,8 +2,8 @@
 #' @title Evaluate decision at an interim, decision or final analysis of a group sequential design with delayed endpoints
 #' @description Maps the statistical results at an interim, decision or final analysis into a decision regarding whether to stop recruitment (interim) or whether to reject the null hypothesis (decision/final). Stopping boundaries are updated based on observed information and correct p-values, confidence intervals and point estimates are given.
 #' 
-#' @param analysis_res object of class ?? from AnalyzeData
-#' @param planned_bnds object of class ?? from CalcBoundaries
+#' @param lmm object of class lmmGSD from AnalyzeData
+#' @param boundaries object of class delayedGSD from CalcBoundaries
 #' @param k the stage at which the decision is to be made
 #' @param analysis is it an interim, decision or final analysis
 #' @param Info.i the observed (where possible) or expected information at each interim and the final analysis
@@ -17,6 +17,7 @@
 #' @return ff
 #' @author Paul Blanche
 #' 
+## * Decision (example)
 #' @examples
 #'
 #' #### Planning #####
@@ -26,7 +27,7 @@
 #' theK <- 2
 #' theN <- 82
 #' 
-#' b1 <- CalcBoundaries(kMax=theK,
+#' myBound0 <- CalcBoundaries(kMax=theK,
 #'                      sided=1,
 #'                      alpha=theAlpha,
 #'                      beta=theBeta,
@@ -36,7 +37,6 @@
 #'                      method=1,
 #'                      delta=theDelta,
 #'                      InfoR.d=0.55)
-#' plot(b1)
 #'
 #' #### Simulate data ####
 #' set.seed(10)
@@ -46,305 +46,112 @@
 #' theDelay <- 0.7500001  #time in months to process data
 #' tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do IA
 #'
-#' theObsData <- SelectData(theData$d, t = tau.i, Delta.t= theDelay)  #data at IA when deciding whether to continue recruitment
+#' theObsData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)  #data at IA when deciding whether to continue recruitment
 #'
 #' #### Analyse data at interim ####
-#' lmm.interim <- AnalyzeData(theObsData)
-#' IA <- Decision(analysis_res = lmm.interim, planned_bnds = b1, k = 1, analysis = "interim") 
+#' myBound1 <- update(myBound0, data = theObsData, k = 1, analysis = "interim")
+#' myInterim1 <- Decision(myBound1) 
 
-## * Decision (code)
-#' @export
-Decision <- function(analysis_res,  #results from AnalyzeData
-                     planned_bnds,  #results from CalcBoundaries
-                     k=1, #at which phase are we?
-                     analysis="interim", #is it an interim or decision or final analysis
-                     Info.i,  #all I_k (information) from first interim to final analysis (observed where possible)
-                     InfoR.d=NULL,  #expected or observed information RATIO at each decision analysis
+
+## * Decision (documentation)
+Decision <- function(object,
                      PositiveIsGood=TRUE, # whether positive effect is good (i.e. positive trial)
-                     Trace=TRUE, # whether to print some messages
-                     bindingFutility=TRUE,
-                     plot=T){  #should the boundaries and results be plotted?
+                     trace=TRUE){
+  
+    ## ** identify stage of the trial
+    kMax <- object$kMax
+    k <- object$stage$k
+    if(k==kMax){
+        stage <- "final"
+    }else if(object$stage$decision>0){
+        stage <- "decision"
+    }else{
+        stage  <- "interim"
+    }
     
-    ## ** check input arguments
-    if(!inherits(analysis_res,"lmmGSD")){
-        stop("Argument \'analysis_res\' should be a \"lmmGSD\" object. \n",
-             "(typically output by AnalyzeData). \n")
-    }
-    if(!inherits(planned_bnds,"delayedGSD")){
-        stop("Argument \'analysis_res\' should be a \"delayedGSD\" object. \n",
-             "(typically output by CalcBoundaries). \n")
-    }
-    if(is.null(InfoR.d) & !((analysis=="interim" & planned_bnds$method==1) | analysis=="final")){
-        stop("InfoR.d must be specified.")
-    }
-    if(is.null(InfoR.d) & analysis=="interim" & planned_bnds$method==1 & k==1){
-        InfoR.d <- (Info.i[1]/planned_bnds$Info.max + 1)/2 #Rk: in this case it does not matter, this value is not used.
-        ## print(paste0("InfoR.d=",InfoR.d))
+    if(trace){
+        if(stage == "final"){
+            cat("Decision to be take at the final analysis  (stage ",k,"). \n",sep="")
+        }else if(stage == "decision"){
+            cat("Decision to be take at the interim analysis of stage ",k,". \n",sep="")
+        }else if(stage == "interim"){
+            cat("Decision to be take at the decision analysis of stage ",k,". \n",sep="")
+        }
     }
 
-    #update boundaries
-    if(analysis!="final"){
-        Bounds <- CalcBoundaries(kMax=planned_bnds$kMax,
-                                 sided=planned_bnds$sided,  #one or two-sided
-                                 alpha=planned_bnds$alpha,  #type I error
-                                 beta=planned_bnds$beta,  #type II error
-                                 InfoR.i=Info.i/planned_bnds$Info.max,  #planned or observed information rates
-                                 gammaA=planned_bnds$gammaA,  #rho parameter for alpha error spending function
-                                 gammaB=planned_bnds$gammaB,  #rho parameter for beta error spending function
-                                 method=planned_bnds$method,  #use method 1 or 2 from paper H&J
-                                 cNotBelowFixedc=planned_bnds$cNotBelowFixedc, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
-                                 delta=planned_bnds$delta,  #effect that the study is powered for
-                                 InfoR.d=InfoR.d,  #(expected) information ratio at each decision analysis
-                                 trace=FALSE,
-                                 bindingFutility = bindingFutility)
-    }else{  ####Is this really needed? Couldn't we just use the Bounds from above?
-      if(bindingFutility){
-        StandardDesign <- gsDesign(k=k, test.type=3,alpha=planned_bnds$alpha,beta=planned_bnds$beta,
-                                   timing=Info.i/max(Info.i),   #Need to double check that this is OK
-                                   sfu=sfPower,sfupar=planned_bnds$gammaA,
-                                   sfl=sfPower,sflpar=planned_bnds$gammaB)
-      } else {
-        StandardDesign <- gsDesign(k=k, test.type=4,alpha=planned_bnds$alpha,beta=planned_bnds$beta,
-                                   timing=Info.i/max(Info.i),
-                                   sfu=sfPower,sfupar=planned_bnds$gammaA,
-                                   sfl=sfPower,sflpar=planned_bnds$gammaB)
-      }
-    }
-
-    #test statistic
-    Z <- analysis_res$statistic
+    
+    ## ** extract information, test statistic, and boundaries
+    ls.info <- getInformation(object, planned = FALSE)
+    Info.max <- ls.info$Info.max
+    Info.i <- ls.info$Info.i
+    Info.d <- ls.info$Info.d
+    uk <- ls.info$uk
+    lk <- ls.info$lk
+    ck <- ls.info$ck
+    
+    Z <- ls.info$delta[NROW(ls.info$delta),"statistic"]
     
     if(!PositiveIsGood){
         Z <- -Z
-        if(Trace){message("Negative effect is good: schange sign of Z")}
+        if(trace){message("Negative effect is good: change sign of Z")}
     }
-    
-    #evaluate decision
-    if(analysis=="interim"){
-        details <- c(u=Bounds$uk[k],l=Bounds$lk[k])
-        if(Z>Bounds$uk[k]){
-            decision="Efficacy"
-        } else if (Z<Bounds$lk[k]){
-            decision="Futility"
-        } else {
-            decision="Continue"
-        }
-    } else if(analysis=="decision"){
-        ## print(paste0("c=",Bounds$ck[k]))
-        details <- c(c=Bounds$ck[k])
-        if(Z>Bounds$ck[k]){
-            decision="Efficacy"
-        } else {
-            decision="Futility"
-        }
-    } else if(analysis=="final"){
-        #details <- c(critical=StandardDesign$criticalValues[k])
-        details <- c(critical=StandardDesign$upper$bound[k])
-        #if(Z>StandardDesign$criticalValues[k]){
-        if(Z>StandardDesign$upper$bound[k]){
-            decision="Efficacy"
-        } else {
-            decision="Futility"
-        }
-    } else {
-        stop("Please specify interim or decision of final for analysis type")
-    }
-    
-    if(plot){
-        if(analysis=="final"){
-            warning("Cannot produce the plot yet, when analysis=final.")
-        }else{
-            PlotBoundaries(Bounds)
-            points(analysis_res$Info/planned_bnds$Info.max,Z,pch=4,cex=1.5)  #at some point we may wish to add that all previous analyses are plotted as well
-        }
-    }
-    
-    out <- list(decision=decision,details=details)
-    out
-}
 
-#would be nice if we can have a predict_info function to avoid that InfoR.d needs to be an argument
-
-
-## * Decision2 (documentation)
-Decision2 <- function(analysis_res,  #results from AnalyzeData
-                     planned_bnds,  #results from CalcBoundaries
-                     k=1, #at which phase are we?
-                     analysis="interim", #is it an interim or decision or final analysis
-                     Info.i,  #all I_k (information) from first interim to final analysis (observed where possible)
-                     InfoR.d,  #expected or observed information RATIO at each decision analysis
-                     PositiveIsGood=TRUE, # whether positive effect is good (i.e. positive trial)
-                     Trace=TRUE, # whether to print some messages
-                     bindingFutility=TRUE,  #whether to use binding futility rules
-                     ImaxAnticipated=FALSE,   #whether interim analysis k was skipped due to anticipated Imax reached
-                     plot=T){  #should the boundaries and results be plotted?
-  
-  #check input arguments
-  #if(is.null(InfoR.d) & !((analysis=="interim" & planned_bnds$method==1) | analysis=="final")){
-  #  stop("InfoR.d must be specified.")
-  #}
-  #if(is.null(InfoR.d) & analysis=="interim" & planned_bnds$method==1 & k==1){
-  #  InfoR.d <- (Info.i[1]/planned_bnds$Info.max + 1)/2 #Rk: in this case it does not matter, this value is not used.
-  #  ## print(paste0("InfoR.d=",InfoR.d))
-  #}
-  
-  #test statistic
-  Z <- analysis_res$statistic
-  
-  if(!PositiveIsGood){
-    Z <- -Z
-    if(Trace){message("Negative effect is good: schange sign of Z")}
-  }
-  
-  #decision at interim
-  if(analysis=="interim"){
-    #skip interim analysis if information is decreasing
-    if(Info.i[k] < Info.i[k-1]){   
-      decision <- "Continue"
-      reason <- "Decreasing information"
-      details <- c(u=NA,l=NA)
-    #skip interim analysis and continue straight to decision analysis if it is anticipated that Imax will be reached at decision analysis k
-    } else if(Info.i[k] > planned_bnds$Info.max | InfoR.d[k] > 1){
-      decision <- "Stop recruitment"
-      reason <- "Imax reached at interim or decision"
-      details <- c(u=NA,l=NA)
-    #update boundaries and evaluate decision as usual otherwise
-    } else {
-      Bounds <- CalcBoundaries(kMax=planned_bnds$kMax,
-                               sided=planned_bnds$sided,  #one or two-sided
-                               alpha=planned_bnds$alpha,  #type I error
-                               beta=planned_bnds$beta,  #type II error
-                               InfoR.i=Info.i/planned_bnds$Info.max,  #planned or observed information rates
-                               gammaA=planned_bnds$gammaA,  #rho parameter for alpha error spending function
-                               gammaB=planned_bnds$gammaB,  #rho parameter for beta error spending function
-                               method=planned_bnds$method,  #use method 1 or 2 from paper H&J
-                               cNotBelowFixedc=planned_bnds$cNotBelowFixedc, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
-                               delta=planned_bnds$delta,  #effect that the study is powered for
-                               InfoR.d=InfoR.d,  #(expected) information ratio at each decision analysis
-                               trace=FALSE,
-                               bindingFutility = bindingFutility)
-      
-      details <- c(u=Bounds$uk[k],l=Bounds$lk[k])
-      if(Z>Bounds$uk[k]){
-        decision <- "Stop recruitment"
-        reason <- "Efficacy"
-      } else if (Z<Bounds$lk[k]){
-        decision <- "Stop recruitment"
-        reason <- "Futility"
-      } else {
-        decision <- "Continue"
-        reason <- "No boundaries crossed"
-      }
-    }
-    
-  #decision at decision analysis
-  } else if(analysis=="decision"){
-    #if information has decreased since interim analysis
-    if(InfoR.d[k]*planned_bnds$Info.max < Info.i[k]){
-      stop("cannot handle case Info.d[k] < Info.i[k]")
-    #if Imax has been reached or anticipated
-    } else if(InfoR.d[k] >= 1 | ImaxAnticipated){
-      if(InfoR.d[k] >= 1 & !ImaxAnticipated){
-        stop("don't know what to do if Id > Imax but this was not anticipated")
-      } else {
-        Bounds <- CalcBoundaries(kMax=planned_bnds$kMax,
-                                 sided=planned_bnds$sided,  #one or two-sided
-                                 alpha=planned_bnds$alpha,  #type I error
-                                 beta=planned_bnds$beta,  #type II error
-                                 InfoR.i=Info.i/planned_bnds$Info.max,  #planned or observed information rates
-                                 gammaA=planned_bnds$gammaA,  #rho parameter for alpha error spending function
-                                 gammaB=planned_bnds$gammaB,  #rho parameter for beta error spending function
-                                 method=planned_bnds$method,  #use method 1 or 2 from paper H&J
-                                 cNotBelowFixedc=planned_bnds$cNotBelowFixedc, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
-                                 delta=planned_bnds$delta,  #effect that the study is powered for
-                                 InfoR.d=InfoR.d,  #(expected) information ratio at each decision analysis
-                                 trace=FALSE,
-                                 bindingFutility = bindingFutility)
-        critval <- Method1(uk=Bounds$uk[1:k],
-                           lk=Bounds$lk[1:k],
-                           Info.i=Bounds$Info.i[1:k],
-                           Info.d=Bounds$Info.d[k],
-                           Info.max=Bounds$Info.max,
-                           sided=Bounds$sided,
-                           cMin=Bounds$cMin,
-                           ImaxAnticipated=TRUE,
-                           rho=Bounds$gammaA,
-                           alpha=Bounds$alpha,
-                           bindingFutility=Bounds$bindingFutility)
+    ## ** decision at interim
+    if(stage=="interim"){
         
-        details <- c(c=critval)
-        if(Z>critval){
-          decision="Efficacy"
-          reason <- "Efficacy"
+        if(k>1 && (Info.i[k] < Info.i[k-1])){ ## skip interim analysis if information is decreasing
+            object$conclusion["interim",k] <- "continue"
+            object$conclusion["reason.interim",k] <- "decreasing information"
+            
+        } else if(Info.i[k] > Info.max){ ## skip interim analysis and continue straight to decision analysis if it is anticipated that Imax will be reached at decision analysis k
+            object$conclusion["interim",k] <- "stop"
+            object$conclusion["reason.interim",k] <- "Imax reached"
         } else {
-          decision="Futility"
-          reason <- "Futility"
+            if(Z>uk[k]){
+                object$conclusion["interim",k] <- "stop"
+                object$conclusion["reason.interim",k] <- "efficacy"
+            } else if (Z<lk[k]){
+                object$conclusion["interim",k] <- "stop"
+                object$conclusion["reason.interim",k] <- "futility"
+            } else {
+                object$conclusion["interim",k] <- "continue"
+                object$conclusion["reason.interim",k] <- "no boundary crossed"
+            }
         }
-        
-      }
-    #in the usual case
-    } else {
-      Bounds <- CalcBoundaries(kMax=planned_bnds$kMax,
-                               sided=planned_bnds$sided,  #one or two-sided
-                               alpha=planned_bnds$alpha,  #type I error
-                               beta=planned_bnds$beta,  #type II error
-                               InfoR.i=Info.i/planned_bnds$Info.max,  #planned or observed information rates
-                               gammaA=planned_bnds$gammaA,  #rho parameter for alpha error spending function
-                               gammaB=planned_bnds$gammaB,  #rho parameter for beta error spending function
-                               method=planned_bnds$method,  #use method 1 or 2 from paper H&J
-                               cNotBelowFixedc=planned_bnds$cNotBelowFixedc, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
-                               delta=planned_bnds$delta,  #effect that the study is powered for
-                               InfoR.d=InfoR.d,  #(expected) information ratio at each decision analysis
-                               trace=FALSE,
-                               bindingFutility = bindingFutility)
-      
-      details <- c(c=Bounds$ck[k])
-      if(Z>Bounds$ck[k]){
-        decision="Efficacy"
-        reason <- "Efficacy"
-      } else {
-        decision="Futility"
-        reason <- "Futility"
-      }
     }
     
-  #decision at the final analysis  
-  } else if(analysis=="final"){
-    if(bindingFutility){
-      StandardDesign <- gsDesign(k=k, test.type=3,alpha=planned_bnds$alpha,beta=planned_bnds$beta,
-                                 timing=c(Info.i[1:(k-1)],planned_bnds$Info.max)/planned_bnds$Info.max,   #Need to double check that this is OK
-                                 n.fix=1,n.I=Info.i,maxn.IPlan=planned_bnds$InflationFactor,
-                                 sfu=sfPower,sfupar=planned_bnds$gammaA,
-                                 sfl=sfPower,sflpar=planned_bnds$gammaB)
-    } else {
-      StandardDesign <- gsDesign(k=k, test.type=4,alpha=planned_bnds$alpha,beta=planned_bnds$beta,
-                                 timing=c(Info.i[1:(k-1)],planned_bnds$Info.max)/planned_bnds$Info.max,
-                                 n.fix=1,n.I=Info.i,maxn.IPlan=planned_bnds$InflationFactor,
-                                 sfu=sfPower,sfupar=planned_bnds$gammaA,
-                                 sfl=sfPower,sflpar=planned_bnds$gammaB)
+    ## ** decision at decision analysis
+    if(stage=="decision"){
+                                        
+        if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
+            stop("cannot handle case Info.d[k] < Info.i[k]")
+        }else if(object$conclusion["reason.interim",k]=="Imax reached"){ ## if Imax has been reached at the interim
+            if(Z > ck[k]){
+                object$conclusion["decision",k] <- "Efficacy"
+            } else {
+                object$conclusion["decision",k] <- "Futility"
+            }
+        }else if(Info.d[k] >= Info.max){ ##  if Imax has been reached between interim and decision
+            stop("don't know what to do if Id > Imax but Ii < Imax")
+        } else { ## usual case
+            if(Z > ck[k]){
+                object$conclusion["decision",k] <- "Efficacy"
+            } else {
+                object$conclusion["decision",k] <- "Futility"
+            }
+        }
+    }  
+
+    ## ** decision at the final analysis  
+    if(stage == "final"){
+        if(Z > uk[k]){
+            object$conclusion["decision",k] <- "Efficacy"
+        } else {
+            object$conclusion["decision",k] <- "Futility"
+        }
     }
-    
-    details <- c(critical=StandardDesign$upper$bound[k])
-    if(Z>StandardDesign$upper$bound[k]){
-      decision="Efficacy"
-      reason <- "Efficacy"
-    } else {
-      decision="Futility"
-      reason <- "Futility"
-    }
-    
-  }
-  
-  if(plot){
-    if(analysis=="final"){
-      warning("Cannot produce the plot yet, when analysis=final.")
-    }else{
-      PlotBoundaries(Bounds)
-      points(analysis_res$Info/planned_bnds$Info.max,Z,pch=4,cex=1.5)  #at some point we may wish to add that all previous analyses are plotted as well
-    }
-  }
-  
-  out <- list(decision=decision,reason=reason,details=details)
-  out
+
+    ## ** export  
+    return(object)
 }
 

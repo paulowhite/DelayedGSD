@@ -63,6 +63,7 @@ zz
 \examples{
 x <- GenData()
 head(x$d,n=20)
+
 }
 \author{
 Paul Blanche
