@@ -1,79 +1,59 @@
-### Decision.R --- 
-#----------------------------------------------------------------------
-## Author: Paul Blanche
-## Created: Aug 28 2020 (14:40) 
-## Version: 
-## Last-Updated: Jul 14 2021 (10:56) 
-##           By: Brice Ozenne
-##     Update #: 93
-#----------------------------------------------------------------------
-## 
-### Commentary: 
-##  Fucntion that maps the statistical results at interim (or final) analysis into
-##  decision to reject, or continue or stop inclusind subjects.
-### Change Log:
-#----------------------------------------------------------------------
-## 
-### Code:
-
 ## * Decision (documentation)
-##' @title Evaluate decision at an interim, decision or final analysis of a group sequential design with delayed endpoints
-##' @description Maps the statistical results at an interim, decision or final analysis into a decision regarding whether to stop recruitment (interim) or whether to reject the null hypothesis (decision/final). Stopping boundaries are updated based on observed information and correct p-values, confidence intervals and point estimates are given.
-##' 
-##' @param analysis_res object of class ?? from AnalyzeData
-##' @param planned_bnds object of class ?? from CalcBoundaries
-##' @param k the stage at which the decision is to be made
-##' @param analysis is it an interim, decision or final analysis
-##' @param Info.i the observed (where possible) or expected information at each interim and the final analysis
-##' @param InfoR.d the expected or observed information ratio at each decision analysis
-##' @param PositiveIsGood whether a positive effect is considered beneficial (TRUE/FALSE)
-##' @param Trace whether to print some messages
-##' @param bindingFutility whether to use binding futility boundaries (use TRUE for binding)
-##' @param plot whether the updated boundaries and the result should be plotted
-##' 
-##' @details zz
-##' @return ff
-##' @author Paul Blanche
-##' 
-##' @examples
-##'
-##' #### Planning #####
-##' theAlpha <- 0.025
-##' theBeta <- 0.2
-##' theDelta <- 1.5
-##' theK <- 2
-##' theN <- 82
-##' 
-##' b1 <- CalcBoundaries(kMax=theK,
-##'                      sided=1,
-##'                      alpha=theAlpha,
-##'                      beta=theBeta,
-##'                      InfoR.i=c(0.5,1),
-##'                      gammaA=2,
-##'                      gammaB=2,
-##'                      method=1,
-##'                      delta=theDelta,
-##'                      InfoR.d=0.55)
-##' plot(b1)
-##'
-##' #### Simulate data ####
-##' set.seed(10)
-##' theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  #generate data with all data for in case trial completes
-##' 
-##' theAR <- 10  #accrual rate (pt per month)
-##' theDelay <- 0.7500001  #time in months to process data
-##' tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do IA
-##'
-##' theObsData <- SelectData(theData$d, t = tau.i, Delta.t= theDelay)  #data at IA when deciding whether to continue recruitment
-##'
-##' #### Analyse data at interim ####
-##' lmm.interim <- AnalyzeData(theObsData)
-##' IA <- Decision(analysis_res = lmm.interim, planned_bnds = b1, k = 1, analysis = "interim") 
-
-
+#' @title Evaluate decision at an interim, decision or final analysis of a group sequential design with delayed endpoints
+#' @description Maps the statistical results at an interim, decision or final analysis into a decision regarding whether to stop recruitment (interim) or whether to reject the null hypothesis (decision/final). Stopping boundaries are updated based on observed information and correct p-values, confidence intervals and point estimates are given.
+#' 
+#' @param analysis_res object of class ?? from AnalyzeData
+#' @param planned_bnds object of class ?? from CalcBoundaries
+#' @param k the stage at which the decision is to be made
+#' @param analysis is it an interim, decision or final analysis
+#' @param Info.i the observed (where possible) or expected information at each interim and the final analysis
+#' @param InfoR.d the expected or observed information ratio at each decision analysis
+#' @param PositiveIsGood whether a positive effect is considered beneficial (TRUE/FALSE)
+#' @param Trace whether to print some messages
+#' @param bindingFutility whether to use binding futility boundaries (use TRUE for binding)
+#' @param plot whether the updated boundaries and the result should be plotted
+#' 
+#' @details Function that maps the statistical results at interim (or final) analysis into decision to reject, or continue or stop inclusind subjects.
+#' @return ff
+#' @author Paul Blanche
+#' 
+#' @examples
+#'
+#' #### Planning #####
+#' theAlpha <- 0.025
+#' theBeta <- 0.2
+#' theDelta <- 1.5
+#' theK <- 2
+#' theN <- 82
+#' 
+#' b1 <- CalcBoundaries(kMax=theK,
+#'                      sided=1,
+#'                      alpha=theAlpha,
+#'                      beta=theBeta,
+#'                      InfoR.i=c(0.5,1),
+#'                      gammaA=2,
+#'                      gammaB=2,
+#'                      method=1,
+#'                      delta=theDelta,
+#'                      InfoR.d=0.55)
+#' plot(b1)
+#'
+#' #### Simulate data ####
+#' set.seed(10)
+#' theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  #generate data with all data for in case trial completes
+#' 
+#' theAR <- 10  #accrual rate (pt per month)
+#' theDelay <- 0.7500001  #time in months to process data
+#' tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do IA
+#'
+#' theObsData <- SelectData(theData$d, t = tau.i, Delta.t= theDelay)  #data at IA when deciding whether to continue recruitment
+#'
+#' #### Analyse data at interim ####
+#' lmm.interim <- AnalyzeData(theObsData)
+#' IA <- Decision(analysis_res = lmm.interim, planned_bnds = b1, k = 1, analysis = "interim") 
 
 ## * Decision (code)
-##' @export
+#' @export
 Decision <- function(analysis_res,  #results from AnalyzeData
                      planned_bnds,  #results from CalcBoundaries
                      k=1, #at which phase are we?
@@ -368,5 +348,3 @@ Decision2 <- function(analysis_res,  #results from AnalyzeData
   out
 }
 
-#----------------------------------------------------------------------
-### Decision.R ends here

@@ -13,6 +13,7 @@
 #' @param optimizer the observed treatment estimate at decision
 
 ## * FinalCI (code)
+#' @export
 FinalCI <- function(Info.d,  
                     Info.i,  
                     ck,  

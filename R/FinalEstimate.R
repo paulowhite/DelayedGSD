@@ -1,3 +1,4 @@
+## * FinalEstimate (documentation)
 #' @title calculate de-biased estimate
 #'
 #' @param Info.d Information at all decision analyses up to stage where study was stopped (should include information at final analysis if stopped at final analysis)
@@ -8,7 +9,9 @@
 #' @param sided one or two sided
 #' @param kMax maximum number of analyses
 #' @param estimate
-#' 
+
+## * FinalEstimate (code)
+#' @export
 FinalEstimate <- function(Info.d,  
                           Info.i,  
                           ck,   

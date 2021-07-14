@@ -9,7 +9,8 @@
 #' @param sided one or two sided
 #' @param cMin minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
 #' @param bindingFutility whether the futility stopping rule is binding
-#' 
+#'
+#' @export
 Method2 <- function(uk, 
                     lk, 
                     Info.i,

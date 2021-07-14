@@ -1,22 +1,3 @@
-### AnalyzeData.R --- 
-#----------------------------------------------------------------------
-## Author: Paul Blanche
-## Created: Aug 25 2020 (09:23) 
-## Version: 
-## Last-Updated: Jul 14 2021 (10:55) 
-##           By: Brice Ozenne
-##     Update #: 214
-#----------------------------------------------------------------------
-## 
-### Commentary: 
-##
-## Analyze available data: provide estimate, s.e., Information nd p-value.
-##
-### Change Log:
-#----------------------------------------------------------------------
-## 
-### Code:
-
 ## * AnalyzeData (documentation)
 #' @param d dataset
 #' @param ddf [character] method used to compute the degrees of freedom of the Wald statistic.
@@ -35,6 +16,7 @@
 
 
 ## * AnalyzeData (code)
+#' @export
 AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
 
     require(nlme)
@@ -107,24 +89,6 @@ AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
     return(out)
 }
 
-## * print.lmmGSD
-print.lmmGSD <- function(x, ...){
-    cat("       Analysis via the gls function \n \n ")
-    cat("  Estimated treatment effect: ",x$name.coef," \n",sep = "")
-    print(c("estimate" = x$estimate, "se" = x$se, "statistic" = x$statistic, "df" = x$df, "p.value" = x$p.value))
-    if(!is.null(x$getInformation)){
-        cat("\n  Number of clusters \n")
-        print(x$n)
-        cat("\n  Estimated information \n")
-        print(x$getInformation)
-        cat("\n",
-            "total     : all patients including who dropped out early and have no observable outcome \n",
-            "decision  : patients with at least one observable outcome, including those with not yet observed values \n",
-            "interim   : patients with at least one observed outcome \n",
-            "interim.cc: patients with at no missing outcome \n")
-    }
-    return(NULL)
-}
 
 ## * wide2long
 wide2long <- function(d, rm.na = FALSE, id.na = NULL, Z.id.na = TRUE){
@@ -185,5 +149,3 @@ wide2long <- function(d, rm.na = FALSE, id.na = NULL, Z.id.na = TRUE){
     attr(dfL,"df.allobs") <- dfL.save
     return(dfL)
 }
-##----------------------------------------------------------------------
-### AnalyzeData.R ends here

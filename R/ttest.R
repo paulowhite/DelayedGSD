@@ -1,25 +1,10 @@
-### ttest.R --- 
-##----------------------------------------------------------------------
-## Author: Brice Ozenne
-## Created: okt 30 2020 (11:36) 
-## Version: 
-## Last-Updated: feb  3 2021 (15:15) 
-##           By: Brice Ozenne
-##     Update #: 33
-##----------------------------------------------------------------------
-## 
-### Commentary: 
-## 
-### Change Log:
-##----------------------------------------------------------------------
-## 
-### Code:
-
-##' @title Student's t-Test
-##' @description Performs one and two sample t-tests on vectors of data. 
-##' The only modification to the \code{stats::t.test} is that it stores the call and the arguments.
-##'
-##' @param ... arguments passed to \code{stats::t.test}
+#' @title Student's t-Test
+#' @description Performs one and two sample t-tests on vectors of data. 
+#' The only modification to the \code{stats::t.test} is that it stores the call and the arguments.
+#'
+#' @param ... arguments passed to \code{stats::t.test}
+#'
+#' @export
 ttest <- function(...){
     out <- t.test(...)
 
@@ -69,6 +54,3 @@ ttest <- function(...){
     class(out) <- append("ttest",class(out))
     return(out)
 }
-
-######################################################################
-### ttest.R ends here

@@ -11,7 +11,8 @@
 #' @param rho value of rho used for type I error spending function
 #' @param alpha one-sided alpha level to be used for the study
 #' @param bindingFutility whether the futility stopping rule is binding
-#' 
+#'
+#' @export
 Method1 <- function(uk,  
                     lk,  
                     Info.i,

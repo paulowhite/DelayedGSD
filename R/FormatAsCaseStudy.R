@@ -1,20 +1,3 @@
-### FormatAsCaseStudy.R --- 
-#----------------------------------------------------------------------
-## Author: Paul Blanche
-## Created: Mar  5 2021 (13:40) 
-## Version: 
-## Last-Updated: mar 26 2021 (15:32) 
-##           By: Brice Ozenne
-##     Update #: 11
-#----------------------------------------------------------------------
-## 
-### Commentary: 
-## 
-### Change Log:
-#----------------------------------------------------------------------
-## 
-### Code:
-
 FormatAsCase <- function(d){
     rm.col <- setdiff(names(d),paste0("missing",1:3))
     long <- reshape(d[,rm.col,drop=FALSE],
@@ -44,6 +27,3 @@ FormatAsCase <- function(d){
     ## summary(dd)
     dd
 }
-
-#----------------------------------------------------------------------
-### FormatAsCaseStudy.R ends here

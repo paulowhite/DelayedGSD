@@ -1,21 +1,4 @@
-### PlotProgress.R --- 
-#----------------------------------------------------------------------
-## Author: Paul Blanche
-## Created: Aug 25 2020 (08:23) 
-## Version: 
-## Last-Updated: Aug 25 2020 (13:35) 
-##           By: Paul Blanche
-##     Update #: 84
-#----------------------------------------------------------------------
-## 
-### Commentary: 
-## 
-### Change Log:
-#----------------------------------------------------------------------
-## 
-### Code:
-
-
+#' @export
 PlotProgress <- function(d,Delta.t=0.500001,at=NA){
     n <- nrow(d) # final sample size
     allt <- unique(c(0,sort(as.matrix(d[,grep("t",names(d))]))))

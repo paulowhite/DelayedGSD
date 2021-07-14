@@ -1,48 +1,31 @@
-### GenData.R --- 
-#----------------------------------------------------------------------
-## Author: Paul Blanche
-## Created: Aug 25 2020 (08:14) 
-## Version: 
-## Last-Updated: Mar  9 2021 (10:35) 
-##           By: Paul Blanche
-##     Update #: 190
-#----------------------------------------------------------------------
-## 
-### Commentary: 
-##  
-##  Generate longitudnal (full) data.
-##  
-### Change Log:
-#----------------------------------------------------------------------
-## 
-### Code:
-
-
-##' @title Generate longitudnal (full) data
-##' @description yy
-##' @param n sample size
-##' @param N.fw  number of follow-up measurements (equally spaced, after baseline)
-##' @param rand.block for block randomization
-##' @param allsd vector of sd of primary outcome at baseline and end of follow-up (main outcome)
-##' @param mean0 mean outcome at each visit in control group
-##' @param delta treatment effect (i.e. difference in mean) on primary outcome at each visit
-##' @param ar accrual rate (average, unit is per time between the equally spaced visits)
-##' @param cor.01.1 correlation between outcome at baseline and at first visit  (main outcome)
-##' @param cor.ij.1 correlation between outcome at two consecutive follow-up measurements  (main outcome)
-##' @param cor.0j.1 correlation between outcome at baseline and at any visit after the first visit  (main outcome)
-##' @param seed
-##' @param MissProb Missingness probability, currently works only if N.fw=2. should be a matrix with columns=V1, rows=V2, for both missing=yes/no (in that order), in proportions.
-##' @param DigitsOutcome Number of digits to round the outcome values (NULL means no rounding)
-##' @param TimeFactor Multiply the times by a factor (e.g. 14 if time between two follow-up visit should be approx 14 days)
-##' @param DigitsTime Number of digits to round the times (NULL means no rounding)
-##' @details zz
-##' @return ff
-##' @author Paul Blanche
-##' 
-##' @examples
-##' x <- GenData()
-##' head(x$d,n=20)
-##' @export
+#' @title Generate longitudnal (full) data
+#' @description yy
+#' 
+#' @param n sample size
+#' @param N.fw  number of follow-up measurements (equally spaced, after baseline)
+#' @param rand.block for block randomization
+#' @param allsd vector of sd of primary outcome at baseline and end of follow-up (main outcome)
+#' @param mean0 mean outcome at each visit in control group
+#' @param delta treatment effect (i.e. difference in mean) on primary outcome at each visit
+#' @param ar accrual rate (average, unit is per time between the equally spaced visits)
+#' @param cor.01.1 correlation between outcome at baseline and at first visit  (main outcome)
+#' @param cor.ij.1 correlation between outcome at two consecutive follow-up measurements  (main outcome)
+#' @param cor.0j.1 correlation between outcome at baseline and at any visit after the first visit  (main outcome)
+#' @param seed
+#' @param MissProb Missingness probability, currently works only if N.fw=2. should be a matrix with columns=V1, rows=V2, for both missing=yes/no (in that order), in proportions.
+#' @param DigitsOutcome Number of digits to round the outcome values (NULL means no rounding)
+#' @param TimeFactor Multiply the times by a factor (e.g. 14 if time between two follow-up visit should be approx 14 days)
+#' @param DigitsTime Number of digits to round the times (NULL means no rounding)
+#' 
+#' @details zz
+#' @return ff
+#' @author Paul Blanche
+#' 
+#' @examples
+#' x <- GenData()
+#' head(x$d,n=20)
+#' 
+#' @export
 GenData <- function(n=52, 
                     N.fw=2,
                     rand.block=c(1,1,0,0),
@@ -145,6 +128,3 @@ GenData <- function(n=52,
          ),
          d=d)
 }
-
-#----------------------------------------------------------------------
-### GenData.R ends here

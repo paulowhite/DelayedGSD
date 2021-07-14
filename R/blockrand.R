@@ -1,30 +1,13 @@
-### blockrand.R --- 
-#----------------------------------------------------------------------
-## Author: Paul Blanche
-## Created: Aug 28 2020 (16:24) 
-## Version: 
-## Last-Updated: Aug 28 2020 (16:28) 
-##           By: Paul Blanche
-##     Update #: 7
-#----------------------------------------------------------------------
-## 
-### Commentary: 
-##  Block randomization.
-### Change Log:
-#----------------------------------------------------------------------
-## 
-### Code:
-
-##' @title Block randomization
-##' @param seed
-##' @param rand.block
-##' @param n
-##' @details Nothing
-##' @return Vector or binary otcome.
-##' @author Paul Blanche
-##' 
-##' @examples
-##' blockrand(123,c(1,1,0,0),10)
+#' @title Block randomization
+#' @param seed
+#' @param rand.block
+#' @param n
+#' @details Nothing
+#' @return Vector or binary otcome.
+#' @author Paul Blanche
+#' 
+#' @examples
+#' blockrand(123,c(1,1,0,0),10)
 blockrand  <-  function(seed,rand.block,n){
     set.seed(seed)
     blocksize <- length(rand.block)
@@ -35,5 +18,3 @@ blockrand  <-  function(seed,rand.block,n){
     Z  <-  a2[order(a2$envelope),"Z"]
     return(Z[1:n])
 }
-#----------------------------------------------------------------------
-### blockrand.R ends here
