@@ -1,3 +1,4 @@
+## * CalcBoundaries (documentation)
 #' @title Calculate boundaries for a group sequential design with delayed endpoints
 #' @description Calculate boundaries (interim and decision) for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach
 #' 
@@ -16,7 +17,7 @@
 #' @param trace whether to print some messages
 #'
 #' @examples
-#' CalcBoundaries(kMax=2,
+#' myBound <- CalcBoundaries(kMax=2,
 #'               sided=1,
 #'               alpha=0.025,  
 #'               beta=0.2,  
@@ -26,8 +27,11 @@
 #'               method=1,
 #'               cNotBelowFixedc=TRUE,
 #'               delta=1.5,
-#'               InfoR.d=0.55)  
-#' 
+#'               InfoR.d=0.55)
+#' myBound
+#' plot(myBound)
+
+## * CalcBoundaries (code)
 #' @export
 CalcBoundaries <- function(kMax=2,  
                            sided=1,  
@@ -100,9 +104,9 @@ CalcBoundaries <- function(kMax=2,
         for(k in 1:(kMax-1)){
             ck[k] <- Method1(uk = uk[1:k],
                              lk = lk[1:k],
-                             Ik = (InfoR.i*Info.max)[1:k],
-                             Id = Info.d[k],
-                             Imax = Info.max,
+                             Info.i = (InfoR.i*Info.max)[1:k],
+                             Info.d = Info.d[k],
+                             Info.max = Info.max,
                              cMin = cMin,
                              bindingFutility = bindingFutility)
         }
@@ -112,9 +116,9 @@ CalcBoundaries <- function(kMax=2,
         for(k in 1:(kMax-1)){
             delayedBnds <- Method2(uk = uk[1:k],
                                    lk = lk[1:k],
-                                   Ik = (InfoR.i*Info.max)[1:k],
-                                   Id = Info.d[k],
-                                   Imax = Info.max,
+                                   Info.i = (InfoR.i*Info.max)[1:k],
+                                   Info.d = Info.d[k],
+                                   Info.max = Info.max,
                                    delta = delta,
                                    cMin = cMin,
                                    bindingFutility = bindingFutility)
@@ -149,27 +153,3 @@ CalcBoundaries <- function(kMax=2,
     return(out)
 }
 
-print.delayedGSD <- function(x, ...){
-  
-  print(x$call)
-  
-  cat("\n")
-  
-  bnds <- cbind(c(1:length(x$lk)),x$lk,x$uk,c(x$ck,x$uk[length(x$uk)]))
-  colnames(bnds) <- c("Stage","Lower","Upper","Decision")
-  
-  cat("Boundaries \n")
-  print(bnds)
-  
-  cat("\n")
-  
-  cat("Planned maximum information \n")
-  print(x$Info.max)
-  
-  cat("\n")
-  
-  cat("Inflation factor \n")
-  print(x$InflationFactor)
-  
-  
-}

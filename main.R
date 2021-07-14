@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 24 2020 (14:37) 
 ## Version: 
-## Last-Updated: Feb 15 2021 (11:23) 
-##           By: Paul Blanche
-##     Update #: 176
+## Last-Updated: Jul 14 2021 (09:48) 
+##           By: Brice Ozenne
+##     Update #: 177
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -29,7 +29,7 @@ sourceDir <- function(path, trace = TRUE, ...) {
         if(trace) cat("\n")
     }
 }
-sourceDir("Rfunctions/")
+sourceDir("R/")
 
 
 # generate data

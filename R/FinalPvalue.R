@@ -1,4 +1,3 @@
-
 ## * FinalPvalue (documentation)
 ##' @title P-value at Decision
 ##' @description  Compute the p-value at the end of the trial.

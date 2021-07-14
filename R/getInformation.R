@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: mar 26 2021 (23:51) 
+## Last-Updated: Jul 14 2021 (10:55) 
 ##           By: Brice Ozenne
-##     Update #: 913
+##     Update #: 914
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -398,13 +398,13 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
                      "Consider passing the data via the \'newdata\' argument. \n")
             }
         }
-        return(getInformation.getInformationGLS(c(out, list(fit = object)), newdata = newdata, variance = variance))
+        return(getInformation.lmmGSD(c(out, list(fit = object)), newdata = newdata, variance = variance))
     }
     return(out)
 }
 
-## * getInformation.getInformationGLS
-getInformation.getInformationGLS <- function(object, newdata = NULL, variance = NULL, weighting = FALSE, ...){
+## * getInformation.lmmGSD
+getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weighting = FALSE, ...){
 
     ## ** normalize arguments
     if(!is.null(variance)){

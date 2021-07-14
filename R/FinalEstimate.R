@@ -1,11 +1,22 @@
-FinalEstimate <- function(Info.d,  #Information at all decision analyses up to stage where study was stopped (should include information at final analysis if stopped at final analysis)
-                          Info.i,  #Information at all interim analyses up to stage where study was stopped
-                          ck,   #decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
-                          lk,  #lower bounds up to stage where study was stopped
-                          uk,  #upper bounds up to stage where study was stopped
-                          sided=1,  #whether the test is 1 or 2-sided
-                          kMax, #maximum number of analyses
-                          estimate){ #the observed treatment estimate at decision
+#' @title calculate de-biased estimate
+#'
+#' @param Info.d Information at all decision analyses up to stage where study was stopped (should include information at final analysis if stopped at final analysis)
+#' @param Info.i Information at all interim analyses up to stage where study was stopped
+#' @param ck decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
+#' @param lk lower bounds up to stage where study was stopped
+#' @param uk upper bounds up to stage where study was stopped
+#' @param sided one or two sided
+#' @param kMax maximum number of analyses
+#' @param estimate
+#' 
+FinalEstimate <- function(Info.d,  
+                          Info.i,  
+                          ck,   
+                          lk,  
+                          uk,  
+                          sided=1,  
+                          kMax, 
+                          estimate){ 
   
   f <- function(delta){
     (FinalPvalue(Info.d=Info.d,

@@ -3,15 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-<<<<<<< HEAD
-## Last-Updated: Apr  7 2021 (15:00) 
-##           By: Paul Blanche
-##     Update #: 403
-=======
-## Last-Updated: mar 26 2021 (23:50) 
+## Last-Updated: Jul 14 2021 (09:49) 
 ##           By: Brice Ozenne
 ##     Update #: 404
->>>>>>> dbb538b98faa6692e5665c67e40d8617366d8a81
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -82,12 +76,12 @@ n <- ceiling(n*R)
 # {{{ set path to load and save and othe machine specific variables
 # if I am on my own laptop
 if(system("whoami",intern=TRUE)=="paul"){  
-    pathToLoad <- "~/research/SeqDesignDelayed/DelayedGSD/Rfunctions/"
+    pathToLoad <- "~/research/SeqDesignDelayed/DelayedGSD/R/"
     pathToSave <- "~/research/SeqDesignDelayed/DelayedGSD/Simulations/output/"
     name <- paste0(name,"test")
     i <- 1
 }else if(system("whoami",intern=TRUE)=="brice"){  
-    pathToLoad <- "~/Documents/GitHub/DelayedGSD/Rfunctions"
+    pathToLoad <- "~/Documents/GitHub/DelayedGSD/R"
     i <- 1
 }
 # if I am on the biostat server

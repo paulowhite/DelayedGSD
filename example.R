@@ -8,7 +8,7 @@ sourceDir <- function(path, trace = TRUE, ...) {
 }
 
 #Source Paul's functions
-sourceDir("Rfunctions")
+sourceDir("R")
 library(rpact) #Library for group sequential designs (and other)
 library(gsDesign)
 
@@ -34,7 +34,7 @@ b1 <- CalcBoundaries(kMax=theK,  #max number of analyses (including final)
                      method=1,  #use method 1 or 2 from paper H&J
                      delta=theDelta,  #effect that the study is powered for
                      InfoR.d=0.55)
-PlotBoundaries(b1)
+plot(b1)
 
 #planned sample size
 n <- power.t.test(delta=1.5,sd=3,sig.level=0.025,power=0.8,alternative = "one.sided")$n/0.82
@@ -61,6 +61,7 @@ xx <- SelectData(x$d,t=thet,Delta.t=theDelta.t*2)  #data at IA when deciding whe
 #xx[index13,"t3"] <- NA
 
 IA <- AnalyzeData(xx) #Interim analysis results - can we add Z-value to output?
+
 
 
 p <- PlotProgress(xx,Delta.t = theDelta.t)

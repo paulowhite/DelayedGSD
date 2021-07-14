@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Aug 25 2020 (09:23) 
 ## Version: 
-## Last-Updated: Jul  6 2021 (11:23) 
+## Last-Updated: Jul 14 2021 (10:55) 
 ##           By: Brice Ozenne
-##     Update #: 210
+##     Update #: 214
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -17,7 +17,7 @@
 ## 
 ### Code:
 
-## * AnalyzeData
+## * AnalyzeData (documentation)
 #' @param d dataset
 #' @param ddf [character] method used to compute the degrees of freedom of the Wald statistic.
 #' Can be \code{satterthwaite} or \code{nlme}.
@@ -34,6 +34,7 @@
 #'
 
 
+## * AnalyzeData (code)
 AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
 
     require(nlme)
@@ -102,12 +103,12 @@ AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
     }
 
     ## ** Export
-    class(out) <- "getInformationGLS"
+    class(out) <- "lmmGSD"
     return(out)
 }
 
-## * print.getInformationGLS
-print.getInformationGLS <- function(x, ...){
+## * print.lmmGSD
+print.lmmGSD <- function(x, ...){
     cat("       Analysis via the gls function \n \n ")
     cat("  Estimated treatment effect: ",x$name.coef," \n",sep = "")
     print(c("estimate" = x$estimate, "se" = x$se, "statistic" = x$statistic, "df" = x$df, "p.value" = x$p.value))

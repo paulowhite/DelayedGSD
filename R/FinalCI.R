@@ -1,14 +1,28 @@
-## * FinalCI
-FinalCI <- function(Info.d,  #Information at all decision analyses up to stage where study was stopped
-                    Info.i,  #Information at all interim analyses up to stage where study was stopped
-                    ck,   #decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
-                    lk,  #lower bounds up to stage where study was stopped
-                    uk,  #upper bounds up to stage where study was stopped
-                    sided=1,  #whether the test is 1 or 2-sided
-                    kMax, #maximum number of analyses
-                    alpha=0.05, #confidence level (to get a 100*(1-alpha)% CI)
+## * FinalCI (documentation)
+#' @title calculate confidence intervals at the end of the study
+#' 
+#' @param Info.d Information at all decision analyses up to stage where study was stopped
+#' @param Info.i Information at all interim analyses up to stage where study was stopped
+#' @param ck decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
+#' @param lk lower bounds up to stage where study was stopped
+#' @param uk upper bounds up to stage where study was stopped
+#' @param sided whether the test is 1 or 2-sided
+#' @param kMax maximum number of analyses
+#' @param alpha confidence level (to get a 100*(1-alpha)% CI)
+#' @param estimate
+#' @param optimizer the observed treatment estimate at decision
+
+## * FinalCI (code)
+FinalCI <- function(Info.d,  
+                    Info.i,  
+                    ck,  
+                    lk,  
+                    uk,  
+                    sided=1,
+                    kMax, 
+                    alpha=0.05,
                     estimate,
-                    optimizer = "optimise"){ #the observed treatment estimate at decision
+                    optimizer = "optimise"){
 
   f <- function(delta){
     FinalPvalue(Info.d=Info.d,
