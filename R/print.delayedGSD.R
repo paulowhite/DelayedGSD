@@ -81,6 +81,18 @@ print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abrevia
             conclusion.interim.print <- sapply(1:kMax,function(iK){
                 if(is.na(x$conclusion["interim",iK])){
                     return("")
+                }else if(x$conclusion["interim",iK]=="Efficacy"){
+                    if(abreviated){
+                        return("E")
+                    }else{
+                        return("conclude efficacy")
+                    }
+                }else if(x$conclusion["interim",iK]=="Futility"){
+                    if(abreviated){
+                        return("F")
+                    }else{
+                        return("conclude futility")
+                    }
                 }else if(x$conclusion["interim",iK]=="continue"){
                     if(x$conclusion["reason.interim",iK]=="no boundary crossed"){
                         if(abreviated){
@@ -134,6 +146,13 @@ print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abrevia
         colname.decision <- c("Critical boundary","Statistic")
         if(any(!is.na(x$conclusion["decision",]))){
             conclusion.decision.print <- x$conclusion["decision",]
+            if(abreviated){
+                conclusion.decision.print[conclusion.decision.print=="Efficacy"] <- "E"
+                conclusion.decision.print[conclusion.decision.print=="Futility"] <- "F"
+            }else{
+                conclusion.decision.print[conclusion.decision.print=="Efficacy"] <- "conclude efficacy"
+                conclusion.decision.print[conclusion.decision.print=="Futility"] <- "conclude futility"
+            }
             conclusion.decision.print[is.na(x$conclusion["decision",])] <- ""
             colname.decision <- c(colname.decision,"")
         }else{

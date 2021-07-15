@@ -36,14 +36,15 @@
 #'                      InfoR.d=0.55)
 #'
 #' #### Simulate data ####
+#' ## generate data with all data for in case trial completes
 #' set.seed(10)
-#' theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  #generate data with all data for in case trial completes
+#' theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  
 #' 
 #' theAR <- 10  #accrual rate (pt per month)
 #' theDelay <- 0.7500001  #time in months to process data
 #' tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do IA
 #'
-#' theObsData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)  #data at IA when deciding whether to continue recruitment
+#' theObsData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)
 #'
 #' #### Analyse data at interim ####
 #' myLMM <- analyzeData(theObsData)
@@ -137,8 +138,10 @@ Decision <- function(object,
     if(type.k == "final"){
         if(Z > uk[k]){
             object$conclusion["decision",k] <- "Efficacy"
+            object$conclusion["interim",k] <- "Efficacy"
         } else {
             object$conclusion["decision",k] <- "Futility"
+            object$conclusion["interim",k] <- "Futility"
         }
     }
 

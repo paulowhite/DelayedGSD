@@ -67,17 +67,16 @@ CalcBoundaries <- function(kMax=2,
  
     ## ** compute boundaries at interim
     if(bindingFutility){
-        StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=3,alpha=alpha,beta=beta,
+        StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=3, alpha=alpha, beta=beta,
                                              timing=InfoR.i,
-                                             sfu=sfPower,sfupar=gammaA,
-                                             sfl=sfPower,sflpar=gammaB)
+                                             sfu=gsDesign::sfPower, sfupar=gammaA,
+                                             sfl=gsDesign::sfPower, sflpar=gammaB)
     } else {
         StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=4,alpha=alpha,beta=beta,
                                              timing=InfoR.i,
-                                             sfu=sfPower,sfupar=gammaA,
-                                             sfl=sfPower,sflpar=gammaB)
+                                             sfu=gsDesign::sfPower, sfupar=gammaA,
+                                             sfl=gsDesign::sfPower, sflpar=gammaB)
     }
-  
   
                                         #R <- getDesignCharacteristics(StandardDesign)$inflationFactor
     R <- StandardDesign$n.I[kMax]

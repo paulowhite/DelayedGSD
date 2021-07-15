@@ -35,8 +35,9 @@
 #'                      InfoR.d=0.55)
 #'
 #' #### Simulate data ####
+#' ## generate data with all data for in case trial completes
 #' set.seed(10)
-#' theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  #generate data with all data for in case trial completes
+#' theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)
 #' 
 #' theAR <- 10  #accrual rate (pt per month)
 #' theDelay <- 0.7500001  #time in months to process data
@@ -58,6 +59,8 @@
 #' #### Analyse data at the final stage ####
 #' theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
 #' myFinal <- update(myInterim1, data = theFinalData, k = 2, analysis = "final")
+#' myFinal
+#' print(myFinal, abreviated = FALSE)
 
 ## * update.delayedGSD (code)
 #' @export
@@ -121,7 +124,7 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
     ## ** estimate
     if(type.k %in% c("decision","final")){
         if(trace>0){cat(" - correct estimate: ", sep = "")}
-        browser()
+
         ## FinalPvalue
         ## FinalCI
         ## FinalEstimate

@@ -141,8 +141,9 @@ plot.delayedGSD <- function(x,
     if(is.null(ylim)){
         ylim <- switch(type,
                        "P" = c(0,1),
-                       "E" = c(min(yl)-0.5,max(yu)+0.5),
-                       c(-1,3))
+                       "E" = c(min(c(yl,delta))-0.5,max(c(yu,delta))+0.5),
+                       "Z" = c(min(c(-1,yl,delta)),max(c(3,yl,delta)))
+                       )
     }
     if(is.null(xlim)){
         xlim <- c(0,max(xu))
@@ -161,7 +162,7 @@ plot.delayedGSD <- function(x,
             xdelta <- c(xdelta,xd[k])
         }
         lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
-        points(xdelta,delta,col="purple",pch=22,bg="green3",cex=1.2)
+        points(xdelta,delta,col="purple",pch=22,bg="purple",cex=1.2)
         text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple",pos=1)
         
     }
