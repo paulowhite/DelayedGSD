@@ -32,7 +32,9 @@ FinalCI(
 
 \item{kMax}{maximum number of analyses}
 
-\item{alpha}{confidence level (to get a 100*(1-alpha)% CI)}
+\item{alpha}{confidence level (to get a 100*(1-alpha)\% CI)}
+
+\item{estimate}{naive estimate (e.g. using  ML or REML).}
 
 \item{optimizer}{the observed treatment estimate at decision}
 }

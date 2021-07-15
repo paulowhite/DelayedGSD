@@ -9,6 +9,7 @@
   y,
   type = "Z",
   Itype = "rate",
+  planned = TRUE,
   main = NULL,
   xlim = NULL,
   ylim = NULL,
@@ -41,7 +42,11 @@
 
 \item{legend.ncol}{number of column in the caption}
 
+\item{legend.cex}{character expansion factor for the text in the legend.}
+
 \item{add.arrows}{[logical] should arrows indicating the ordering of the space be added?}
+
+\item{...}{not used. For compatibility with the generic method.}
 
 \item{sep.arrows}{[numeric vector of length 2] space between the critical point and the arrow (below and above)}
 
@@ -53,26 +58,10 @@
 Display boundaries over information
 }
 \examples{
-## content of the file PlotOrdering
 bnds <- CalcBoundaries(kMax=3, InfoR.i = c(0.5,0.75,1), InfoR.d = c(0.55,0.8))
 plot(bnds, type = "Z")
 plot(bnds, type = "Z", add.arrows = TRUE)
 plot(bnds, type = "Z", add.arrows = TRUE, lwd.arrow=2,ylim=c(0.35,2.6), xlim=c(0.5,1.1),legend=FALSE)
 plot(bnds, type = "E")
 plot(bnds, type = "P")
-
-plot(bnds$Info.i,bnds$lk,col="red",pch=21,bg="red",ylim=c(0,max(bnds$uk+0.5)),xlab="Information",ylab="Stopping boundary (Z-statistic)")
-lines(bnds$Info.i,bnds$lk,col="red",lty=2)
-points(bnds$Info.i,bnds$uk,col="green",lty=2,pch=21,bg="green")
-lines(bnds$Info.i,bnds$uk,col="green",lty=2)
-points(bnds$Info.d,bnds$ck,pch=4)
-arrows(x0=bnds$Info.d[1],y0=0,x1=bnds$Info.d[1],y1=bnds$ck[1]-0.1,lty=1,length=0.1)
-arrows(x0=bnds$Info.d[1],y0=bnds$ck[1]-0.1,x1=bnds$Info.d[2],y1=0,lty=1,length=0.1)
-arrows(x0=bnds$Info.d[2],y0=0,x1=bnds$Info.d[2],y1=bnds$ck[2]-0.1,lty=1,length=0.1)
-arrows(x0=bnds$Info.d[2],y0=bnds$ck[2]-0.1,x1=bnds$Info.i[3],y1=0,lty=1,length=0.1)
-arrows(x0=bnds$Info.i[3],y0=0,x1=bnds$Info.i[3],y1=3,lty=1,length=0.1)
-arrows(x0=bnds$Info.i[3],y0=3,x1=bnds$Info.d[2],y1=bnds$ck[2]+0.1,lty=1,length=0.1)
-arrows(x0=bnds$Info.d[2],y0=bnds$ck[2]+0.1,x1=bnds$Info.d[2],y1=3,lty=1,length=0.1)
-arrows(x0=bnds$Info.d[2],y0=3,x1=bnds$Info.d[1],y1=bnds$ck[1]+0.1,lty=1,length=0.1)
-arrows(x0=bnds$Info.d[1],y0=bnds$ck[1]+0.1,x1=bnds$Info.d[1],y1=3,lty=1,length=0.1)
 }

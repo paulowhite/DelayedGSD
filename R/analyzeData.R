@@ -1,8 +1,12 @@
-## * AnalyzeData (documentation)
+## * analyzeData (documentation)
+#' @title Fit a Linear Mixed Model
+#' @description Fit a linear mixed model and extract the information relative to the parameter of interest.
+#' 
 #' @param d dataset
 #' @param ddf [character] method used to compute the degrees of freedom of the Wald statistic.
-#' Can be \code{satterthwaite} or \code{nlme}.
+#' Can be \code{"satterthwaite"} or \code{"nlme"}.
 #' @param getinfo [logical] should the information be computed at interim and decision? Otherwise no information is computed.
+#' @param trace [logical] should the execution of the function be traced?
 #' 
 #' @examples
 #' ## simulate data in the wide format
@@ -10,14 +14,15 @@
 #' dataW <- GenData(n=104)$d
 #'
 #' ## estimate mixed model
-#' AnalyzeData(dataW, getinfo = FALSE)
-#' AnalyzeData(dataW, getinfo = TRUE)
+#' analyzeData(dataW, getinfo = FALSE)
+#' analyzeData(dataW, getinfo = TRUE)
+#' analyzeData(dataW, ddf = "satterthwaite", getinfo = TRUE)
 #'
 
 
-## * AnalyzeData (code)
+## * analyzeData (code)
 #' @export
-AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
+analyzeData <- function(d, ddf = "nlme", getinfo = TRUE, trace = TRUE){
 
     require(nlme)
 
@@ -56,7 +61,11 @@ AnalyzeData <- function(d, ddf = "nlme", getinfo = TRUE){
         ## summary(m)$tTable["Z1","p-value"]
     }else{ ## or using satterthwaite approximation
         require(emmeans)
-        groupTest <- emmeans::emmeans(m, specs = ~Z|visit, data = long[!is.na(long$X),,drop=FALSE])
+        if(trace){
+            groupTest <- emmeans::emmeans(m, specs = ~Z|visit, data = long[!is.na(long$X),,drop=FALSE])
+        }else{
+            groupTest <- suppressMessages(emmeans::emmeans(m, specs = ~Z|visit, data = long[!is.na(long$X),,drop=FALSE]))
+        }
         e.satterthwaite <- summary(pairs(groupTest, reverse = TRUE), by = NULL, infer = TRUE, adjust = "none")
         index <- which(e.satterthwaite$visit==levels(long$visit)[1])
 

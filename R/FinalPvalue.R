@@ -9,7 +9,7 @@
 #' @param sided whether the test is 1 or 2-sided
 #' @param kMax maximum number of analyses
 #' @param delta true effect under which to calculate the probability (should always be 0 for p-value, only change for calculation of CI)
-#' @param estimate the observed treatment estimate at decision
+#' @param estimate naive estimate (e.g. using  ML or REML).
 #'
 #' @examples
 #' library(rpact)

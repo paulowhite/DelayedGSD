@@ -131,7 +131,7 @@ CalcBoundaries <- function(kMax=2,
 
     ## ** output
     out <- list(call = call,
-                stage = data.frame(k = 0, decision = FALSE),
+                stage = data.frame(k = 0, type = "planning"),
                 conclusion = matrix(as.character(NA), nrow = 3, ncol = kMax, dimnames = list(c("interim","reason.interim","decision"),NULL)),
                 uk = uk, 
                 lk = lk,

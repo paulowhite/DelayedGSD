@@ -11,7 +11,7 @@
 #' @param cor.01.1 correlation between outcome at baseline and at first visit  (main outcome)
 #' @param cor.ij.1 correlation between outcome at two consecutive follow-up measurements  (main outcome)
 #' @param cor.0j.1 correlation between outcome at baseline and at any visit after the first visit  (main outcome)
-#' @param seed
+#' @param seed integer for the random seed generator state.
 #' @param MissProb Missingness probability, currently works only if N.fw=2. should be a matrix with columns=V1, rows=V2, for both missing=yes/no (in that order), in proportions.
 #' @param DigitsOutcome Number of digits to round the outcome values (NULL means no rounding)
 #' @param TimeFactor Multiply the times by a factor (e.g. 14 if time between two follow-up visit should be approx 14 days)

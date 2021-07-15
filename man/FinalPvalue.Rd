@@ -23,7 +23,7 @@ FinalPvalue(Info.d, Info.i, ck, lk, uk, sided = 1, kMax, delta = 0, estimate)
 
 \item{delta}{true effect under which to calculate the probability (should always be 0 for p-value, only change for calculation of CI)}
 
-\item{estimate}{the observed treatment estimate at decision}
+\item{estimate}{naive estimate (e.g. using  ML or REML).}
 }
 \description{
 Compute the p-value at the end of the trial.

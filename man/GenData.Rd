@@ -43,6 +43,8 @@ GenData(
 
 \item{cor.0j.1}{correlation between outcome at baseline and at any visit after the first visit  (main outcome)}
 
+\item{seed}{integer for the random seed generator state.}
+
 \item{MissProb}{Missingness probability, currently works only if N.fw=2. should be a matrix with columns=V1, rows=V2, for both missing=yes/no (in that order), in proportions.}
 
 \item{DigitsOutcome}{Number of digits to round the outcome values (NULL means no rounding)}

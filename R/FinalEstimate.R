@@ -8,7 +8,7 @@
 #' @param uk upper bounds up to stage where study was stopped
 #' @param sided one or two sided
 #' @param kMax maximum number of analyses
-#' @param estimate
+#' @param estimate naive estimate (e.g. using  ML or REML).
 
 ## * FinalEstimate (code)
 #' @export

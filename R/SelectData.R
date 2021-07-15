@@ -1,8 +1,10 @@
 #' @title Select available longitudnal data for analysis at a specific follow-up time.
 #' @description yy
+#' 
 #' @param d data set generated with GenData function.
-#' @param Delta.t
+#' @param Delta.t time necessary to process the data.
 #' @param t time at which we want the available data.
+#' 
 #' @details xxx
 #' @return input dataset  with less rows and NA where appropriate.
 #' @author Paul Blanche

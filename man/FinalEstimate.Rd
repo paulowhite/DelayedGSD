@@ -20,6 +20,8 @@ FinalEstimate(Info.d, Info.i, ck, lk, uk, sided = 1, kMax, estimate)
 \item{sided}{one or two sided}
 
 \item{kMax}{maximum number of analyses}
+
+\item{estimate}{naive estimate (e.g. using  ML or REML).}
 }
 \description{
 calculate de-biased estimate

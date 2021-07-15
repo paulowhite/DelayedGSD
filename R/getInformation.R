@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: Jul 14 2021 (16:38) 
+## Last-Updated: Jul 15 2021 (10:54) 
 ##           By: Brice Ozenne
-##     Update #: 930
+##     Update #: 938
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -18,6 +18,7 @@
 ## * getInformation (documentation)
 #' @title Extract information relative to a parameter.
 #' @description Extract information relative to a parameter.
+#' @name getInformation
 #'
 #' @param object a \code{ttest} object or a \code{gls} object.
 #' @param planned [character] Should only the information used to plan the trial be output (\code{"only"}),
@@ -39,7 +40,8 @@
 #' @details Argument \bold{data}: the dataset may contain missing value in the outcome but no in the covariates. Missing value in the outcome indicates that the information is not available at the interim analysis but will be come available at decision.
 #'
 #'
-#' Argument \bold{details}: when using gls models, an attribute detail is added to the output which contain a list:\itemize{
+#' Argument \bold{details}: when using gls models, an attribute detail is added to the output which contain a list:
+#' \itemize{
 #' \item decision: information at decision analysis
 #' \item interim: information at the interim analysis using all available data
 #' \item interim.cc: information at the interim analysis using a complete case analysis
@@ -121,6 +123,7 @@
 #' getInformation(e.gls, name.coef = "time", variance = list(diag(1:2),diag(1:2)))
 
 ## * getInformation.matrix
+#' @rdname getInformation
 getInformation.matrix <- function(object, variance, ...){
     ## object is the design matrix
 
@@ -154,6 +157,7 @@ getInformation.matrix <- function(object, variance, ...){
 }
 
 ## * getInformation.ttest
+#' @rdname getInformation
 getInformation.ttest <- function(object, type = "estimation", variance = NULL, ...){
 
     ## ** normalize arguments
@@ -208,6 +212,7 @@ getInformation.ttest <- function(object, type = "estimation", variance = NULL, .
 }
 
 ## * getInformation.gls
+#' @rdname getInformation
 getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
                                newdata = NULL, variance = NULL, ...){
 
@@ -407,6 +412,7 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
 }
 
 ## * getInformation.lmmGSD
+#' @rdname getInformation
 getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weighting = FALSE, ...){
 
     ## ** normalize arguments
@@ -516,6 +522,7 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
 }
 
 ## * getInformation.delayedGSD
+#' @rdname getInformation
 getInformation.delayedGSD <- function(object, planned = TRUE, ...){
 
     ## ** check user input
@@ -526,7 +533,7 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
     ## ** extract information from object
     kMax <- object$kMax
     k <- object$stage$k
-    decision <- object$stage$decision
+    type.k <- object$stage$type
 
     ## ** prepare output
     out <- list(Info.i = NULL,
@@ -540,7 +547,7 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
 
     ## ** extract information, boundaries, and estimated effect
 
-    if(identical(planned,"only") || k==0){
+    if(identical(planned,"only") || (type.k=="planning")){
         out$Info.i <- object$planned$Info.i
         out$Info.d <- object$planned$Info.d
         out$uk <- object$planned$uk
@@ -553,11 +560,11 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
             out$uk <- object$uk
             out$lk <- object$lk
             out$ck <- object$ck
-            if(k==kMax){
+            if(type.k=="final"){
                 out$index.lmm <- 1:kMax
-            }else if(decision>0){
+            }else if(type.k=="decision"){
                 out$index.lmm <- 1:(k+1)
-            }else{
+            }else if(type.k=="interim"){
                 out$index.lmm <- 1:k
             }
         }else{
@@ -566,13 +573,13 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
             out$Info.i <- c(object$Info.i[1:k], rep(NA, kMax-k))
             out$ck <- rep(NA,kMax-1)
             out$Info.d <- rep(NA,kMax-1)
-            if(k==kMax){
+            if(type.k=="final"){
                 out$index.lmm <- 1:kMax
-            }else if(decision>0){
+            }else if(type.k=="decision"){
                 out$ck[k] <- object$ck[k]
                 out$Info.d[k] <- object$Info.d[k]
                 out$index.lmm <- 1:(k+1)
-            }else{
+            }else if(type.k=="interim"){
                 out$index.lmm <- 1:k
             }
             

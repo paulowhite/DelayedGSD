@@ -10,6 +10,8 @@ SelectData(d, t, Delta.t = 0.500001)
 \item{d}{data set generated with GenData function.}
 
 \item{t}{time at which we want the available data.}
+
+\item{Delta.t}{time necessary to process the data.}
 }
 \value{
 input dataset  with less rows and NA where appropriate.

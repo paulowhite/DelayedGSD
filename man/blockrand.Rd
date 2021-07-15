@@ -6,6 +6,13 @@
 \usage{
 blockrand(seed, rand.block, n)
 }
+\arguments{
+\item{seed}{integer for the random seed generator state.}
+
+\item{rand.block}{values within each block. The length of this vector determine the block size.}
+
+\item{n}{number of observations.}
+}
 \value{
 Vector or binary otcome.
 }

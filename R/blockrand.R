@@ -1,7 +1,9 @@
 #' @title Block randomization
-#' @param seed
-#' @param rand.block
-#' @param n
+#' 
+#' @param seed integer for the random seed generator state.
+#' @param rand.block values within each block. The length of this vector determine the block size.
+#' @param n number of observations.
+#' 
 #' @details Nothing
 #' @return Vector or binary otcome.
 #' @author Paul Blanche

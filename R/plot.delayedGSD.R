@@ -10,11 +10,12 @@
 #' @param ylim range of the y axis
 #' @param legend should a caption be added?
 #' @param legend.ncol number of column in the caption
-#' @param legend.cex
+#' @param legend.cex character expansion factor for the text in the legend.
 #' @param add.arrows [logical] should arrows indicating the ordering of the space be added?
 #' @param sep.arrows [numeric vector of length 2] space between the critical point and the arrow (below and above)
 #' @param size.arrows [numeric, >0] width of the arrow.
 #' @param lwd.arrows [numeric, >0] thickness of the arrow.
+#' @param ... not used. For compatibility with the generic method.
 #'
 #' @examples
 #' bnds <- CalcBoundaries(kMax=3, InfoR.i = c(0.5,0.75,1), InfoR.d = c(0.55,0.8))
@@ -63,8 +64,8 @@ plot.delayedGSD <- function(x,
     alpha <- x$alpha
     kMax <- x$kMax
     k <- x$stage$k
-    decision <- x$stage$decision
-    test.planning <- identical(planned,"only") || (k==0)
+    type.k <- x$stage$type
+    test.planning <- identical(planned,"only") || (type.k=="planning")
 
     ls.info <- getInformation(x, planned = planned)
     Info.i <- ls.info$Info.i
@@ -85,11 +86,11 @@ plot.delayedGSD <- function(x,
     if(is.null(main)){
         if(test.planning){
             main <- "Planning"
-        }else if(k==kMax){
+        }else if(type.k=="final"){
             main <- paste0("Final analysis (stage ",k,")")
-        }else if(decision>0){
+        }else if(type.k=="decision"){
             main <- paste0("Decision analysis at stage ",k)
-        }else{
+        }else if(type.k=="interim"){
             main <- paste0("Interim analysis at stage ",k)
         }
     }
@@ -156,7 +157,7 @@ plot.delayedGSD <- function(x,
     points(xu,yu,col="green3",pch=21,bg="green3",cex=1.2)
     if(!is.null(delta)){
         xdelta <- xu[1:k]
-        if(decision>0 && k<kMax){
+        if(type.k=="decision"){
             xdelta <- c(xdelta,xd[k])
         }
         lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)

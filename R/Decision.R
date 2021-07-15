@@ -1,17 +1,14 @@
 ## * Decision (documentation)
-#' @title Evaluate decision at an interim, decision or final analysis of a group sequential design with delayed endpoints
+#' @title Take Decision in a GSD
 #' @description Maps the statistical results at an interim, decision or final analysis into a decision regarding whether to stop recruitment (interim) or whether to reject the null hypothesis (decision/final). Stopping boundaries are updated based on observed information and correct p-values, confidence intervals and point estimates are given.
 #' 
-#' @param lmm object of class lmmGSD from AnalyzeData
-#' @param boundaries object of class delayedGSD from CalcBoundaries
-#' @param k the stage at which the decision is to be made
-#' @param analysis is it an interim, decision or final analysis
-#' @param Info.i the observed (where possible) or expected information at each interim and the final analysis
-#' @param InfoR.d the expected or observed information ratio at each decision analysis
-#' @param PositiveIsGood whether a positive effect is considered beneficial (TRUE/FALSE)
-#' @param Trace whether to print some messages
-#' @param bindingFutility whether to use binding futility boundaries (use TRUE for binding)
-#' @param plot whether the updated boundaries and the result should be plotted
+#' @param object object of class \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
+#' @param PositiveIsGood [logical] whether a positive effect is considered beneficial (TRUE/FALSE)
+#' @param k [integer] index of the analysis.
+#' @param type.k [character] type of analysis: \code{"interim"} (after continuing recruitment),
+#' \code{"decision"} (after stopping recruitment for efficacy or futility),
+#' or \code{"final"} (after reaching the last stage of the trial).
+#' @param trace [logical] should the execution of the function be traced?
 #' 
 #' @details Function that maps the statistical results at interim (or final) analysis into decision to reject, or continue or stop inclusind subjects.
 #' @return ff
@@ -49,33 +46,28 @@
 #' theObsData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)  #data at IA when deciding whether to continue recruitment
 #'
 #' #### Analyse data at interim ####
-#' myBound1 <- update(myBound0, data = theObsData, k = 1, analysis = "interim")
-#' myInterim1 <- Decision(myBound1) 
-
+#' myLMM <- analyzeData(theObsData)
+#' myBound1 <- updateBoundaries(myBound0, lmm = myLMM, k = 1, type.k = "interim")
+#' myInterim1 <- Decision(myBound1, k = 1, type.k = "interim")
+#' myInterim1$conclusion
 
 ## * Decision (documentation)
 Decision <- function(object,
-                     PositiveIsGood=TRUE, # whether positive effect is good (i.e. positive trial)
-                     trace=TRUE){
+                     k,
+                     type.k,
+                     PositiveIsGood = TRUE, # whether positive effect is good (i.e. positive trial)
+                     trace = TRUE){
   
     ## ** identify stage of the trial
     kMax <- object$kMax
-    k <- object$stage$k
-    if(k==kMax){
-        stage <- "final"
-    }else if(object$stage$decision>0){
-        stage <- "decision"
-    }else{
-        stage  <- "interim"
-    }
     
     if(trace){
-        if(stage == "final"){
-            cat("Decision to be take at the final analysis  (stage ",k,"). \n",sep="")
-        }else if(stage == "decision"){
-            cat("Decision to be take at the interim analysis of stage ",k,". \n",sep="")
-        }else if(stage == "interim"){
-            cat("Decision to be take at the decision analysis of stage ",k,". \n",sep="")
+        if(type.k == "final"){
+            cat("Decision to be taken at the final analysis  (stage ",k,") \n",sep="")
+        }else if(type.k == "decision"){
+            cat("Decision to be taken at the decision analysis of stage ",k," \n",sep="")
+        }else if(type.k == "interim"){
+            cat("Decision to be taken at the interim analysis of stage ",k," \n",sep="")
         }
     }
 
@@ -90,15 +82,14 @@ Decision <- function(object,
     ck <- ls.info$ck
     
     Z <- ls.info$delta[NROW(ls.info$delta),"statistic"]
-    
+
     if(!PositiveIsGood){
         Z <- -Z
         if(trace){message("Negative effect is good: change sign of Z")}
     }
 
     ## ** decision at interim
-    if(stage=="interim"){
-        
+    if(type.k=="interim"){
         if(k>1 && (Info.i[k] < Info.i[k-1])){ ## skip interim analysis if information is decreasing
             object$conclusion["interim",k] <- "continue"
             object$conclusion["reason.interim",k] <- "decreasing information"
@@ -121,7 +112,7 @@ Decision <- function(object,
     }
     
     ## ** decision at decision analysis
-    if(stage=="decision"){
+    if(type.k=="decision"){
                                         
         if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
             stop("cannot handle case Info.d[k] < Info.i[k]")
@@ -143,7 +134,7 @@ Decision <- function(object,
     }  
 
     ## ** decision at the final analysis  
-    if(stage == "final"){
+    if(type.k == "final"){
         if(Z > uk[k]){
             object$conclusion["decision",k] <- "Efficacy"
         } else {
