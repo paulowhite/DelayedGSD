@@ -17,6 +17,7 @@ CalcBoundaries(
   delta = 1.5,
   InfoR.d = 0.55,
   bindingFutility = TRUE,
+  n = NULL,
   trace = TRUE
 )
 }
@@ -44,6 +45,8 @@ CalcBoundaries(
 \item{InfoR.d}{(expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.}
 
 \item{bindingFutility}{whether the futility stopping rule is binding}
+
+\item{n}{planned sample size in each group. Optional argument.}
 
 \item{trace}{whether to print some messages}
 }

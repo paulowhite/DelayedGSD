@@ -11,7 +11,9 @@
 #' 
 updateInformation <- function(object, lmm, k, type.k, update.stage = TRUE){
 
-    ## ** update information
+    kMax <- object$kMax
+    
+    ## ** update information at current stage
     if(type.k %in% c("interim","final")){
         object$Info.i[k] <- as.double(lmm$getInformation["interim"])
     }
@@ -19,6 +21,25 @@ updateInformation <- function(object, lmm, k, type.k, update.stage = TRUE){
         ## update decision (even when doing interim) to ensure monotone information
         object$Info.d[k] <- as.double(lmm$getInformation["decision"])
     }
+
+    ## ## ** update information at future stages
+    ## Has some side effect: change the boundary at the current stage if information exceed Imax
+    ## if(type.k == "interim"){
+        
+    ##     if((k+1)<=(kMax-1)){
+    ##         object$Info.i[(k+1):(kMax-1)] <- object$Info.i / (object$planned$Info.i[k]/object$planned$Info.i[(k+1):(kMax-1)])
+    ##         object$Info.d[(k+1):(kMax-1)] <- object$Info.d / (object$planned$Info.d[k]/object$planned$Info.d[(k+1):(kMax-1)])
+    ##     }
+    ##     object$Info.i[kMax] <- object$Info.d / (object$planned$Info.d[k]/object$planned$Info.i[kMax])
+        
+    ## }else if(type.k == "decision"){ ## will never reach any other stage
+
+    ##     object$Info.i[k:kMax] <- NA
+    ##     if((k+1)<=(kMax-1)){
+    ##         object$Info.d[(k+1):(kMax-1)] <- NA
+    ##     }
+
+    ## }
 
     ## ** udpate.stage
     if(update.stage){

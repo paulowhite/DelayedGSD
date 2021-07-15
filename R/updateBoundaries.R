@@ -87,12 +87,26 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
 
     Info.i <- object$Info.i
     Info.d <- object$Info.d
-    
+
     ## ** update boundaries
     ## *** at interim
     if(type.k == "interim"){
-     
-        if(Info.d[k] < Info.max){
+
+        if(k>1 && (Info.i[k] < Info.i[k-1])){ ## continue to the next interim when information decreased
+            object$lk[k]  <- NA
+            object$uk[k]  <- NA
+            object$ck[k]  <- NA
+        }else if((Info.i[k] >= Info.max) || (Info.d[k] >= Info.max)){ ## stop and do decision when Imax is already reached or anticipated to be reached
+            object$lk[k]  <- NA
+            object$uk[k]  <- NA
+            object$ck[k]  <- NA
+        }else{ ## usual evaluation
+
+            ## ## Handling information greater than Info.max at future interim or decision analyses or at the final analysis
+            ## if(any(Info.i>object$Info.max)){
+            ##     attr(Info.i,"InflationFactor") <- object$InflationFactor
+            ## }
+
             newBounds <- CalcBoundaries(kMax=kMax,
                                         sided=object$sided,
                                         alpha=object$alpha, 
@@ -110,18 +124,42 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
             object$lk  <- newBounds$lk
             object$uk  <- newBounds$uk
             object$ck  <- newBounds$ck
-        }else{
-            object$lk[k]  <- Inf
-            object$uk[k]  <- -Inf
-            object$ck[k]  <- NA
-        }
+        } 
 
     }
 
     ## *** at decision
     if(type.k == "decision"){
 
-        if(Info.d[k] < Info.max){
+        ## Handling information greater than Info.max at future interim or decision analyses or at the final analysis:
+        ## we will never reach these analyses so no need to compute boundaries there and we should not need the information at those stages
+        Info.i[(k+1):kMax] <- NA ## future interim or final
+        if((k+1)>=(kMax-1)){Info.d[(k+1):(kMax-1)] <- NA} ## future decision
+
+
+        
+        if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
+            ## the real problematic case is when Info.d[k] < Imax but Info.i[k] > Imax
+            ## What to do?
+            stop("Do not know how to deal when Information decreases between interim and decision. \n")
+        }else if((object$conclusion["reason.interim",k]=="Imax reached") || (Info.d[k] >= Info.max)){ ## if Imax has been reached at the interim and continue to increase, or has been reached at decision
+            ## recompute the decision boundary to spend all the alpha
+            if(object$method==1){
+                newBounds2 <- Method1(uk=uk[1:k],
+                                      lk=lk[1:k],
+                                      Info.i=Info.i[1:k],
+                                      Info.d=Info.d[k],
+                                      Info.max=Info.max,
+                                      sided=object$sided,
+                                      ImaxAnticipated=TRUE,
+                                      rho=object$gammaA,
+                                      alpha=object$alpha,
+                                      bindingFutility=bindingFutility)
+                object$ck[k:(kMax-1)]  <- c(newBound2[k], rep(NA,kMax-k-1))
+            }else{
+                stop("Method ",object$method," not implemented when Imax reached. \n")
+            }
+        }else { ## usual evaluation
             newBounds <- CalcBoundaries(kMax=kMax,
                                         sided=object$sided,
                                         alpha=object$alpha, 
@@ -139,54 +177,19 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
             object$lk  <- newBounds$lk
             object$uk  <- newBounds$uk
             object$ck  <- newBounds$ck
-
-        }else if(object$conclusion["reason.interim",k]=="Imax reached"){
-            ## recompute the decision boundary to spend all the alpha
-            newBounds2 <- Method1(uk=uk[1:k],
-                                  lk=lk[1:k],
-                                  Info.i=Info.i[1:k],
-                                  Info.d=Info.d[k],
-                                  Info.max=Info.max,
-                                  sided=object$sided,
-                                  ImaxAnticipated=TRUE,
-                                  rho=object$gammaA,
-                                  alpha=object$alpha,
-                                  bindingFutility=bindingFutility)
-            object$ck[k:(kMax-1)]  <- c(newBound2[k], rep(NA,kMax-k-1))
-        }else{
-            ## What to do?
-            stop("Do not know how to deal when Information decrease between interim and decision. \n")
         }
     }
     
     ## *** at final
-    if(type.k == "final"){
-        ## Should is be Info.max? or min(Info.i[k],Info.max)?
-        ## Otherwise no need to update boundaries ...
-        timing <- c(Info.i[1:(k-1)],object$Info.max)/object$Info.max
+    if(type.k == "final"){ ##  that could be replace by a call to CalcBoundaries
+        if(bindingFutility){test.type <- 3}else{test.type <- 4}
 
-        if(bindingFutility){
-            StandardDesign <- gsDesign(k=k, test.type=3, alpha=object$alpha, beta=object$beta,
-                                       timing=timing,   #Need to double check that this is OK
-                                       sfu=gsDesign::sfPower, sfupar=object$gammaA,
-                                       sfl=gsDesign::sfPower, sflpar=object$gammaB)
-            ## StandardDesign <- gsDesign(k=k, test.type=3, alpha=object$alpha, beta=object$beta,
-            ##                            timing=timing,   #Need to double check that this is OK
-            ##                            n.fix=1,n.I=Info.i,maxn.IPlan=object$InflationFactor,
-            ##                            sfu=gsDesign::sfPower, sfupar=object$gammaA,
-            ##                            sfl=gsDesign::sfPower, sflpar=object$gammaB)
-        } else {
-            StandardDesign <- gsDesign(k=k, test.type=4, alpha=object$alpha, beta=object$beta,
-                                       timing=timing,   #Need to double check that this is OK
-                                       n.I=Info.i, maxn.IPlan=object$InflationFactor,
-                                       sfu=gsDesign::sfPower, sfupar=object$gammaA,
-                                       sfl=gsDesign::sfPower, sflpar=object$gammaB)
-            ## StandardDesign <- gsDesign(k=k, test.type=4,alpha=object$alpha,beta=object$beta,
-            ##                            timing=timing,
-            ##                            n.fix=1,n.I=Info.i,maxn.IPlan=onbject$InflationFactor,
-            ##                            sfu=gsDesign::sfPower, sfupar=object$gammaA,
-            ##                            sfl=gsDesign::sfPower, sflpar=object$gammaB)
-        }
+        StandardDesign <- gsDesign(k = k, test.type = test.type, alpha = object$alpha, beta = object$beta,
+                                   timing = c(Info.i[1:(k-1)], object$Info.max)/object$Info.max,
+                                   n.fix = 1, n.I = Info.i / (object$Info.max/object$InflationFactor), maxn.IPlan = object$InflationFactor,
+                                   ## n.fix=object$Info.max/object$InflationFactor, n.I=Info.i, maxn.IPlan=object$Info.max ## should be equivalent
+                                   sfu = gsDesign::sfPower, sfupar = object$gammaA,
+                                   sfl = gsDesign::sfPower, sflpar = object$gammaB)
 
         object$lk[k]  <- StandardDesign$upper$bound[k]
         object$uk[k]  <- StandardDesign$upper$bound[k]

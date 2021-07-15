@@ -14,6 +14,7 @@
 #' @param delta effect that the study is powered for
 #' @param InfoR.d (expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.
 #' @param bindingFutility whether the futility stopping rule is binding
+#' @param n planned sample size in each group. Optional argument.
 #' @param trace whether to print some messages
 #'
 #' @examples
@@ -45,6 +46,7 @@ CalcBoundaries <- function(kMax=2,
                            delta=1.5, 
                            InfoR.d=0.55,   
                            bindingFutility=TRUE,  #
+                           n=NULL,
                            trace=TRUE){  
 
     require(gsDesign)
@@ -66,41 +68,57 @@ CalcBoundaries <- function(kMax=2,
     if(trace){message("In CalcBoundaries, the method assumes that positive effects are good")}
  
     ## ** compute boundaries at interim
-    if(bindingFutility){
-        StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=3, alpha=alpha, beta=beta,
+    if(bindingFutility){test.type <- 3}else{test.type <- 4}
+
+    ## if(any(InfoR.i>1)){
+    ##     StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=test.type, alpha=alpha, beta=beta,
+    ##                                          timing=InfoR.i,
+    ##                                          n.fix = 1, n.I = InfoR.i / attr(InfoR.i,"InflationFactor"), maxn.IPlan = attr(InfoR.i,"InflationFactor"),
+    ##                                          sfu=gsDesign::sfPower, sfupar=gammaA,
+    ##                                          sfl=gsDesign::sfPower, sflpar=gammaB)
+    ## }else{ ## normal case
+        StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=test.type, alpha=alpha, beta=beta,
                                              timing=InfoR.i,
                                              sfu=gsDesign::sfPower, sfupar=gammaA,
                                              sfl=gsDesign::sfPower, sflpar=gammaB)
-    } else {
-        StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=4,alpha=alpha,beta=beta,
-                                             timing=InfoR.i,
-                                             sfu=gsDesign::sfPower, sfupar=gammaA,
-                                             sfl=gsDesign::sfPower, sflpar=gammaB)
-    }
-  
+    ## }
                                         #R <- getDesignCharacteristics(StandardDesign)$inflationFactor
+
     R <- StandardDesign$n.I[kMax]
     Info.max <- ((qnorm(1-alpha)+qnorm(1-beta))/delta)^2*R
     Info.d <- InfoR.d*Info.max
   
-    if(max(Info.d) >= Info.max){
-        stop("Function cannot handle Id >= Imax yet")
-    }
     
-                                        #uk <- StandardDesign$criticalValues
-                                        #lk <- c(StandardDesign$futilityBounds,uk[kMax])
+    ##uk <- StandardDesign$criticalValues
+    ##lk <- c(StandardDesign$futilityBounds,uk[kMax])
     uk <- StandardDesign$upper$bound
-  
-  #browser()
-
-    ## ** compute boundaries at decision and possibly update futility boundary at interim
     lk <- StandardDesign$lower$bound
     ck <- rep(0,kMax-1)
-    cMin <- ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf)
+  
+    ## ** remove boundaries corresponding to stage that will not be reached
+    ## e.g. we stop early (stage 1) and need to re-compute the boundary at decision
+    ##      futility and efficacy boundaries at stage 2 or later will never be used
+    ##      same for the decision boundaries at stage 2 or later
 
+    indexNNA.i <- which(!is.na(InfoR.i))
+    indexNNA.d <- which(!is.na(InfoR.d))
+    uk[-indexNNA.i] <- NA
+    lk[-indexNNA.i] <- NA
+    ck[-indexNNA.d] <- NA
+
+    if(any(max(Info.d[indexNNA.d]) >= Info.max)){
+        warning("Information at decision exceed maximum planned information. \n",
+                "Use the maximum planned information to compute the boundary at decision. \n")
+        browser()
+        ## max(Info.d[indexNNA.d]) >= Info.max)
+    }
+    
+    ## ** compute boundaries at decision and possibly update futility boundary at interim
+    cMin <- ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf)
+    
     if(method==1){
     
-        for(k in 1:(kMax-1)){
+        for(k in indexNNA.d){
             ck[k] <- Method1(uk = uk[1:k],
                              lk = lk[1:k],
                              Info.i = (InfoR.i*Info.max)[1:k],
@@ -112,7 +130,7 @@ CalcBoundaries <- function(kMax=2,
     
     } else if(method==2){
     
-        for(k in 1:(kMax-1)){
+        for(k in indexNNA.d){
             delayedBnds <- Method2(uk = uk[1:k],
                                    lk = lk[1:k],
                                    Info.i = (InfoR.i*Info.max)[1:k],
@@ -130,6 +148,7 @@ CalcBoundaries <- function(kMax=2,
 
     ## ** output
     out <- list(call = call,
+                n.obs = n,
                 stage = data.frame(k = 0, type = "planning"),
                 conclusion = matrix(as.character(NA), nrow = 3, ncol = kMax, dimnames = list(c("interim","reason.interim","decision"),NULL)),
                 uk = uk, 

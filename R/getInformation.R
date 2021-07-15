@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: Jul 15 2021 (10:54) 
+## Last-Updated: Jul 15 2021 (17:09) 
 ##           By: Brice Ozenne
-##     Update #: 938
+##     Update #: 939
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -580,6 +580,7 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
                 out$Info.d[k] <- object$Info.d[k]
                 out$index.lmm <- 1:(k+1)
             }else if(type.k=="interim"){
+                out$Info.d[k] <- object$Info.d[k]
                 out$index.lmm <- 1:k
             }
             

@@ -74,7 +74,7 @@ Decision <- function(object,
 
     
     ## ** extract information, test statistic, and boundaries
-    ls.info <- getInformation(object, planned = FALSE)
+    ls.info <- getInformation(object, planned = TRUE)
     Info.max <- ls.info$Info.max
     Info.i <- ls.info$Info.i
     Info.d <- ls.info$Info.d
@@ -91,14 +91,14 @@ Decision <- function(object,
 
     ## ** decision at interim
     if(type.k=="interim"){
-        if(k>1 && (Info.i[k] < Info.i[k-1])){ ## skip interim analysis if information is decreasing
+        
+        if(k>1 && (Info.i[k] < Info.i[k-1])){ ## will continue to the next interim when information decreased
             object$conclusion["interim",k] <- "continue"
             object$conclusion["reason.interim",k] <- "decreasing information"
-            
-        } else if(Info.i[k] > Info.max){ ## skip interim analysis and continue straight to decision analysis if it is anticipated that Imax will be reached at decision analysis k
+        } else if((Info.i[k] >= Info.max) || (Info.d[k] >= Info.max)){ ## stop and do decision when Imax is already reached or anticipated to be reached
             object$conclusion["interim",k] <- "stop"
             object$conclusion["reason.interim",k] <- "Imax reached"
-        } else {
+        } else { ## usual case
             if(Z>uk[k]){
                 object$conclusion["interim",k] <- "stop"
                 object$conclusion["reason.interim",k] <- "efficacy"
@@ -117,14 +117,12 @@ Decision <- function(object,
                                         
         if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
             stop("cannot handle case Info.d[k] < Info.i[k]")
-        }else if(object$conclusion["reason.interim",k]=="Imax reached"){ ## if Imax has been reached at the interim
+        }else if((object$conclusion["reason.interim",k]=="Imax reached") || (Info.d[k] >= Info.max)){ ## if Imax has been reached at the interim
             if(Z > ck[k]){
                 object$conclusion["decision",k] <- "Efficacy"
             } else {
                 object$conclusion["decision",k] <- "Futility"
             }
-        }else if(Info.d[k] >= Info.max){ ##  if Imax has been reached between interim and decision
-            stop("don't know what to do if Id > Imax but Ii < Imax")
         } else { ## usual case
             if(Z > ck[k]){
                 object$conclusion["decision",k] <- "Efficacy"
@@ -138,10 +136,8 @@ Decision <- function(object,
     if(type.k == "final"){
         if(Z > uk[k]){
             object$conclusion["decision",k] <- "Efficacy"
-            object$conclusion["interim",k] <- "Efficacy"
         } else {
             object$conclusion["decision",k] <- "Futility"
-            object$conclusion["interim",k] <- "Futility"
         }
     }
 

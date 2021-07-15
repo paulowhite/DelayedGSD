@@ -52,17 +52,19 @@ myBound0 <- CalcBoundaries(kMax=theK,
                      InfoR.d=0.55)
 
 #### Simulate data ####
+## generate data with all data for in case trial completes
 set.seed(10)
-theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  #generate data with all data for in case trial completes
+theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  
 
 theAR <- 10  #accrual rate (pt per month)
 theDelay <- 0.7500001  #time in months to process data
 tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do IA
 
-theObsData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)  #data at IA when deciding whether to continue recruitment
 
 #### Analyse data at the first interim ####
-myLMM <- analyzeData(theObsData)
+theInterimData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)
+
+myLMM <- analyzeData(theInterimData)
 myBound1 <- updateBoundaries(myBound0, lmm = myLMM, k = 1, type.k = "interim")
 print(myBound1)
 print(myBound1, planned = FALSE)
@@ -71,4 +73,11 @@ print(myBound1, planned = "only")
 par(mfrow = c(1,2))
 plot(myBound1, planned = "only")
 plot(myBound1)
+
+#### Analyse data at the final ####
+theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
+
+myLMM <- analyzeData(theFinalData)
+myBound2 <- updateBoundaries(myBound1, lmm = myLMM, k = 2, type.k = "final")
+plot(myBound2)
 }

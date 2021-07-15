@@ -22,6 +22,7 @@
 #' theDelta <- 1.5
 #' theK <- 2
 #' theN <- 82
+#'
 #' 
 #' myBound0 <- CalcBoundaries(kMax=theK,
 #'                           sided=1,
@@ -61,6 +62,7 @@
 #' myFinal <- update(myInterim1, data = theFinalData, k = 2, analysis = "final")
 #' myFinal
 #' print(myFinal, abreviated = FALSE)
+#' plot(myFinal)
 
 ## * update.delayedGSD (code)
 #' @export
@@ -125,11 +127,20 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
     if(type.k %in% c("decision","final")){
         if(trace>0){cat(" - correct estimate: ", sep = "")}
 
-        ## FinalPvalue
-        ## FinalCI
-        ## FinalEstimate
+        ## FinalPvalue <- function(Info.d,  
+        ##                         Info.i,  
+        ##                         ck,   
+        ##                         lk,  
+        ##                         uk,  
+        ##                         sided=1,  
+        ##                         kMax, 
+        ##                         delta=0,  
+        ##                         estimate)
+            ## FinalPvalue
+            ## FinalCI
+            ## FinalEstimate
 
-        if(trace>0){cat("done \n", sep = "")}
+        if(trace>0){cat("not done \n", sep = "")}
     }
     
     ## ** export

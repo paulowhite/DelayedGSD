@@ -45,6 +45,7 @@ theDelta <- 1.5
 theK <- 2
 theN <- 82
 
+
 myBound0 <- CalcBoundaries(kMax=theK,
                           sided=1,
                      alpha=theAlpha,
@@ -57,8 +58,9 @@ myBound0 <- CalcBoundaries(kMax=theK,
                      InfoR.d=0.55)
 
 #### Simulate data ####
+## generate data with all data for in case trial completes
 set.seed(10)
-theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  #generate data with all data for in case trial completes
+theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)
 
 theAR <- 10  #accrual rate (pt per month)
 theDelay <- 0.7500001  #time in months to process data
@@ -80,4 +82,7 @@ plot(myInterim1)
 #### Analyse data at the final stage ####
 theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
 myFinal <- update(myInterim1, data = theFinalData, k = 2, analysis = "final")
+myFinal
+print(myFinal, abreviated = FALSE)
+plot(myFinal)
 }

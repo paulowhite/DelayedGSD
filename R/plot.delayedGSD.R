@@ -161,7 +161,7 @@ plot.delayedGSD <- function(x,
         if(type.k=="decision"){
             xdelta <- c(xdelta,xd[k])
         }
-        lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
+        ## lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
         points(xdelta,delta,col="purple",pch=22,bg="purple",cex=1.2)
         text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple",pos=1)
         
@@ -210,7 +210,7 @@ plot.delayedGSD <- function(x,
         pt.bg.legend <- c("green3","red",NA,NA)
         if(!is.null(delta)){
             text.legend <- c(text.legend,"Current estimate")
-            lty.legend <- c(lty.legend,3)
+            lty.legend <- c(lty.legend,NA)
             pch.legend <- c(pch.legend,22)
             col.legend <- c(col.legend,"purple")
             pt.bg.legend <- c(pt.bg.legend,"purple")
