@@ -197,8 +197,23 @@ print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abrevia
     ## ** Estimates
     if(!test.planning){
         cat(" * Current ML-estimate of the treatment effect \n")
-        print(c("estimate" = iLMM$estimate, "se" = iLMM$se, "statistic" = iLMM$statistic, "df" = iLMM$df, "p.value" = iLMM$p.value), digits = digits)
+        print(c("estimate" = iLMM$estimate,
+                "se" = iLMM$se,
+                "statistic" = iLMM$statistic,
+                "df" = iLMM$df,
+                "p.value" = iLMM$p.value),
+              digits = digits)
         cat("\n")
+
+        if(!is.null(x$correction)){
+            cat(" * Corrected estimate of the treatment effect \n")
+            print(c("estimate" = x$correction$estimate,
+                    "lower" = x$correction$lower,
+                    "upper" = x$correction$upper,
+                    "p.value" = x$correction$p.value),
+                  digits = digits)
+            cat("\n")
+        }
     }  
   
     ## ** Sample size

@@ -127,20 +127,50 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
     if(type.k %in% c("decision","final")){
         if(trace>0){cat(" - correct estimate: ", sep = "")}
 
-        ## FinalPvalue <- function(Info.d,  
-        ##                         Info.i,  
-        ##                         ck,   
-        ##                         lk,  
-        ##                         uk,  
-        ##                         sided=1,  
-        ##                         kMax, 
-        ##                         delta=0,  
-        ##                         estimate)
-            ## FinalPvalue
-            ## FinalCI
-            ## FinalEstimate
+        delta <- getInformation(object)$delta
 
-        if(trace>0){cat("not done \n", sep = "")}
+        object$correction <- data.frame(estimate=NA,
+                                        lower=NA,
+                                        upper=NA,
+                                        p.value=NA)
+
+        ## *** p.value
+        object$correction$p.value <- FinalPvalue(Info.d = object$Info.d,  
+                                                 Info.i = object$Info.i,  
+                                                 ck = object$ck,   
+                                                 lk = object$kk,  
+                                                 uk = object$uk,  
+                                                 sided = 1,  
+                                                 kMax = kMax, 
+                                                 delta = 0,  
+                                                 estimate = delta[NROW(delta),"estimate"])
+
+        ## *** CI
+        resCI <- FinalCI(Info.d = object$Info.d,  
+                         Info.i = object$Info.i,  
+                         ck = object$ck,   
+                         lk = object$kk,  
+                         uk = object$uk,  
+                         sided = 1,  
+                         kMax = kMax, 
+                         alpha = object$alpha,  
+                         estimate = delta[NROW(delta),"estimate"])
+        object$correction$lower <- resCI["lower"]
+        attr(object$correction$lower,"error") <- attr(resCI,"error")["lower"]
+        object$correction$upper <- resCI["upper"]
+        attr(object$correction$lower,"error") <- attr(resCI,"error")["upper"]
+        
+        ## *** Estimate
+        object$correction$estimate <- FinalEstimate(Info.d = object$Info.d,  
+                                                    Info.i = object$Info.i,  
+                                                    ck = object$ck,   
+                                                    lk = object$kk,  
+                                                    uk = object$uk,  
+                                                    sided = 1,  
+                                                    kMax = kMax, 
+                                                    estimate = delta[NROW(delta),"estimate"])
+
+        if(trace>0){cat("done \n", sep = "")}
     }
     
     ## ** export
