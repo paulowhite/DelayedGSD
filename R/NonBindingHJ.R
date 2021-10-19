@@ -125,7 +125,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
     if(Trace){
       cat("\n Check whether the interval within which to search for coef large enough. \n")
     }
-    xx <- planboundaries(rho_alpha=rho_alpha,
+    xx <- NonBindingHJ(rho_alpha=rho_alpha,
                          rho_beta=rho_beta,
                          alpha=alpha,
                          beta=beta,
@@ -154,7 +154,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
         if(Trace){
           cat("\n Step :",nwhile,"(out of max.", nWhileMax,")")
         }
-        xx <- planboundaries(rho_alpha=rho_alpha,
+        xx <- NonBindingHJ(rho_alpha=rho_alpha,
                              rho_beta=rho_beta,
                              alpha=alpha,
                              beta=beta,
