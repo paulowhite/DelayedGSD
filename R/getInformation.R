@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: Jul 15 2021 (17:09) 
+## Last-Updated: Dec 16 2021 (18:47) 
 ##           By: Brice Ozenne
-##     Update #: 939
+##     Update #: 972
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -27,14 +27,11 @@
 #' @param name.coef [character] For which coefficient the information should be computed (only relevant for gls models).
 #' @param type [character] Should the information be estimated only for the observed data (\code{"estimation"}, excluding missing values)
 #' or for the full dataset  (\code{"prediction"}, including missing values).
-#' @param method.prediction [character] method used to estimate the information relative to the missing values (only relevant for gls models).
-#' Can be by increasing the information proportionally to the amount of missing values (\code{"inflation"})
-#' or by approximating the variance of the estimator by a weighted average between the complete case estimator and the full information estimator (\code{"pooling"}).
-#' or a list containing the theoretical value of the variance-covariance matrix for each treatment group.
 #' @param variance [NULL, list] If \code{NULL} then the estimated variance-covariance matrix from the object is used.
 #' Otherwise it should be a list containing the theoretical value of the variance-covariance matrix for each treatment group.
-#' @param data [data.frame] The dataset relative to which the information should be computed. See details section.
+#' @param newdata,data [data.frame] The dataset relative to which the information should be computed. See details section.
 #' @param details [logical] Should intermediate results be output. See details section.
+#' @param weighting [logical] Should weight be used to handle missing values in the covariates.
 #' @param ... not used. For compatibility with the generic details.
 #' 
 #' @details Argument \bold{data}: the dataset may contain missing value in the outcome but no in the covariates. Missing value in the outcome indicates that the information is not available at the interim analysis but will be come available at decision.
@@ -124,6 +121,7 @@
 
 ## * getInformation.matrix
 #' @rdname getInformation
+#' @export
 getInformation.matrix <- function(object, variance, ...){
     ## object is the design matrix
 
@@ -158,6 +156,7 @@ getInformation.matrix <- function(object, variance, ...){
 
 ## * getInformation.ttest
 #' @rdname getInformation
+#' @export
 getInformation.ttest <- function(object, type = "estimation", variance = NULL, ...){
 
     ## ** normalize arguments
@@ -179,7 +178,7 @@ getInformation.ttest <- function(object, type = "estimation", variance = NULL, .
         
         }else if(type=="prediction"){ ## output the predicted information if there was no missing value
 
-            se <- sqrt(Reduce("+",lapply(z, function(iZ){var(iZ, na.rm = TRUE)/length(iZ)})))
+            se <- sqrt(Reduce("+",lapply(z, function(iZ){stats::var(iZ, na.rm = TRUE)/length(iZ)})))
 
         }
         
@@ -213,9 +212,12 @@ getInformation.ttest <- function(object, type = "estimation", variance = NULL, .
 
 ## * getInformation.gls
 #' @rdname getInformation
+#' @export
 getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
                                newdata = NULL, variance = NULL, ...){
 
+    requireNamespace("nlme")
+    
     ## ** normalize arguments
     if(is.null(data)){
         data <- try(nlme::getData(object), silent = TRUE)
@@ -259,7 +261,7 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
     n.cluster <- length(level.cluster)
     
     ## *** coefficients
-    name.allcoef <- names(coef(object))
+    name.allcoef <- names(stats::coef(object))
     n.allcoef <- length(name.allcoef)
     name.coef <- match.arg(name.coef, name.allcoef)
 
@@ -267,13 +269,13 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
     ## *** at decision
 
     ## design matrix
-    X.decision <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = data, na.action = na.pass)) ## instead of X <- model.matrix(stats::formula(object), data = data) to keep rows with missing data        
+    X.decision <- stats::model.matrix(f.gls, data = stats::model.frame(formula = f.gls, data = data, na.action = stats::na.pass)) ## instead of X <- model.matrix(stats::formula(object), data = data) to keep rows with missing data        
 
     ## covariance pattern
     resPattern.decision <- .getPattern(object, data = data, variance = NULL)
 
     ## number of observation per cluster at decision
-    resPattern.decision$nobs.vargroup <- setNames(sapply(resPattern.decision$variance.vargroup,NCOL)[resPattern.decision$index.vargroup], names(resPattern.decision$index.vargroup))
+    resPattern.decision$nobs.vargroup <- stats::setNames(sapply(resPattern.decision$variance.vargroup,NCOL)[resPattern.decision$index.vargroup], names(resPattern.decision$index.vargroup))
 
     ## *** at interim: full information approach
     ## dataset
@@ -281,13 +283,13 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
     data.interim <- data[index.interim,,drop=FALSE]
 
     ## design matrix
-    X.interim <- model.matrix(f.gls, data = data)
+    X.interim <- stats::model.matrix(f.gls, data = data)
 
     ## covariance pattern
     resPattern.interim <- .getPattern(object, data = data.interim, variance = NULL)
 
     ## number of observation per cluster at interim
-    resPattern.interim$nobs.vargroup <- setNames(sapply(resPattern.interim$variance.vargroup,NCOL)[resPattern.interim$index.vargroup], names(resPattern.interim$index.vargroup))
+    resPattern.interim$nobs.vargroup <- stats::setNames(sapply(resPattern.interim$variance.vargroup,NCOL)[resPattern.interim$index.vargroup], names(resPattern.interim$index.vargroup))
 
     ## clusters
     if(length(cluster.var)>0){
@@ -314,13 +316,13 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
         data.interim.cc <- data[index.cc,,drop=FALSE]
 
         ## design matrix
-        X.interim.cc <- model.matrix(f.gls, data = data.interim.cc)
+        X.interim.cc <- stats::model.matrix(f.gls, data = data.interim.cc)
 
         ## covariance pattern
         resPattern.interim.cc <- .getPattern(object, data = data.interim.cc, variance = NULL)
 
         ## number of observation per cluster in the complete case
-        resPattern.interim.cc$nobs.vargroup <- setNames(sapply(resPattern.interim.cc$variance.vargroup,NCOL)[resPattern.interim.cc$index.vargroup], names(resPattern.interim.cc$index.vargroup))
+        resPattern.interim.cc$nobs.vargroup <- stats::setNames(sapply(resPattern.interim.cc$variance.vargroup,NCOL)[resPattern.interim.cc$index.vargroup], names(resPattern.interim.cc$index.vargroup))
     }    
         
     ## *** sanity checks
@@ -396,7 +398,7 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
     if(details){
         return(out)
     }else if(is.null(newdata) && is.null(variance)){        
-        return(setNames(1/solve(info.interim)[name.coef,name.coef], name.coef))
+        return(stats::setNames(1/solve(info.interim)[name.coef,name.coef], name.coef))
     }else{
 
         if(is.null(newdata)){
@@ -413,6 +415,7 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
 
 ## * getInformation.lmmGSD
 #' @rdname getInformation
+#' @export
 getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weighting = FALSE, ...){
 
     ## ** normalize arguments
@@ -429,7 +432,7 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
     ## ** extra from object
     cluster.var <- object$cluster.var
     f.gls <- object$formula.mean
-    name.regressor <- all.vars(update(f.gls,0~.))
+    name.regressor <- all.vars(stats::update(f.gls,0~.))
     name.coef <- object$name.coef
     test.missing <- object$n["total"]!=object$n["decision"]
 
@@ -473,7 +476,7 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
         ## weight used to compensate for the missing values
         if(length(name.regressorNNA2)==0){ ## no prior knowledge about the missing individuals
             ratio <- length(unique(newdata.full$id))/object$n["total"]
-            weight <- setNames(rep(ratio, times = n.estimate), level.cluster.estimate)
+            weight <- stats::setNames(rep(ratio, times = n.estimate), level.cluster.estimate)
         }else{ ## some prior knowledge about the missing individuals (e.g. randomization group)
             ls.levels.newdata <- lapply(name.regressorNNA2, function(iReg){ tapply(newdata.full[[iReg]], newdata.full[[cluster.var]], function(iX){unique(iX)})==1 })
             strata.cluster.newdata <- interaction(as.data.frame(do.call(cbind, ls.levels.newdata)))
@@ -490,7 +493,7 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
             weight <- (table(strata.cluster.newdata)/table(strata.cluster.estimate))[as.numeric(strata.cluster.estimate)]
         }
         ## design matrix
-        X.newdata <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = newdata[!test.idNA,,drop=FALSE], na.action = na.pass))
+        X.newdata <- stats::model.matrix(f.gls, data = stats::model.frame(formula = f.gls, data = newdata[!test.idNA,,drop=FALSE], na.action = stats::na.pass))
         ## X.newdata - object$decision$X
         ## covariance pattern
         resPattern.newdata <- .getPattern(object$fit, data = newdata[!test.idNA,,drop=FALSE], variance = variance)
@@ -498,14 +501,14 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
 
     }else{
         ## design matrix
-        X.newdata <- model.matrix(f.gls, data = model.frame(formula = f.gls, data = newdata, na.action = na.pass)) ## instead of X <- model.matrix(stats::formula(object$fit), data = data) to keep rows with missing data
+        X.newdata <- stats::model.matrix(f.gls, data = stats::model.frame(formula = f.gls, data = newdata, na.action = stats::na.pass)) ## instead of X <- model.matrix(stats::formula(object$fit), data = data) to keep rows with missing data
         ## covariance pattern
         resPattern.newdata <- .getPattern(object$fit, data = newdata, variance = variance)
         ## weights
         weight <- NULL
     }
     ## number of observation per cluster at decision
-    resPattern.newdata$nobs.vargroup <- setNames(sapply(resPattern.newdata$variance.vargroup,NCOL)[resPattern.newdata$index.vargroup], names(resPattern.newdata$index.vargroup))
+    resPattern.newdata$nobs.vargroup <- stats::setNames(sapply(resPattern.newdata$variance.vargroup,NCOL)[resPattern.newdata$index.vargroup], names(resPattern.newdata$index.vargroup))
 
     ## ** predict information
     info.newdata <- getInformation(X.newdata,
@@ -523,6 +526,7 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
 
 ## * getInformation.delayedGSD
 #' @rdname getInformation
+#' @export
 getInformation.delayedGSD <- function(object, planned = TRUE, ...){
 
     ## ** check user input
@@ -598,23 +602,24 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
 
 ## * .getPattern
 .getPattern <- function(object, data, variance = NULL){
-
+    requireNamespace("nlme")
+    
     ## ** reinitialize correlation/variance structure according to data
     if(!is.null(object$modelStruct$corStruct)){
-        corStructNew <- do.call(class(object$modelStruct$corStruct)[1],
+        corStructNew <- do.call(utils::getFromNamespace(class(object$modelStruct$corStruct)[1], ns = "nlme"),
                                 args = list(form = stats::formula(object$modelStruct$corStruct),
-                                            value = coef(object$modelStruct$corStruct, unconstrained = FALSE))
+                                            value = stats::coef(object$modelStruct$corStruct, unconstrained = FALSE))
                                 )
-        corStructNew <- Initialize(corStructNew, data = data)
-        corgroups <- getGroups(corStructNew)
+        corStructNew <- nlme::Initialize(corStructNew, data = data)
+        corgroups <- nlme::getGroups(corStructNew)
     }
     if(!is.null(object$modelStruct$varStruct)){
-        varStructNew <- do.call(class(object$modelStruct$varStruct)[1],
+        varStructNew <- do.call(utils::getFromNamespace(class(object$modelStruct$varStruct)[1], ns = "nlme"),
                                 args = list(form = stats::formula(object$modelStruct$varStruct),
-                                            value = coef(object$modelStruct$varStruct, unconstrained = FALSE))
+                                            value = stats::coef(object$modelStruct$varStruct, unconstrained = FALSE))
                                 )
-        varStructNew <- Initialize(varStructNew, data = data)
-        vargroups <- getGroups(varStructNew)
+        varStructNew <- nlme::Initialize(varStructNew, data = data)
+        vargroups <- nlme::getGroups(varStructNew)
     }
 
     ## ** number and position of the clusters among the observations
@@ -623,14 +628,14 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
         n.cluster <- NROW(data)
 
     }else{ ## correlation structure
-        index.cluster <- setNames(as.numeric(corgroups), corgroups)
+        index.cluster <- stats::setNames(as.numeric(corgroups), corgroups)
         n.cluster <- attr(corStructNew,"Dim")$M
 
     }
 
     ## ** extract number and position of unique residual variance-covariance structures
     if(is.null(object$modelStruct$varStruct)){ ## no variance structure
-        index.vargroup <- setNames(rep(1,n.cluster), sort(unique(names(index.cluster))))
+        index.vargroup <- stats::setNames(rep(1,n.cluster), sort(unique(names(index.cluster))))
         n.vargroup <-  1
         Sigma.pattern <- list("sigma") ## not needed
 
@@ -667,7 +672,7 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
     }else if(is.null(object$modelStruct$corStruct)){
         rho <- 0
     }else{
-        rho <- coef(object$modelStruct$corStruct, unconstrained = FALSE)
+        rho <- stats::coef(object$modelStruct$corStruct, unconstrained = FALSE)
     }
     
     ## ** full residual variance-covariance matrix
@@ -681,7 +686,7 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
         variance.vargroup <- variance
     }else{ ## variance and correlation structure
         name.vargroup <- names(Sigma.pattern)
-        variance.vargroup <- setNames(vector(mode = "list", length = n.vargroup), name.vargroup)
+        variance.vargroup <- stats::setNames(vector(mode = "list", length = n.vargroup), name.vargroup)
         MSigma.pattern.full <- do.call(rbind,Sigma.pattern.full)
 
         for(i.vargroup in 1:n.vargroup){ ## i.vargroup <- 2
@@ -712,17 +717,17 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
     ## ** build or check variance covariance patterns for fully observed cluster
     if(is.null(variance)){
         if(is.null(object$modelStruct$varStruct) && is.null(object$modelStruct$corStruct)){
-            variance <- list(matrix(sigma(object)^2, nrow = 1, ncol = 1))
+            variance <- list(matrix(stats::sigma(object)^2, nrow = 1, ncol = 1))
         }else if(is.null(object$modelStruct$varStruct)){
-            variance <- unclass(getVarCov(e.gls))
+            variance <- unclass(nlme::getVarCov(object))
         }else if(is.null(object$modelStruct$corStruct)){
-            variance <- as.list((sigma(object)*coef(object$modelStruct$varStruct, allCoef = TRUE, unconstrained = FALSE))^2)
+            variance <- as.list((stats::sigma(object)*stats::coef(object$modelStruct$varStruct, allCoef = TRUE, unconstrained = FALSE))^2)
         }else{
-            vec.sigma <- sigma(object)*coef(object$modelStruct$varStruct, allCoef = TRUE, unconstrained = FALSE)
+            vec.sigma <- stats::sigma(object)*stats::coef(object$modelStruct$varStruct, allCoef = TRUE, unconstrained = FALSE)
             Mcor <- matrix(1, nrow = rep.full, ncol = rep.full)
             Mcor[lower.tri(Mcor)] <- rho
             Mcor[upper.tri(Mcor)] <- t(Mcor)[upper.tri(Mcor)]
-            variance <- setNames(lapply(Sigma.pattern, function(x){
+            variance <- stats::setNames(lapply(Sigma.pattern, function(x){
                 tcrossprod(vec.sigma[x]) * Mcor
             }), names(Sigma.pattern))
         }
@@ -746,7 +751,7 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
 
         
         ## check correlation
-        ls.rho <- lapply(variance[sapply(variance,length)>1], function(x){cov2cor(x)[lower.tri(x)]})
+        ls.rho <- lapply(variance[sapply(variance,length)>1], function(x){stats::cov2cor(x)[lower.tri(x)]})
         if(length(ls.rho)>1){
             M.rho <- do.call(rbind, ls.rho)
             test <- apply(M.rho, MARGIN = 2, FUN = function(x){max(abs(diff(x)))})
@@ -786,13 +791,13 @@ getInformation.delayedGSD <- function(object, planned = TRUE, ...){
     ## i.e. does score of the parameter of interest contains a linear combination of the score of other parameters, so that their contribution to the score of the parameter of interest will always be 0.
     ## example Score = [Score_alpha & Score_beta] where Score_alpha = [S_1 \\ S_2] and Score_beta = [S_2 \\ 0] so sum(S_2) must be 0 and therefore the last observations do not contribute to Score_alpha
     X.new <- X.decision[setdiff(index.interim.full, index.interim),,drop=FALSE]
-    scorefit <- lm.fit(x = X.new[,setdiff(colnames(X.new),name.coef),drop=FALSE], y = X.new[,name.coef])
+    scorefit <- stats::lm.fit(x = X.new[,setdiff(colnames(X.new),name.coef),drop=FALSE], y = X.new[,name.coef])
     if(any(abs(scorefit$residuals)>1e-10)){ ## not a linear combination
         return(n.interim - n.interim.cc)
     }
     
     ## check whether,  at interim (full information), the score of the parameter of interest contains the score of the linear combination, via the design matrix
-    combin <- na.omit(coef(scorefit))
+    combin <- stats::na.omit(stats::coef(scorefit))
     X.combin <- Reduce("+",lapply(1:length(combin), function(x){
         X.interim[,names(combin)[x],drop=FALSE]*combin[x]
     }))

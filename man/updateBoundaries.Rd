@@ -14,6 +14,8 @@ updateBoundaries(
 )
 }
 \arguments{
+\item{object}{Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.}
+
 \item{lmm}{Optional argument used to update the information. Object of type \code{lmmGSD}, typically output from \code{\link{analyzeData}}.}
 
 \item{k}{[integer] Index of the analysis.}
@@ -25,8 +27,6 @@ or \code{"final"} (after reaching the last stage of the trial).}
 \item{update.stage}{[logical] should the arguments \code{k} and \code{type.k} be used to update to stage of the trial?}
 
 \item{trace}{[logical] should the execution of the function be traced?}
-
-\item{x}{Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.}
 }
 \description{
 Recompute the boundaries based according to the current information.

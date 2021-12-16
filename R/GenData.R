@@ -43,7 +43,7 @@ GenData <- function(n=52,
                     DigitsTime=NULL
                     ){
     #--
-    require(mvtnorm)
+    requireNamespace("mvtnorm")
     #--
     set.seed(seed)   
     d <- data.frame(id=1:n, # id
@@ -70,8 +70,8 @@ GenData <- function(n=52,
     vcovmat <- diag(allsd)%*%cor.matrix%*%diag(allsd)
     # Generate outcome at baseline and each follow-up visit
     allmeans1 <- delta + mean0  # mean in treatment group
-    d[d$Z==0,paste0("X",1:NV)] <- rmvnorm(n=sum(d$Z==0),mean=mean0,sigma=vcovmat)
-    d[d$Z==1,paste0("X",1:NV)] <- rmvnorm(n=sum(d$Z==1),mean=allmeans1,sigma=vcovmat)    
+    d[d$Z==0,paste0("X",1:NV)] <- mvtnorm::rmvnorm(n=sum(d$Z==0),mean=mean0,sigma=vcovmat)
+    d[d$Z==1,paste0("X",1:NV)] <- mvtnorm::rmvnorm(n=sum(d$Z==1),mean=allmeans1,sigma=vcovmat)    
     # Generate time at inclusion (time since study start) and deduce time at each follow-up
 
     d[1,"t1"] <- 0
@@ -80,7 +80,7 @@ GenData <- function(n=52,
     }
     
     for(i in 2:n){
-        d[i,"t1"] <- d[i-1,"t1"] +    runif(1,min=0,max= 2/ar)
+        d[i,"t1"] <- d[i-1,"t1"] +    stats::runif(1,min=0,max= 2/ar)
         for(k in 2:NV){            
             d[i,paste0("t",k)] <- d[i,"t1"] + k-1 # initialize time of each follow-up measurement
         }

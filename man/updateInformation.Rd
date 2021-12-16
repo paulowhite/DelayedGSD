@@ -7,6 +7,8 @@
 updateInformation(object, lmm, k, type.k, update.stage = TRUE)
 }
 \arguments{
+\item{object}{Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.}
+
 \item{lmm}{Linear mixed model as a \code{lmmGSD} object, typically output from \code{\link{analyzeData}}.}
 
 \item{k}{[integer] Index of the analysis.}
@@ -16,8 +18,6 @@ updateInformation(object, lmm, k, type.k, update.stage = TRUE)
 or \code{"final"} (after reaching the last stage of the trial).}
 
 \item{update.stage}{[logical] should the arguments \code{k} and \code{type.k} be used to update to stage of the trial?}
-
-\item{x}{Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.}
 }
 \description{
 Update the information based according to a linear mixed model.

@@ -53,6 +53,7 @@
 #' myInterim1$conclusion
 
 ## * Decision (documentation)
+#' @export
 Decision <- function(object,
                      k,
                      type.k,

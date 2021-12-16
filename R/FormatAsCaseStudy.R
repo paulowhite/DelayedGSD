@@ -1,6 +1,6 @@
 FormatAsCase <- function(d){
     rm.col <- setdiff(names(d),paste0("missing",1:3))
-    long <- reshape(d[,rm.col,drop=FALSE],
+    long <- stats::reshape(d[,rm.col,drop=FALSE],
                     direction='long',
                     varying=c('X2','X3'),
                     idvar='id',

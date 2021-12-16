@@ -13,7 +13,7 @@
 #' @param rho_beta rho parameter of the rho-family spending functions (Kim-DeMets) for beta
 #' @param alpha type I error
 #' @param beta type II error
-#' @param kMax max number of analyses (including final)
+#' @param Kmax max number of analyses (including final)
 #' @param Info.max maximum information needed for given beta (type II-error), theta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, theta and Kmax.
 #' @param Info.i Expected or observed (wherever possible) information at the interim and final analyses 1:Kmax
 #' @param Info.d Expected or observed information at all potential decision analyses 1:(Kmax-1)
@@ -33,7 +33,7 @@
 #'
 #' @examples
 #'
-#' Example to check that code matches
+#' ## Example to check that code matches
 #' b1 <- CalcBoundaries(kMax=2,  #max number of analyses (including final)
 #'                     sided=1,  #one or two-sided
 #'                     alpha=0.025,  #type I error
@@ -49,6 +49,7 @@
 #' NonBindingHJ(Kmax=2,Info.max=b1$Info.max,theta=1.5,binding=FALSE,alpha=0.025,Info.i=c(0.6,1)*b1$Info.max)
 
 ## * NonBindingHJ (code)
+#' @export
 NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
                          rho_beta=2,           # rho parameter of the rho-family spending functions (Kim-DeMets) for beta
                          alpha=0.025,          # Type-I error (overall)
@@ -105,7 +106,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
     }
   }
   # compute If (see Jennison book page 87
-  If <- (qnorm(1-alpha)+qnorm(1-beta))^2/theta^2
+  If <- (stats::qnorm(1-alpha)+stats::qnorm(1-beta))^2/theta^2
   if(Trace){
     cat("\n If computed as =",If,"\n")
   }
@@ -229,12 +230,12 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
   IncAlpha[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
   IncBeta[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
   if(direction=="smaller"){
-    theb[1] <- qnorm(p=1-IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
-    thea[1] <- qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
+    theb[1] <- stats::qnorm(p=1-IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
+    thea[1] <- stats::qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
   }else{
     if(direction=="greater"){
-      theb[1] <- qnorm(p=IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
-      thea[1] <- qnorm(p=1-IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
+      theb[1] <- stats::qnorm(p=IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
+      thea[1] <- stats::qnorm(p=1-IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
     }else{
       stop("direction should be either greater or smaller")
     }
@@ -265,7 +266,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
           if(direction=="smaller"){
             ## {{{ b_k by solving what follows 
             theb[k] <- (theb[k-1] + thea[k-1])/2 # just to handle cases in which there is no root in what follows (when binding = TRUE )
-            try(theb[k] <- uniroot(function(x){pmvnorm(lower = c(thea[1:(k-1)],x),
+            try(theb[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(thea[1:(k-1)],x),
                                                        upper = c(theb[1:(k-1)],Inf),
                                                        mean=rep(0,k),
                                                        sigma= sigmaZk[1:k,1:k],
@@ -278,7 +279,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
             ## {{{ a_k by solving what follows 
             if(IsbkOK){
               thea[k] <- theb[k] # just to handle cases in which there is no root in what follows 
-              try(thea[k] <- uniroot(function(x){pmvnorm(lower = c(thea[1:(k-1)],-Inf),
+              try(thea[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(thea[1:(k-1)],-Inf),
                                                          upper = c(theb[1:(k-1)],x),
                                                          mean=thetheta[1:k],
                                                          sigma= sigmaZk[1:k,1:k],
@@ -294,7 +295,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
           if(direction=="greater"){
             ## {{{ b_k by solving what follows 
             theb[k] <- (theb[k-1] + thea[k-1])/2 # just to handle cases in which there is no root in what follows  (when binding = TRUE )
-            try(theb[k] <- uniroot(function(x){pmvnorm(lower = c(theb[1:(k-1)],-Inf),
+            try(theb[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(theb[1:(k-1)],-Inf),
                                                        upper = c(thea[1:(k-1)],x),
                                                        mean=rep(0,k), 
                                                        sigma= sigmaZk[1:k,1:k],
@@ -307,7 +308,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
             ## {{{ a_k by solving what follows 
             if(IsbkOK){
               thea[k] <- theb[k] # just to handle cases in which there is no root in what follows                            
-              try(thea[k] <- uniroot(function(x){pmvnorm(lower = c(theb[1:(k-1)],x),
+              try(thea[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(theb[1:(k-1)],x),
                                                          upper = c(thea[1:(k-1)],Inf),
                                                          mean=thetheta[1:k],
                                                          sigma= sigmaZk[1:k,1:k],
@@ -326,7 +327,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
             if(direction=="smaller"){
               ## {{{ b_k by solving what follows
               theb[k] <- (theb[k-1] + thea[k-1])/2 # just to handle cases in which there is no root in what follows
-              try(theb[k] <- uniroot(function(x){pmvnorm(lower = c(rep(-Inf, k-1),x),
+              try(theb[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(rep(-Inf, k-1),x),
                                                          upper = c(theb[1:(k-1)],Inf),                                                                   
                                                          mean=rep(0,k),
                                                          sigma= sigmaZk[1:k,1:k],
@@ -340,7 +341,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
               ## {{{ a_k by solving what follows
               if(IsbkOK){
                 thea[k] <- theb[k] # just to handle cases in which there is no root in what follows 
-                try(thea[k] <- uniroot(function(x){pmvnorm(lower = c(thea[1:(k-1)],-Inf),
+                try(thea[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(thea[1:(k-1)],-Inf),
                                                            upper = c(theb[1:(k-1)],x),
                                                            mean=thetheta[1:k],
                                                            sigma= sigmaZk[1:k,1:k],
@@ -357,7 +358,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
               ## {{{ b_k by solving what follows
               ## browser()
               theb[k] <- (theb[k-1] + thea[k-1])/2 # just to handle cases in which there is no root in what follows
-              try(theb[k] <- uniroot(function(x){pmvnorm(lower = c(theb[1:(k-1)],-Inf),
+              try(theb[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(theb[1:(k-1)],-Inf),
                                                          upper = c(rep(Inf, k-1),x),
                                                          mean=rep(0,k), #thetheta[1:k],
                                                          sigma= sigmaZk[1:k,1:k],
@@ -370,7 +371,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
               ## {{{ a_k by solving what follows
               if(IsbkOK){
                 thea[k] <- theb[k] # just to handle cases in which there is no root in what follows                            
-                try(thea[k] <- uniroot(function(x){pmvnorm(lower = c(theb[1:(k-1)],x),
+                try(thea[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(theb[1:(k-1)],x),
                                                            upper = c(thea[1:(k-1)],Inf),
                                                            mean=thetheta[1:k],
                                                            sigma= sigmaZk[1:k,1:k],

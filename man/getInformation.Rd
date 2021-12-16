@@ -42,18 +42,15 @@ or for the full dataset  (\code{"prediction"}, including missing values).}
 
 \item{name.coef}{[character] For which coefficient the information should be computed (only relevant for gls models).}
 
-\item{data}{[data.frame] The dataset relative to which the information should be computed. See details section.}
-
 \item{details}{[logical] Should intermediate results be output. See details section.}
+
+\item{newdata, data}{[data.frame] The dataset relative to which the information should be computed. See details section.}
+
+\item{weighting}{[logical] Should weight be used to handle missing values in the covariates.}
 
 \item{planned}{[character] Should only the information used to plan the trial be output (\code{"only"}),
 or only the estimated information (\code{FALSE}),
 or the estimated information when available and otherwise the information used to plan the trial.}
-
-\item{method.prediction}{[character] method used to estimate the information relative to the missing values (only relevant for gls models).
-Can be by increasing the information proportionally to the amount of missing values (\code{"inflation"})
-or by approximating the variance of the estimator by a weighted average between the complete case estimator and the full information estimator (\code{"pooling"}).
-or a list containing the theoretical value of the variance-covariance matrix for each treatment group.}
 }
 \description{
 Extract information relative to a parameter.

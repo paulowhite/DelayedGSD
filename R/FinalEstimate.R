@@ -33,7 +33,7 @@ FinalEstimate <- function(Info.d,
                 delta=delta) - 0.5)^2
   }
   
-  res <- optimise(f,lower=estimate-2*sqrt(1/Info.d[length(Info.d)]),upper=estimate+2*sqrt(1/Info.d[length(Info.d)]))
+  res <- stats::optimise(f,lower=estimate-2*sqrt(1/Info.d[length(Info.d)]),upper=estimate+2*sqrt(1/Info.d[length(Info.d)]))
   
   res$minimum
 }
