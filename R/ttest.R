@@ -6,7 +6,7 @@
 #'
 #' @export
 ttest <- function(...){
-    out <- t.test(...)
+    out <- stats::t.test(...)
 
     ## ** add call and arguments to the output
     out$call <- match.call()

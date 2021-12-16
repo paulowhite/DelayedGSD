@@ -32,7 +32,7 @@
 #' myBound
 #' plot(myBound)
 #' 
-#' #to reproduce bounds from CJ DSBS course slide 106
+#' ## to reproduce bounds from CJ DSBS course slide 106
 #' myBound <- CalcBoundaries(kMax=3,
 #'               sided=1,
 #'               alpha=0.025,  
@@ -40,9 +40,9 @@
 #'               InfoR.i=c(3.5,6.75,12)/12,
 #'               gammaA=1.345,
 #'               gammaB=1.345,
-#'               method=2,
+#'               method=1, ## has been changed from 2 to 1
 #'               cNotBelowFixedc=TRUE,
-#'               bindingFutility=F,
+#'               bindingFutility=FALSE,
 #'               delta=1,
 #'               InfoR.d=c(5.5,8.75)/12)
 #' myBound
@@ -65,7 +65,7 @@ CalcBoundaries <- function(kMax=2,
                            n=NULL,
                            trace=TRUE){  
 
-    require(gsDesign)
+    requireNamespace("gsDesign")
 
     ## ** normalize user input
     call <- match.call() ## keep track of how the user run the function
@@ -101,7 +101,7 @@ CalcBoundaries <- function(kMax=2,
                                         #R <- getDesignCharacteristics(StandardDesign)$inflationFactor
 
     R <- StandardDesign$n.I[kMax]
-    Info.max <- ((qnorm(1-alpha)+qnorm(1-beta))/delta)^2*R
+    Info.max <- ((stats::qnorm(1-alpha)+stats::qnorm(1-beta))/delta)^2*R
     Info.d <- InfoR.d*Info.max
   
     
@@ -130,7 +130,7 @@ CalcBoundaries <- function(kMax=2,
     }
     
     ## ** compute boundaries at decision and possibly update futility boundary at interim
-    cMin <- ifelse(cNotBelowFixedc,qnorm(1-alpha),-Inf)
+    cMin <- ifelse(cNotBelowFixedc,stats::qnorm(1-alpha),-Inf)
     
     if(method==1){
     
@@ -195,4 +195,5 @@ CalcBoundaries <- function(kMax=2,
     class(out) <- append("delayedGSD",class(out))
     return(out)
 }
+
 

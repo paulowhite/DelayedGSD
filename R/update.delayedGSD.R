@@ -11,7 +11,11 @@
 #' @param type.k [character] type of analysis: \code{"interim"} (after continuing recruitment),
 #' \code{"decision"} (after stopping recruitment for efficacy or futility),
 #' or \code{"final"} (after reaching the last stage of the trial).
+#' @param p.value [logical] should the p-value be computed at decision?
+#' @param ci [logical] should the confidence intervalsbe computed at decision?
+#' @param estimate [logical] should a de-biased estimate be computed at decision? WARNING: this is experiment and not reliable.
 #' @param trace [logical] should the execution of the function be traced?
+#' @param ... not used, for compatibility with the generic method.
 
 ## * update.delayedGSD (examples)
 #' @examples
@@ -48,7 +52,7 @@
 #' #### Analyse data at the first interim ####
 #' theInterimData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)
 #' 
-#' myInterim1 <- update(myBound0, data = theInterimData, k = 1, analysis = "interim")
+#' myInterim1 <- update(myBound0, data = theInterimData) ## k = 1, analysis = "interim"
 #' print(myInterim1)
 #' print(myInterim1, planned = FALSE)
 #' print(myInterim1, planned = "only")
@@ -59,36 +63,47 @@
 #' 
 #' #### Analyse data at the final stage ####
 #' theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
-#' myFinal <- update(myInterim1, data = theFinalData, k = 2, analysis = "final")
+#' myFinal <- update(myInterim1, data = theFinalData) ## k = 2, analysis = "final"
 #' myFinal
 #' print(myFinal, abreviated = FALSE)
 #' plot(myFinal)
 
 ## * update.delayedGSD (code)
 #' @export
-update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k = NULL, type.k = NULL, trace = TRUE, ...){
+update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k = NULL, type.k = NULL,
+                              p.value = TRUE, ci = TRUE, estimate = TRUE,
+                              trace = TRUE, ...){
 
+    
+
+    ## ** normalize user input
     kMax <- object$kMax
     object.type.k <- object$stage$type
     object.k <- object$stage$k
-    
+
+    if(object.type.k %in% "decision"){
+        stop("No more boundary to update when a decision analysis has been performed. \n")
+    }
+    if(object.type.k %in% "final"){
+        stop("No more boundary to update when the final analysis has been performed. \n")
+    }
+    resStage <- .getStage(object.stage = object$stage,
+                          object.conclusion = object$conclusion,
+                          kMax = kMax,
+                          k = k,
+                          type.k = type.k,
+                          nextStage = TRUE)
+    k <- resStage$k
+    type.k <- resStage$type
+
     if(trace>0){
         if(object.type.k=="planning"){
             cat("Group Sequential Trial at the ",object.type.k," stage. \n", sep = "")
         }else{
             cat("Group Sequential Trial at the ",object.type.k," analysis of stage ",object.k,". \n", sep = "")
         }
+        cat("Update for the ",type.k," analysis of stage ",k,". \n", sep = "")
     }
-
-    ## ** normalize user input
-    resStage <- .getStage(object.stage = object$stage,
-                          object.conclusion = object$conclusion,
-                          kMax = kMax,
-                          k = k,
-                          type.k = type.k)
-    k <- resStage$k
-    type.k <- resStage$type
-    if(trace>0){cat("Update for the ",type.k," analysis of stage ",k,". \n", sep = "")}
 
     ## ** update mixed model
     if(trace>0){cat(" - fit mixed model: ", sep = "")}
@@ -135,41 +150,47 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
                                         p.value=NA)
 
         ## *** p.value
-        object$correction$p.value <- FinalPvalue(Info.d = object$Info.d,  
-                                                 Info.i = object$Info.i,  
-                                                 ck = object$ck,   
-                                                 lk = object$kk,  
-                                                 uk = object$uk,  
-                                                 sided = 1,  
-                                                 kMax = kMax, 
-                                                 delta = 0,  
-                                                 estimate = delta[NROW(delta),"estimate"])
-
+        if(p.value){
+            object$correction$p.value <- FinalPvalue(Info.d = object$Info.d,  
+                                                     Info.i = object$Info.i,  
+                                                     ck = object$ck,   
+                                                     lk = object$kk,  
+                                                     uk = object$uk,  
+                                                     sided = 1,  
+                                                     kMax = kMax, 
+                                                     delta = 0,  
+                                                     estimate = delta[NROW(delta),"estimate"])
+        }
+        
         ## *** CI
-        resCI <- FinalCI(Info.d = object$Info.d,  
-                         Info.i = object$Info.i,  
-                         ck = object$ck,   
-                         lk = object$kk,  
-                         uk = object$uk,  
-                         sided = 1,  
-                         kMax = kMax, 
-                         alpha = object$alpha,  
-                         estimate = delta[NROW(delta),"estimate"])
-        object$correction$lower <- resCI["lower"]
-        attr(object$correction$lower,"error") <- attr(resCI,"error")["lower"]
-        object$correction$upper <- resCI["upper"]
-        attr(object$correction$lower,"error") <- attr(resCI,"error")["upper"]
+        if(ci){
+            resCI <- FinalCI(Info.d = object$Info.d,  
+                             Info.i = object$Info.i,  
+                             ck = object$ck,   
+                             lk = object$kk,  
+                             uk = object$uk,  
+                             sided = 1,  
+                             kMax = kMax, 
+                             alpha = object$alpha,  
+                             estimate = delta[NROW(delta),"estimate"])
+            object$correction$lower <- resCI["lower"]
+            attr(object$correction$lower,"error") <- attr(resCI,"error")["lower"]
+            object$correction$upper <- resCI["upper"]
+            attr(object$correction$lower,"error") <- attr(resCI,"error")["upper"]
+        }
         
         ## *** Estimate
-        object$correction$estimate <- FinalEstimate(Info.d = object$Info.d,  
-                                                    Info.i = object$Info.i,  
-                                                    ck = object$ck,   
-                                                    lk = object$kk,  
-                                                    uk = object$uk,  
-                                                    sided = 1,  
-                                                    kMax = kMax, 
-                                                    estimate = delta[NROW(delta),"estimate"])
-
+        if(estimate){
+            object$correction$estimate <- FinalEstimate(Info.d = object$Info.d,  
+                                                        Info.i = object$Info.i,  
+                                                        ck = object$ck,   
+                                                        lk = object$kk,  
+                                                        uk = object$uk,  
+                                                        sided = 1,  
+                                                        kMax = kMax, 
+                                                        estimate = delta[NROW(delta),"estimate"])
+        }
+        
         if(trace>0){cat("done \n", sep = "")}
     }
     
@@ -178,88 +199,171 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
 }
 
 ## * .getStage
-.getStage <- function(object.stage, object.conclusion, kMax, k, type.k){
+## Identify the current stage or check that the values of k and type.k are compatible with the object
+.getStage <- function(object.stage, object.conclusion, kMax, k, type.k, nextStage){
 
     ## ** extract information
     object.k <- object.stage$k
     object.type.k <- object.stage$type
-    object.conclusionInterim <- object.conclusion["interim",object.k]
 
     ## ** basic checks
     if(!is.null(type.k)){
         type.k <- match.arg(type.k, c("interim","decision","final"))
     }
-    if(!is.null(k) && k<0 || k>kMax || k %% 1 != 0){
-        stop("Argument \'k\' must be an integer between 1 and ",kMax,"")
+    if(!is.null(k)){
+        if(k<0 || k>kMax || k %% 1 != 0){
+            stop("Argument \'k\' must be an integer between 1 and ",kMax,"")
+        }
     }
 
     ## ** more precise check
     if(object.k==0){
-        if(!is.null(k)){
-            if(k!=1){
-                stop("Argument \'k\' should be 1 just after the planning stage. \n")
-            }
-        }else{
-            k <- 1
-        }
-        if(!is.null(type.k)){
-            if(type.k!="interim"){
-                stop("Argument \'type.k\' should be \"interim\" just after the planning stage. \n")
-            }
-        }else{
-            type.k <- "interim"
-        }
-    }else{
-        if(is.na(object.conclusionInterim)){
-            stop("Decision type.k must be made for stage ",object.k," before updating the boundaries. \n")
-        }
-        if(object.type.k %in% "decision"){
-            stop("No more boundary to update when a decision analysis has been performed. \n")
-        }
-        if(object.type.k %in% "final"){
-            stop("No more boundary to update when the final analysis has been performed. \n")
-        }
-        if(object.conclusionInterim=="continue"){
+
+        ## *** planning
+        if(nextStage){
             if(!is.null(k)){
-                if(k!=(object.k+1)){
-                    stop("Argument \'k\' should be ",object.k+1," after continuing recruitment following the interim of stage ",object.k,". \n")
+                if(k!=1){
+                    stop("Argument \'k\' should be 1 just after the planning stage. \n")
+                }
+            }else{ 
+                k <- 1
+            }
+            if(!is.null(type.k)){
+                if(type.k!="interim"){
+                    stop("Argument \'type.k\' should be \"interim\" just after the planning stage. \n")
                 }
             }else{
-                k <- object.k + 1
+                type.k <- "interim"
             }
-            if(k==kMax){
-                if(!is.null(type.k)){
-                    if(type.k!="final"){
-                        stop("Argument \'type.k\' should be \"final\" after continuing recruitment following the interim of stage ",object.k,". \n")
-                    }
-                }else{
-                    type.k <- "final"
-                }
-            }else{ ## k < kMax
-                if(!is.null(type.k)){
-                    if(type.k!="interim"){
-                        stop("Argument \'type.k\' should be \"interim\" after continuing recruitment following the interim of stage ",object.k,". \n")
-                    }
-                }else{
-                    type.k <- "interim"
-                }
-            }
-        }else{ ##    object.conclusionInterim=="stop"
+        }else{
             if(!is.null(k)){
-                if(k!=object.k){
-                    stop("Argument \'k\' should be ",object.k," after stopping recruitment following the interim of stage ",object.k,". \n")
+                if(k!=0){
+                    stop("Argument \'k\' should be 0 at the planning stage. \n")
+                }
+            }else{ 
+                k <- 0
+            }
+            if(!is.null(type.k)){
+                if(type.k!="planning"){
+                    stop("Argument \'type.k\' should be \"planning\" just at the planning stage. \n")
+                }
+            }else{
+                type.k <- "planning"
+            }
+        }
+    }else if(object.type.k=="interim"){
+
+        if(nextStage){
+            object.conclusionInterim <- object.conclusion["interim",object.k]
+
+            if(object.conclusionInterim=="continue"){ ## at interim where we conclude to continue
+                if(!is.null(k)){
+                    if(k!=(object.k+1)){
+                        stop("Argument \'k\' should be ",object.k+1," after continuing recruitment following the interim of stage ",object.k,". \n")
+                    }
+                }else{
+                    k <- object.k + 1
+                }
+                if(k==kMax){
+                    if(!is.null(type.k)){
+                        if(type.k!="final"){
+                            stop("Argument \'type.k\' should be \"final\" after continuing recruitment following the interim of stage ",object.k,". \n")
+                        }
+                    }else{
+                        type.k <- "final"
+                    }
+                }else{ ## k < kMax
+                    if(!is.null(type.k)){
+                        if(type.k!="interim"){
+                            stop("Argument \'type.k\' should be \"interim\" after continuing recruitment following the interim of stage ",object.k,". \n")
+                        }
+                    }else{
+                        type.k <- "interim"
+                    }
+                }
+            }else if(object.conclusionInterim=="stop"){ ## at interim where we conclude to stop
+                if(!is.null(k)){
+                    if(k!=object.k){
+                        stop("Argument \'k\' should be ",object.k," after stopping recruitment following the interim of stage ",object.k,". \n")
+                    }
+                }else{
+                    k <- object.k
+                }
+                if(!is.null(type.k)){
+                    if(type.k!="decision"){
+                        stop("Argument \'type.k\' should be \"decision\" after stopping recruitment following the interim of stage ",object.k,". \n")
+                    }
+                }else{
+                    type.k <- "decision"
+                }
+            }
+
+        }else{
+            if(!is.null(k)){
+                if(k %in% 1:object.k == FALSE){
+                    stop("Argument \'k\' should be an integer between 1 and ",object.k,". \n")
                 }
             }else{
                 k <- object.k
             }
             if(!is.null(type.k)){
-                if(type.k!="decision"){
-                    stop("Argument \'type.k\' should be \"decision\" after stopping recruitment following the interim of stage ",object.k,". \n")
+                if(type.k %in% "interim" == FALSE){
+                    stop("Argument \'type.k\' can only be \"interim\". \n")
                 }
             }else{
-                type.k <- "decision"
+                type.k <- "interim"
             }
         }
+
+    }else if(object.type.k=="decision"){
+        if(nextStage){
+            stop("The decision analysis has already been reached, no further analysis. \n")
+        }
+        if(!is.null(k)){
+            if(k %in% 1:object.k == FALSE){
+                stop("Argument \'k\' should be an integer between 1 and ",object.k,". \n")
+            }
+        }else{
+            k <- object.k
+        }
+        if(!is.null(type.k)){
+            if(k<object.k && type.k=="decision"){
+                stop("Argument \'type.k\' cannot be \"decision\" as recruitement continued after interim ",k,". \n")
+            }else if(type.k %in% c("decision","interim") == FALSE){
+                stop("Argument \'type.k\' can either be \"interim\" or \"decision\". \n")
+            }
+        }else{
+            type.k <- "decision"
+        }
+
+    }else if(object.type.k=="final"){
+    
+        if(nextStage){
+            stop("The final analysis has already been reachedm no further analysis. \n")
+        }
+        if(!is.null(k)){
+            if(k %in% 1:object.k == FALSE){
+                stop("Argument \'k\' should be an integer between 1 and ",object.k,". \n")
+            }
+        }else{
+            k <- object.k
+        }
+        if(!is.null(type.k)){
+            if(k==object.k){
+                if(type.k!="final"){
+                    stop("Argument \'type.k\' must be \"final\" at stage ",k,". \n")
+                }
+            }else if(type.k %in% c("decision","interim") == FALSE){
+                if(k>2){
+                    stop("Argument \'type.k\' can either be \"interim\" or \"decision\" between stage 1 and ",k-1,". \n")
+                }else{
+                    stop("Argument \'type.k\' can either be \"interim\" or \"decision\" at stage 1. \n")
+                }
+            }
+        }else{
+            type.k <- "final"
+        }
+
     }
     
     ## ** export

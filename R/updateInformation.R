@@ -1,7 +1,7 @@
 #' @title Update Information in a GSD
 #' @description Update the information based according to a linear mixed model.
 #'
-#' @param x Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
+#' @param object Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
 #' @param lmm Linear mixed model as a \code{lmmGSD} object, typically output from \code{\link{analyzeData}}.
 #' @param k [integer] Index of the analysis.
 #' @param type.k [character] Type of analysis: \code{"interim"} (after continuing recruitment),

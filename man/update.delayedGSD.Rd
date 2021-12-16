@@ -11,6 +11,9 @@
   ddf = NULL,
   k = NULL,
   type.k = NULL,
+  p.value = TRUE,
+  ci = TRUE,
+  estimate = TRUE,
   trace = TRUE,
   ...
 )
@@ -30,7 +33,15 @@
 \code{"decision"} (after stopping recruitment for efficacy or futility),
 or \code{"final"} (after reaching the last stage of the trial).}
 
+\item{p.value}{[logical] should the p-value be computed at decision?}
+
+\item{ci}{[logical] should the confidence intervalsbe computed at decision?}
+
+\item{estimate}{[logical] should a de-biased estimate be computed at decision? WARNING: this is experiment and not reliable.}
+
 \item{trace}{[logical] should the execution of the function be traced?}
+
+\item{...}{not used, for compatibility with the generic method.}
 }
 \description{
 Use the newly observed data to perform the next stage of the analysis:
@@ -70,7 +81,7 @@ tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do
 #### Analyse data at the first interim ####
 theInterimData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)
 
-myInterim1 <- update(myBound0, data = theInterimData, k = 1, analysis = "interim")
+myInterim1 <- update(myBound0, data = theInterimData) ## k = 1, analysis = "interim"
 print(myInterim1)
 print(myInterim1, planned = FALSE)
 print(myInterim1, planned = "only")
@@ -81,7 +92,7 @@ plot(myInterim1)
 
 #### Analyse data at the final stage ####
 theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
-myFinal <- update(myInterim1, data = theFinalData, k = 2, analysis = "final")
+myFinal <- update(myInterim1, data = theFinalData) ## k = 2, analysis = "final"
 myFinal
 print(myFinal, abreviated = FALSE)
 plot(myFinal)

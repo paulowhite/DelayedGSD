@@ -2,7 +2,7 @@
 #' @title Update Boundaries of a GSD
 #' @description Recompute the boundaries based according to the current information.
 #'
-#' @param x Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
+#' @param object Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
 #' @param lmm Optional argument used to update the information. Object of type \code{lmmGSD}, typically output from \code{\link{analyzeData}}.
 #' @param k [integer] Index of the analysis.
 #' @param type.k [character] Type of analysis: \code{"interim"} (after continuing recruitment),
@@ -155,7 +155,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                       rho=object$gammaA,
                                       alpha=object$alpha,
                                       bindingFutility=bindingFutility)
-                object$ck[k:(kMax-1)]  <- c(newBound2[k], rep(NA,kMax-k-1))
+                object$ck[k:(kMax-1)]  <- c(newBounds2[k], rep(NA,kMax-k-1))
             }else{
                 stop("Method ",object$method," not implemented when Imax reached. \n")
             }
@@ -184,12 +184,12 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
     if(type.k == "final"){ ##  that could be replace by a call to CalcBoundaries
         if(bindingFutility){test.type <- 3}else{test.type <- 4}
 
-        StandardDesign <- gsDesign(k = k, test.type = test.type, alpha = object$alpha, beta = object$beta,
-                                   timing = c(Info.i[1:(k-1)], object$Info.max)/object$Info.max,
-                                   n.fix = 1, n.I = Info.i / (object$Info.max/object$InflationFactor), maxn.IPlan = object$InflationFactor,
-                                   ## n.fix=object$Info.max/object$InflationFactor, n.I=Info.i, maxn.IPlan=object$Info.max ## should be equivalent
-                                   sfu = gsDesign::sfPower, sfupar = object$gammaA,
-                                   sfl = gsDesign::sfPower, sflpar = object$gammaB)
+        StandardDesign <- gsDesign::gsDesign(k = k, test.type = test.type, alpha = object$alpha, beta = object$beta,
+                                             timing = c(Info.i[1:(k-1)], object$Info.max)/object$Info.max,
+                                             n.fix = 1, n.I = Info.i / (object$Info.max/object$InflationFactor), maxn.IPlan = object$InflationFactor,
+                                             ## n.fix=object$Info.max/object$InflationFactor, n.I=Info.i, maxn.IPlan=object$Info.max ## should be equivalent
+                                             sfu = gsDesign::sfPower, sfupar = object$gammaA,
+                                             sfl = gsDesign::sfPower, sflpar = object$gammaB)
 
         object$lk[k]  <- StandardDesign$upper$bound[k]
         object$uk[k]  <- StandardDesign$upper$bound[k]

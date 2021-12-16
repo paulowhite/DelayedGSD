@@ -67,4 +67,20 @@ myBound <- CalcBoundaries(kMax=2,
               InfoR.d=0.55)
 myBound
 plot(myBound)
+
+## to reproduce bounds from CJ DSBS course slide 106
+myBound <- CalcBoundaries(kMax=3,
+              sided=1,
+              alpha=0.025,  
+              beta=0.1,  
+              InfoR.i=c(3.5,6.75,12)/12,
+              gammaA=1.345,
+              gammaB=1.345,
+              method=1, ## has been changed from 2 to 1
+              cNotBelowFixedc=TRUE,
+              bindingFutility=FALSE,
+              delta=1,
+              InfoR.d=c(5.5,8.75)/12)
+myBound
+plot(myBound)
 }

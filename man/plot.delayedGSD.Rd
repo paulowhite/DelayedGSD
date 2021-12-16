@@ -16,7 +16,7 @@
   legend = TRUE,
   legend.ncol = 1,
   legend.cex = 1,
-  add.arrows = FALSE,
+  add.arrow = FALSE,
   sep.arrow = c(0.2, 0.1),
   size.arrow = 0.1,
   lwd.arrow = 1,
@@ -32,6 +32,9 @@
 
 \item{Itype}{information scale on x-axis (rate or absolute (abs))}
 
+\item{planned}{[logical] should the planned boundaries be displayed along with the boundaries that have been computed based on the data.
+Can also be \code{"only"} to only display planned boundaries.}
+
 \item{main}{to specify a plot title}
 
 \item{xlim}{range of the x axis}
@@ -44,15 +47,15 @@
 
 \item{legend.cex}{character expansion factor for the text in the legend.}
 
-\item{add.arrows}{[logical] should arrows indicating the ordering of the space be added?}
+\item{add.arrow}{[logical] should arrows indicating the ordering of the space be added?}
+
+\item{sep.arrow}{[numeric vector of length 2] space between the critical point and the arrow (below and above)}
+
+\item{size.arrow}{[numeric, >0] width of the arrow.}
+
+\item{lwd.arrow}{[numeric, >0] thickness of the arrow.}
 
 \item{...}{not used. For compatibility with the generic method.}
-
-\item{sep.arrows}{[numeric vector of length 2] space between the critical point and the arrow (below and above)}
-
-\item{size.arrows}{[numeric, >0] width of the arrow.}
-
-\item{lwd.arrows}{[numeric, >0] thickness of the arrow.}
 }
 \description{
 Display boundaries over information
@@ -60,8 +63,8 @@ Display boundaries over information
 \examples{
 bnds <- CalcBoundaries(kMax=3, InfoR.i = c(0.5,0.75,1), InfoR.d = c(0.55,0.8))
 plot(bnds, type = "Z")
-plot(bnds, type = "Z", add.arrows = TRUE)
-plot(bnds, type = "Z", add.arrows = TRUE, lwd.arrow=2,ylim=c(0.35,2.6), xlim=c(0.5,1.1),legend=FALSE)
+plot(bnds, type = "Z", add.arrow = TRUE)
+plot(bnds, type = "Z", add.arrow = TRUE, lwd.arrow=2,ylim=c(0.35,2.6), xlim=c(0.5,1.1),legend=FALSE)
 plot(bnds, type = "E")
 plot(bnds, type = "P")
 }

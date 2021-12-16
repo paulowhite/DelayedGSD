@@ -1,37 +1,28 @@
+## * print.delayedGSD (documentation)
+#' @title Status of a Group Sequential Design with Delayed Endpoints
+#' @description Display boundaries and estimated treatment effect up the current stage.
+#' 
+#' @param x object of class \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
+#' @param planned [logical] should the planned boundaries be displayed along with the boundaries that have been computed based on the data.
+#' Can also be \code{"only"} to only display planned boundaries.
+#' @param digits [interger,>0] integer indicating the number of decimal places to be used.
+#' @param space [character] column separator.
+#' @param abreviated [logical] abreviate some column names and action that should be taken
+#' (e.g. C for continue, C-Info for continue due to decreasing information, S-F for stop for futility, and S-Imax for stop because maximum information has been reached).
+#' @param ... not used, for compatibility with the generic method.
+#' 
+
 ## * print.delayedGSD
 #' @export
-print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abreviated = TRUE, ...){
+print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abreviated = TRUE, ...){
 
     ## ** extract information from object
     call <- x$call
     kMax <- x$kMax
     k <- x$stage$k
     type.k <- x$stage$type
-    InflationFactor <- x$InflationFactor
 
     test.planning <- (type.k=="planning") || identical(planned,"only")
-    ls.info <- getInformation(x, planned = planned)
-    Info.max <- ls.info$Info.max
-    uk  <- ls.info$uk
-    lk  <- ls.info$lk
-    ck  <- ls.info$ck
-    
-    if(!test.planning){
-        iLMM <- x$lmm[[utils::tail(ls.info$index.lmm,1)]]
-
-        statistic <- unname(ls.info$delta[,"statistic"])
-        statistic.interim <- c(statistic[1:k], rep(NA,kMax-k))
-        statistic.interim[kMax] <- NA ## at final analysis no interim only decision
-        statistic.decision <- rep(NA,kMax)
-        if(type.k=="decision"){
-            statistic.decision[k] <- statistic[k+1]
-        }else if(type.k=="final"){
-            statistic.decision[k] <- statistic[k]
-        }
-
-        ## remove critical boundaries when continuing at interim
-        ck[which(x$conclusion["interim",]=="continue")] <- NA
-    }
 
     ## ** Welcome message
     if(test.planning){
@@ -53,173 +44,122 @@ print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abrevia
     }
 
     ## ** Boundaries
+    df.printBound <- stats::coef(x, type = "boundary", planned = planned)
+    df.printBound$Fbound <- round(df.printBound$Fbound, digits)
+    df.printBound$Ebound <- round(df.printBound$Ebound, digits)
+    df.printBound$Cbound <- round(df.printBound$Cbound, digits)
+        
     if(test.planning){
 
-        df.print <- data.frame(1:kMax, lk, uk, c(ck,uk[kMax]))
         if(abreviated){
-            colnames(df.print) <- c("Stage","F-bound","E-bound","C-bound")
+            colnames(df.printBound) <- c("Stage","F-bound","E-bound","C-bound")
         }else{
-            colnames(df.print) <- c("Stage","Futility boundary","Efficacy boundary","Critical boundary")
+            colnames(df.printBound) <- c("Stage","Futility boundary","Efficacy boundary","Critical boundary")
         }
+        df.printBound[is.na(df.printBound)] <- ""
 
         cat("\n * Planned boundaries: \n")
-        print(df.print, row.names = FALSE, digits = digits)
+        print(df.printBound, row.names = FALSE, digits = digits, quotes="")
 
-    }else{    
-
-        ## Round values
-        if(is.null(digits)){
-            statistic.interim.print <- as.character(statistic.interim)
-            statistic.decision.print <- as.character(statistic.decision)
-            lk.print <- c(as.character(lk[1:(kMax-1)]),as.character(NA)) ## no interim at the last stage, only decision
-            uk.print <- c(as.character(uk[1:(kMax-1)]),as.character(NA))
-            ck.print <- as.character(c(ck,uk[kMax]))
-        }else{
-            statistic.interim.print <- as.character(round(statistic.interim,digits))
-            statistic.decision.print <- as.character(round(statistic.decision,digits))
-            lk.print <- c(as.character(round(lk[1:(kMax-1)], digits)),as.character(NA)) ## no interim at the last stage, only decision
-            uk.print <- c(as.character(round(uk[1:(kMax-1)], digits)),as.character(NA))
-            ck.print <- c(as.character(round(c(ck,uk[kMax]),digits)))
-        }
-        statistic.interim.print[is.na(statistic.interim)] <- ""
-        statistic.decision.print[is.na(statistic.decision)] <- ""
-        lk.print[is.na(lk.print)] <- ""
-        uk.print[is.na(uk.print)] <- ""
-        ck.print[is.na(ck.print)] <- ""
-
-        ## Abreviate actions
-        colname.interim <- c("Futility boundary","Efficacy boundary","Statistic")
-        colname.decision <- c("Critical boundary","Statistic")
+    }else{
+        df.printBound$statistic.interim <- round(df.printBound$statistic.interim, digits)
+        df.printBound$statistic.decision <- round(df.printBound$statistic.decision, digits)
+        df.printBound[is.na(df.printBound)] <- ""
         
         conclusion.interim.print <- .reformatInterimTxt(x$conclusion, kMax = kMax, abreviated = abreviated)
-        if(!is.null(conclusion.interim.print)){
-            if(abreviated){
-                colname.interim <- c(colname.interim,"")
-            }else{
-                colname.interim <- c(colname.interim,"Action")
-            }
-        }
         conclusion.decision.print <- .reformatDecisionTxt(x$conclusion, kMax = kMax, abreviated = abreviated)
-        if(!is.null(conclusion.decision.print)){
-            if(abreviated){
-                colname.decision <- c(colname.decision,"")
-            }else{
-                colname.decision <- c(colname.decision,"Action")
-            }
-        }
 
-        ## assemble
-        if(is.null(space)){
-            ls.df <- list(1:kMax,
-                          lk.print, uk.print, statistic.interim.print, conclusion.interim.print,
-                          ck.print, statistic.decision.print, conclusion.decision.print)
-            df.print <- data.frame(ls.df[sapply(ls.df,length)>0])
-            colnames(df.print) <- c("Stage",colname.interim,colname.decision)
-        }else{
-            ls.df <- list(1:kMax, space,
-                          lk.print, uk.print, statistic.interim.print, conclusion.interim.print, space,
-                          ck.print, statistic.decision.print, conclusion.decision.print)
-            df.print <- data.frame(ls.df[sapply(ls.df,length)>0])
-            colnames(df.print) <- c("Stage","",colname.interim,"",colname.decision)
+        df.printBound2 <- data.frame("Stage" = df.printBound$Stage,
+                                     "Futility boundary" = df.printBound$Fbound,
+                                     "Efficacy boundary" = df.printBound$Ebound,
+                                     "Statistic" = df.printBound$statistic.interim,
+                                     "Action" = conclusion.interim.print,
+                                     "Critical boundary" = df.printBound$Cbound,
+                                     "Statistic" = df.printBound$statistic.decision,
+                                     "Action" = conclusion.decision.print,
+                                     check.names = FALSE)
+
+        if(abreviated){
+            names(df.printBound2) <- c("Stage", "F-bound", "E-bound", "Stat", "", "C-bound", "Stat", "")
+            names(df.printBound2)[8] <- ""
         }
 
         ## display
         cat("\n * Boundaries and observed statistics \n")
-        df.print2 <- rbind(names(df.print),df.print)
-        colnames(df.print2) <- rep("", NCOL(df.print))
-        colnames(df.print2)[names(df.print)=="Efficacy boundary"] <- "Interim"
-        colnames(df.print2)[names(df.print)=="Critical boundary"] <- "Decision"
-
+        df.printBound3 <- rbind(names(df.printBound2),df.printBound2)
+        df.printBound3[1,1] <- ""
+        names(df.printBound3) <- rep("", NCOL(df.printBound3))
         if(abreviated){
-            df.print2[1,names(df.print)=="Statistic"] <- "Stat"
-            df.print2[1,names(df.print)=="Futility boundary"] <- "F-bound"
-            df.print2[1,names(df.print)=="Efficacy boundary"] <- "E-bound"
-            df.print2[1,names(df.print)=="Critical boundary"] <- "C-bound"
+            names(df.printBound3)[3] <- "Interim"
+            names(df.printBound3)[6] <- "Decision"
+        }else{
+            names(df.printBound3)[3] <- "Interim analysis"
+            names(df.printBound3)[6] <- "Decision analysis"
         }
-        print(df.print2, row.names = FALSE)
+        print(df.printBound3, row.names = FALSE, quote = FALSE)
     }
   
     cat("\n")
 
     ## ** Information
+    df.printInfo <- stats::coef(x, type = "information", planned = planned)
+    if(!is.null(digits)){
+        df.printInfo$Interim <- round(df.printInfo$Interim, digits)
+        df.printInfo$Decision <- round(df.printInfo$Decision, digits)
+        df.printInfo$Interim.pc <- round(df.printInfo$Interim.pc, digits)
+        df.printInfo$Decision.pc <- round(df.printInfo$Decision.pc, digits)
+    }
+
     if(test.planning){
-        Info.i <- c(x$planned$Info.i[1:(kMax-1)],NA)
-        Info.d <- c(x$planned$Info.d,x$planned$Info.i[kMax])
-        InfoR.i <- Info.i/x$Info.max
-        InfoR.d <- Info.d/x$Info.max
-        if(!is.null(x$n.obs)){
-            n.obs <- x$n.obs*InfoR.d
-        }else{
-            n.obs <- NULL
-        }
+        names(df.printInfo) <- c("Stage", "Interim", "(%)", "Decision", "(%)")
         cat(" * Planned information: \n",sep="")
     }else{
-        Info.i <- c(ls.info$Info.i[1:(kMax-1)],NA)
-        Info.d <- c(ls.info$Info.d,ls.info$Info.i[kMax])
-        InfoR.i <- Info.i/x$Info.max
-        InfoR.d <- Info.d/x$Info.max
-        n.obs <- unlist(lapply(x$lmm, function(iLMM){
-            if(!is.null(iLMM)){iLMM$n["decision"]}else{NA}
-        }))
-        index.lastNNA <- utils::tail(which(!is.na(n.obs)),1)
-        index.NA <- which(is.na(n.obs))
-        n.obs[index.NA] <- round(n.obs[index.lastNNA] * InfoR.d[index.NA]/InfoR.d[index.lastNNA],digits)
-        n.obs <- as.character(n.obs)
-        n.obs[intersect(index.NA,which(is.na(InfoR.d)))] <- ""
-        cat(" * Observed and planned information: \n",sep="")
-        ## cat(" * Observed and predicted information: \n",sep="")
+        names(df.printInfo) <- c("Stage", "Interim", "(%)", "Decision", "(%)", "n")
+        if(planned){
+            cat(" * Observed and planned information: \n",sep="")
+        }else{
+            cat(" * Observed information: \n",sep="")
+        }
     }
-    if(!is.null(digits)){
-        Info.i <- round(Info.i, digits)
-        Info.d <- round(Info.d, digits)
-        InfoR.i <- round(InfoR.i, digits)
-        InfoR.d <- round(InfoR.d, digits)
-    }
-    df.printInfo <- data.frame(Stage = 1:kMax,
-                               Interim =  as.character(Info.i),
-                               "(%)" = as.character(InfoR.i),
-                               "Decision" = as.character(Info.d),
-                               "(%)" = as.character(InfoR.d),
-                               check.names = FALSE)
     df.printInfo[is.na(df.printInfo)] <- ""
-    if(!is.null(n.obs)){
-        df.printInfo  <- cbind(df.printInfo,"n"=n.obs)
-    }
     if(!is.null(space)){
         df.printInfo <- cbind(df.printInfo[,1,drop=FALSE]," "=space,df.printInfo[,2:3]," "=space,df.printInfo[,-(1:3)])
         names(df.printInfo)[c(2,5)] <- ""
     }
-        
-
     print(df.printInfo, row.names = FALSE)
     cat("\n")
 
     ## ** Estimates
     if(!test.planning){
-        cat(" * Current ML-estimate of the treatment effect \n")
-        print(c("estimate" = iLMM$estimate,
-                "se" = iLMM$se,
-                "statistic" = iLMM$statistic,
-                "df" = iLMM$df,
-                "p.value" = iLMM$p.value),
-              digits = digits)
-        cat("\n")
-
-        if(!is.null(x$correction)){
-            cat(" * Corrected estimate of the treatment effect \n")
-            print(c("estimate" = x$correction$estimate,
-                    "lower" = x$correction$lower,
-                    "upper" = x$correction$upper,
-                    "p.value" = x$correction$p.value),
-                  digits = digits)
+        x.CI <- stats::confint(x, method = c("ML","corrected ML"))
+        x.CI$estimate <- round(x.CI$estimate, digits)
+        x.CI$se <- round(x.CI$se, digits)
+        x.CI$lower <- round(x.CI$lower, digits)
+        x.CI$upper <- round(x.CI$upper, digits)
+        x.CI$statistic <- round(x.CI$statistic, digits)
+        x.CI$df <- round(x.CI$df, digits)
+        x.CI$p.value <- format.pval(x.CI$p.value, digits)
+        x.CI$stage <- paste0(x.CI$stage," (",x.CI$type,")")
+        x.CI$type <- NULL
+        if(is.null(x$correction)){
+            cat(" * Current ML-estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
+            print(x.CI[,c("estimate","se","lower","upper","statistic","df","p.value")], row.names = FALSE)
+            cat("\n")
+        }else{
+            cat(" * Estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
+            x.CI[is.na(x.CI)] <- ""
+            
+            print(x.CI[,c("method","estimate","lower","upper","p.value")], quote = FALSE, row.names = FALSE)
             cat("\n")
         }
     }  
   
     ## ** Sample size
     if(test.planning){
+        InflationFactor <- x$InflationFactor
         cat(" * Inflation factor: ",InflationFactor," \n",sep="")
     }else{
+        iLMM <- x$lmm[[k+(type.k=="decision")]]
         cat(" * Number of clusters in the study: ",iLMM$n["interim"]," with at least one outcome value \n ",
             "                                   ",iLMM$n["interim.cc"]," with complete data \n", sep = "")
     }    
@@ -230,7 +170,7 @@ print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abrevia
 ## ** interim
 .reformatInterimTxt <- function(conclusion, kMax, abreviated){
 
-    if(all(is.na(conclusion["interim",]))){return(NULL)}
+    if(all(is.na(conclusion["interim",]))){return(rep("",kMax))}
     
     out <- sapply(1:kMax,function(iK){
         if(is.na(conclusion["interim",iK])){
@@ -262,7 +202,7 @@ print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abrevia
                 }else{
                     return("stop for futility")
                 }
-            }else if(conclusion["reason.interim",iK]=="Imax-reached"){
+            }else if(conclusion["reason.interim",iK]=="Imax reached"){
                 if(abreviated){
                     return("S-Imax")
                 }else{
@@ -271,14 +211,15 @@ print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abrevia
             }
         }
     })
-
     return(out)
 }
 
 ## ** decision
 .reformatDecisionTxt <- function(conclusion, kMax, abreviated){
 
-    if(all(is.na(conclusion["decision",]))){return(NULL)}
+    out <- rep("",kMax)
+
+    if(all(is.na(conclusion["decision",]))){return(out)}
 
     out <- sapply(1:kMax,function(iK){
         if(is.na(conclusion["decision",iK])){
@@ -289,6 +230,7 @@ print.delayedGSD <- function(x, planned = TRUE, digits = 3, space = " ", abrevia
             }else{
                 return("conclude efficacy")
             }
+            return(out)
         }else if(conclusion["decision",iK]=="Futility"){
             if(abreviated){
                 return("F")

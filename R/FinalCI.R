@@ -50,13 +50,13 @@ FinalCI <- function(Info.d,
   }
 
     if(optimizer=="optimise"){
-        lbnd <- optimise(function(x){f(x)^2},lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]))
-        ubnd <- optimise(function(x){g(x)^2},lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]))
+        lbnd <- stats::optimise(function(x){f(x)^2},lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]))
+        ubnd <- stats::optimise(function(x){g(x)^2},lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]))
         out <- c(lower = lbnd$minimum, upper = ubnd$minimum)
         attr(out,"error") <- c(lower = lbnd$objective, upper = ubnd$objective)
     }else if(optimizer=="uniroot"){
-        lbnd <- uniroot(f,lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]))
-        ubnd <- uniroot(g,lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]))
+        lbnd <- stats::uniroot(f,lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]))
+        ubnd <- stats::uniroot(g,lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]))
         out <- c(lower = lbnd$root, upper = ubnd$root)
         attr(out,"error") <- c(lower = lbnd$f.root, upper = ubnd$f.root)
         attr(out,"iter") <- c(lower = lbnd$iter, upper = ubnd$iter)

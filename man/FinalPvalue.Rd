@@ -29,7 +29,9 @@ FinalPvalue(Info.d, Info.i, ck, lk, uk, sided = 1, kMax, delta = 0, estimate)
 Compute the p-value at the end of the trial.
 }
 \examples{
-library(rpact)
+library(mvtnorm)
+
+if(require(rpact)){
 
 #### example 1 ####
 ## simulate data for a given design
@@ -47,9 +49,9 @@ res <- getDataset(sampleSizes1 = c(40,20),sampleSizes2=c(40,20),means1=c(1.5,3),
 vec.stage <- res$stages ##  1 1 2 2
 vec.mean <- res$overallMeans ##   1.5 0.5 2.0 0.0
 vec.std <- res$overallStDevs ##  2.000000 2.000000 2.007307 2.007307
-vec.z <- vec.mean/(vec.std/sqrt(vec.n)) ## 4.743416 1.581139 7.717771 0.000000
 vec.n <- res$overallSampleSizes ##  40 40 60 60
-estimate <- abs(diff(vec.mean[vec.stages==res$.kMax])) ##  2
+vec.z <- vec.mean/(vec.std/sqrt(vec.n)) ## 4.743416 1.581139 7.717771 0.000000
+estimate <- abs(diff(vec.mean[vec.stage==res$.kMax])) ##  2
 
 Info.var <- as.double(1/tapply(vec.std^2/vec.n,vec.stage,sum)) ## 5.0000 7.4455 
 statistic <- estimate*sqrt(Info.var[2]) ## 5.457289 
@@ -69,7 +71,6 @@ pval1 + pval2 ## 0.00625
 
 ## p-value using FinalPvalue
 FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate)
-FinalPvalue2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate)
 
 ## p-value using rpact
 
@@ -108,28 +109,18 @@ pval1 + pval2 ## 0.009819342
 
 ## p-value using FinalPvalue
 FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate)
-FinalPvalue2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate) ## [1] 0.009819408
 
 ## confidence interval using FinalPvalue
-FinalPvalue2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, delta = 0.0737)
-1-FinalPvalue2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, delta = 0.729)
+FinalCI(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate) ## [1] 0.07371176 0.72920245
 
-FinalCI2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate) ## [1] 0.07371176 0.72920245
-
-library(microbenchmark)
-microbenchmark(optimise = FinalCI2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, optimizer = "optimise"),
-              uniroot = FinalCI2(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, optimizer = "uniroot") 
-)
+## library(microbenchmark)
+## microbenchmark(optimise = FinalCI(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, optimizer = "optimise"),
+##               uniroot = FinalCI(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, optimizer = "uniroot") 
+## )
 ## Unit: milliseconds
 ##      expr      min       lq     mean   median       uq      max neval cld
 ##  optimise 27.58699 30.60128 32.20530 32.24507 33.47103 44.99762   100   b
 ##   uniroot 21.37910 23.32777 24.45567 24.29751 25.16585 29.36898   100  a
 
-## p-value by hand
-## - more extreme 1: stop at first interim for efficacy
-pval1 <- pmvnorm(lower = efficacyBound[1], upper = Inf, mean=0, sigma= Info.cor[1,1,drop=FALSE]) 
-## - more extreme 1: stop at second interim for efficacy with a larger effect
-pval2 <- pmvnorm(lower = c(futilityBound[1], statistic), upper = c(efficacyBound[1],Inf), mean=c(0,0), sigma = Info.cor) 
-## global
-pval1 + pval2 ## 0.00625 
+}
 }

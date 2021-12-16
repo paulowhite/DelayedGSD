@@ -21,7 +21,7 @@ Method2 <- function(uk,
                     cMin=-Inf, 
                     bindingFutility=TRUE){ 
   
-  require(mvtnorm)
+  requireNamespace("mvtnorm")
   
   if(sided!=1){
     stop("Function cannot handle two-sided tests yet")
@@ -51,18 +51,18 @@ Method2 <- function(uk,
   
   #browser()
   
-  sol <- uniroot(function(x){
+  sol <- stats::uniroot(function(x){
     
     c <- Method1(lk=c(lk[0:(k-1)],x),uk=uk,Info.i=Info.all[1:k],Info.d=Info.d,Info.max=Info.max,cMin=cMin)
     
-    pmvnorm(lower = c(lk[0:(k-1)],uk[k],-Inf),
-            upper = c(uk[0:(k-1)],Inf,c),
-            mean=theta,
-            sigma= sigmaZk) + 
-      pmvnorm(lower = c(lk[0:(k-1)],-Inf,-Inf),
-              upper = c(uk[0:(k-1)],x,c),
-              mean=theta,
-              sigma= sigmaZk) - (ErrorSpend(I=Info.d,Info.max=Info.max,beta_or_alpha=0.2,rho=2)-ErrorSpend(I=Info.all[k],Info.max=Info.max,beta_or_alpha=0.2,rho=2))},
+      mvtnorm::pmvnorm(lower = c(lk[0:(k-1)],uk[k],-Inf),
+                       upper = c(uk[0:(k-1)],Inf,c),
+                       mean=theta,
+                       sigma= sigmaZk) + 
+          mvtnorm::pmvnorm(lower = c(lk[0:(k-1)],-Inf,-Inf),
+                           upper = c(uk[0:(k-1)],x,c),
+                           mean=theta,
+                           sigma= sigmaZk) - (ErrorSpend(I=Info.d,Info.max=Info.max,beta_or_alpha=0.2,rho=2)-ErrorSpend(I=Info.all[k],Info.max=Info.max,beta_or_alpha=0.2,rho=2))},
     lower = -10,
     upper = uk[k]*0.999)$root #can't be exactly uk[k] since upper bound for method1 function and then the lower and upper bound would be equal
   

@@ -60,8 +60,10 @@ xx <- SelectData(x$d,t=thet,Delta.t=theDelta.t*2)  #data at IA when deciding whe
 #xx[index12,c("t2","t3")] <- NA
 #xx[index13,"t3"] <- NA
 
-IA <- AnalyzeData(xx) #Interim analysis results - can we add Z-value to output?
+b.interim <- update(b1, data = xx, k = 1, type = "interim")
 
+IA <- analyzeData(xx) #Interim analysis results - can we add Z-value to output?
+class(IA)
 
 
 p <- PlotProgress(xx,Delta.t = theDelta.t)
@@ -72,7 +74,7 @@ sum(is.na(xx$t1))
 sum(is.na(xx$t2))
 sum(is.na(xx$t3))
 
-dIA <- Decision(IA,b1,Id=IA$getInformation["decision"]/b1$Imax,k=1,analysis="interim",Ik=c(IA$Info,b1$Imax))  
+dIA <- Decision(object = b1, k=1, type.k = "interim")   ## IA,Id=IA$getInformation["decision"]/b1$Imax,k=1,analysis="interim",Ik=c(IA$Info,b1$Imax)
 
 #Decision at decision analysis
 #index21 <- which(x$d$t1<=14.9)
