@@ -46,7 +46,10 @@
 #'                     InfoR.d=0.65,
 #'                     bindingFutility=FALSE)
 #'
-#' NonBindingHJ(Kmax=2,Info.max=b1$Info.max,theta=1.5,binding=FALSE,alpha=0.025,Info.i=c(0.6,1)*b1$Info.max)
+#' b12 <- NonBindingHJ(Kmax=2,Info.max=b1$Info.max,theta=1.5,binding=FALSE,alpha=0.025,Info.i=c(0.6,1)*b1$Info.max)
+#' 
+#' all.equal(b1$uk, b12$boundaries[,"b.k"])
+#' all.equal(b1$lk, b12$boundaries[,"a.k"])
 
 ## * NonBindingHJ (code)
 NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
