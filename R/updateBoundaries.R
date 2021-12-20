@@ -27,8 +27,8 @@
 #'                      alpha=theAlpha,
 #'                      beta=theBeta,
 #'                      InfoR.i=c(0.5,1),
-#'                      gammaA=2,
-#'                      gammaB=2,
+#'                      rho_alpha=2,
+#'                      rho_beta=2,
 #'                      method=1,
 #'                      delta=theDelta,
 #'                      InfoR.d=0.55)
@@ -112,8 +112,8 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                         alpha=object$alpha, 
                                         beta=object$beta,  
                                         InfoR.i=Info.i/object$Info.max,  
-                                        gammaA=object$gammaA,
-                                        gammaB=object$gammaB,
+                                        rho_alpha=object$rho_alpha,
+                                        rho_beta=object$rho_beta,
                                         method=object$method,
                                         cNotBelowFixedc=object$cNotBelowFixedc, 
                                         delta=object$delta,  
@@ -152,7 +152,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                       Info.max=Info.max,
                                       sided=object$sided,
                                       ImaxAnticipated=TRUE,
-                                      rho=object$gammaA,
+                                      rho=object$rho_alpha,
                                       alpha=object$alpha,
                                       bindingFutility=bindingFutility)
                 object$ck[k:(kMax-1)]  <- c(newBounds2[k], rep(NA,kMax-k-1))
@@ -165,8 +165,8 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                         alpha=object$alpha, 
                                         beta=object$beta,  
                                         InfoR.i=Info.i/object$Info.max,  
-                                        gammaA=object$gammaA,
-                                        gammaB=object$gammaB,
+                                        rho_alpha=object$rho_alpha,
+                                        rho_beta=object$rho_beta,
                                         method=object$method,
                                         cNotBelowFixedc=object$cNotBelowFixedc, 
                                         delta=object$delta,  
@@ -188,8 +188,8 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                              timing = c(Info.i[1:(k-1)], object$Info.max)/object$Info.max,
                                              n.fix = 1, n.I = Info.i / (object$Info.max/object$InflationFactor), maxn.IPlan = object$InflationFactor,
                                              ## n.fix=object$Info.max/object$InflationFactor, n.I=Info.i, maxn.IPlan=object$Info.max ## should be equivalent
-                                             sfu = gsDesign::sfPower, sfupar = object$gammaA,
-                                             sfl = gsDesign::sfPower, sflpar = object$gammaB)
+                                             sfu = gsDesign::sfPower, sfupar = object$rho_alpha,
+                                             sfl = gsDesign::sfPower, sflpar = object$rho_beta)
 
         object$lk[k]  <- StandardDesign$upper$bound[k]
         object$uk[k]  <- StandardDesign$upper$bound[k]

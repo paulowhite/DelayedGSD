@@ -8,7 +8,7 @@
 #' @param sided one or two sided
 #' @param cMin minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
 #' @param ImaxAnticipated set to TRUE if c should be calculated according to Eq 15 in HJ because study was stopped early due to Imax reached
-#' @param rho value of rho used for type I error spending function
+#' @param rho_alpha value of rho used for type I error spending function
 #' @param alpha one-sided alpha level to be used for the study
 #' @param bindingFutility whether the futility stopping rule is binding
 #'
@@ -21,7 +21,7 @@ Method1 <- function(uk,
                     sided=1,
                     cMin=-Inf,
                     ImaxAnticipated=FALSE,
-                    rho=2, 
+                    rho_alpha=2, 
                     alpha=0.025, 
                     bindingFutility=TRUE){  
   
@@ -54,7 +54,7 @@ Method1 <- function(uk,
                 y <- mvtnorm::pmvnorm(lower = c(lk[0:(k-1)],x),
                                       upper = c(uk[0:(k-1)],Inf),
                                       mean=rep(0,k),
-                                      sigma= sigmaZk) - (alpha-ErrorSpend(I = Info.all[k-1], rho = rho,beta_or_alpha = alpha, Info.max = Info.max))
+                                      sigma= sigmaZk) - (alpha-ErrorSpend(I = Info.all[k-1], rho = rho_alpha,beta_or_alpha = alpha, Info.max = Info.max))
                 as.numeric(y)
             }
         } else {
@@ -64,7 +64,7 @@ Method1 <- function(uk,
                 y <- mvtnorm::pmvnorm(lower = c(lk2[0:(k-1)],x),
                                       upper = c(uk[0:(k-1)],Inf),
                                       mean=rep(0,k),
-                                      sigma= sigmaZk) - (alpha-ErrorSpend(I = Info.all[k-1], rho = rho,beta_or_alpha = alpha, Info.max = Info.max))
+                                      sigma= sigmaZk) - (alpha-ErrorSpend(I = Info.all[k-1], rho = rho_alpha,beta_or_alpha = alpha, Info.max = Info.max))
                 as.numeric(y)
             }
         }

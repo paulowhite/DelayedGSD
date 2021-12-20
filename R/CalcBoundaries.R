@@ -7,8 +7,8 @@
 #' @param alpha type I error
 #' @param beta type II error
 #' @param InfoR.i planned or observed information rates at interim analysis, including the final analysis.
-#' @param gammaA rho parameter for alpha error spending function
-#' @param gammaB rho parameter for beta error spending function
+#' @param rho_alpha rho parameter for alpha error spending function
+#' @param rho_beta rho parameter for beta error spending function
 #' @param method use method 1 or 2 from paper H&J
 #' @param cNotBelowFixedc whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
 #' @param delta effect that the study is powered for
@@ -23,8 +23,8 @@
 #'               alpha=0.025,  
 #'               beta=0.2,  
 #'               InfoR.i=c(0.5,1),
-#'               gammaA=2,
-#'               gammaB=2,
+#'               rho_alpha=2,
+#'               rho_beta=2,
 #'               method=1,
 #'               cNotBelowFixedc=TRUE,
 #'               delta=1.5,
@@ -38,8 +38,8 @@
 #'               alpha=0.025,  
 #'               beta=0.1,  
 #'               InfoR.i=c(3.5,6.75,12)/12,
-#'               gammaA=1.345,
-#'               gammaB=1.345,
+#'               rho_alpha=1.345,
+#'               rho_beta=1.345,
 #'               method=1, ## has been changed from 2 to 1
 #'               cNotBelowFixedc=TRUE,
 #'               bindingFutility=FALSE,
@@ -55,8 +55,8 @@ CalcBoundaries <- function(kMax=2,
                            alpha=0.025, 
                            beta=0.2,  
                            InfoR.i=c(0.5,1),  
-                           gammaA=2,  
-                           gammaB=2,  
+                           rho_alpha=2,  
+                           rho_beta=2,  
                            method=1, 
                            cNotBelowFixedc=FALSE, 
                            delta=1.5, 
@@ -90,13 +90,13 @@ CalcBoundaries <- function(kMax=2,
     ##     StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=test.type, alpha=alpha, beta=beta,
     ##                                          timing=InfoR.i,
     ##                                          n.fix = 1, n.I = InfoR.i / attr(InfoR.i,"InflationFactor"), maxn.IPlan = attr(InfoR.i,"InflationFactor"),
-    ##                                          sfu=gsDesign::sfPower, sfupar=gammaA,
-    ##                                          sfl=gsDesign::sfPower, sflpar=gammaB)
+    ##                                          sfu=gsDesign::sfPower, sfupar=rho_alpha,
+    ##                                          sfl=gsDesign::sfPower, sflpar=rho_beta)
     ## }else{ ## normal case
         StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=test.type, alpha=alpha, beta=beta,
                                              timing=InfoR.i,
-                                             sfu=gsDesign::sfPower, sfupar=gammaA,
-                                             sfl=gsDesign::sfPower, sflpar=gammaB)
+                                             sfu=gsDesign::sfPower, sfupar=rho_alpha,
+                                             sfl=gsDesign::sfPower, sflpar=rho_beta)
     ## }
                                         #R <- getDesignCharacteristics(StandardDesign)$inflationFactor
 
@@ -179,8 +179,8 @@ CalcBoundaries <- function(kMax=2,
                 kMax = kMax,
                 sided = sided,
                 beta = beta,
-                gammaA = gammaA,
-                gammaB = gammaB,
+                rho_alpha = rho_alpha,
+                rho_beta = rho_beta,
                 method = method,
                 delta = delta,
                 cNotBelowFixedc = cNotBelowFixedc,

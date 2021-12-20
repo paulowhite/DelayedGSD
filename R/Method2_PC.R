@@ -15,16 +15,16 @@
 #' @param alpha type I error
 #' @param beta type II error
 #' @param kMax max number of analyses (including final)
-#' @param Info.max maximum information needed for given beta (type II-error), theta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, theta and Kmax.
+#' @param Info.max maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
 #' @param InfoR.i Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
 #' @param InfoR.d Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
-#' @param theta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. theta=expected log(Hazard ratio))
+#' @param delta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
 #' @param abseps tolerance for precision when finding roots or computing integrals
 #' @param binding binding or non-binding futility boundary (i.e FALSE if it is allowed to continue after crossing the futility boundary)
 #' @param binding_type type of non-binding futility rule to use. "HJ" corresponds to the method proposed by Hampson and Jennison, "BBO" corresponds to the method proposed by Baayen, Blanche and Ozenne
 #' @param direction greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
-#' @param Trace Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, theta and Kmax).
-#' @param nWhileMax Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, theta and Kmax)
+#' @param Trace Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
+#' @param nWhileMax Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
 #' @param toldiff Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
 #' @param tolcoef Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
 #' @param mycoefMax Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
@@ -49,7 +49,7 @@
 #'                     InfoR.d=0.65,
 #'                     bindingFutility=FALSE)
 #'
-#' b12 <- Method2_PC(Kmax=2,Info.max=b1$Info.max,theta=1.5,binding=FALSE,alpha=0.025,InfoR.i=c(0.6,1),InfoR.d=0.65)
+#' b12 <- Method2_PC(Kmax=2,Info.max=b1$Info.max,delta=1.5,binding=FALSE,alpha=0.025,InfoR.i=c(0.6,1),InfoR.d=0.65)
 #' 
 #' 
 #' b1FT <- CalcBoundaries(kMax=2,  #max number of analyses (including final)
@@ -64,16 +64,16 @@
 #'                     InfoR.d=0.65,
 #'                     bindingFutility=TRUE)
 #'
-#' b12FT <- Method2_PC(Kmax=2,Info.max=b1FT$Info.max,theta=1.5,binding=TRUE,alpha=0.025,InfoR.i=c(0.6,1),InfoR.d=0.65)
+#' b12FT <- Method2_PC(Kmax=2,Info.max=b1FT$Info.max,delta=1.5,binding=TRUE,alpha=0.025,InfoR.i=c(0.6,1),InfoR.d=0.65)
 #' 
-#' b12FTNoImax <- Method2_PC(Kmax=2,Info.max=NULL,theta=1.5,binding=TRUE,alpha=0.025,InfoR.i=c(0.6,1),InfoR.d=0.65)
+#' b12FTNoImax <- Method2_PC(Kmax=2,Info.max=NULL,delta=1.5,binding=TRUE,alpha=0.025,InfoR.i=c(0.6,1),InfoR.d=0.65)
 #' 
 #' 
 #' 
 #' all.equal(b1$uk, b12$boundaries[,"b.k"])
 #' all.equal(b1$lk, b12$boundaries[,"a.k"])
 #' 
-#' b13 <- Method2_PC(Kmax=2,theta=1.5,binding=FALSE,alpha=0.025,Trace=T,InfoR.i=c(0.6,1))
+#' b13 <- Method2_PC(Kmax=2,delta=1.5,binding=FALSE,alpha=0.025,Trace=T,InfoR.i=c(0.6,1))
 #' 
 #' 
 #' to reproduce bounds from CJ DSBS course slide 106 REQUIRES NON-BINDING FUTILITY
@@ -86,7 +86,7 @@
 #'            Info.max=12,
 #'            InfoR.i=c(3.5,6.75,12)/12,
 #'            InfoR.d=c(5.5,8.75)/12,
-#'            theta=1,  
+#'            delta=1,  
 #'            abseps = 1e-06, 
 #'            binding=FALSE,
 #'            binding_type="HJ",   
@@ -104,16 +104,16 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                          alpha=0.025,          # Type-I error (overall)
                          beta=0.2,             # Type-II error (overall)
                          Kmax,                 # number of planned analyses (including the final analysis)
-                         Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), theta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, theta and Kmax.
+                         Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
                          InfoR.i=NULL,         # Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
                          InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
-                         theta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. theta=expected log(Hazard ratio))
+                         delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
                          abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
                          binding=TRUE,         # binding or non-binding futility boundary (i.e FALSE if it is allowed to continue after crossing the futility boundary)
                          binding_type="BBO",   # type of non-binding futility rule to use. "HJ" corresponds to the method proposed by Hampson and Jennison, "BBO" corresponds to the method proposed by Baayen, Blanche and Ozenne
                          direction="smaller",  # greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
-                         Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, theta and Kmax).
-                         nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, theta and Kmax)
+                         Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
+                         nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
                          toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
                          tolcoef= 1e-04,       # Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
                          mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
@@ -137,13 +137,13 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
     #nothing to be done
   }else{
     if(direction=="greater"){
-      theta <- -theta
+      delta <- -delta
     }else{
       stop("direction should be either greater or smaller")}
   }
   
-  if( (direction=="smaller" & theta<0) | (direction=="greater" & theta>0)){
-    stop("The values given for arguments direction and theta are inconsistent.\n When direction=smaller, theta should be positive.\n When direction=greater, theta should be negative.")
+  if( (direction=="smaller" & delta<0) | (direction=="greater" & delta>0)){
+    stop("The values given for arguments direction and delta are inconsistent.\n When direction=smaller, delta should be positive.\n When direction=greater, delta should be negative.")
   }
   # initialize
   thealpha <- rep(0,Kmax)  # alpha spent up to step k
@@ -159,7 +159,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
     }
   }
   # compute If (see Jennison book page 87
-  If <- (qnorm(1-alpha)+qnorm(1-beta))^2/theta^2
+  If <- (qnorm(1-alpha)+qnorm(1-beta))^2/delta^2
   if(Trace){
     cat("\n If computed as =",If,"\n")
   }
@@ -188,13 +188,15 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                        Info.max=If*mycoefU,
                        InfoR.i=InfoR.i,
                        InfoR.d=InfoR.d,
-                       theta=theta,
+                       delta=delta,
                        abseps=abseps,
                        toldiff=toldiff,
                        binding=binding,
                        binding_type=binding_type,
                        direction=direction,
-                       Trace=FALSE)
+                       Trace=FALSE,
+                       sided=sided,
+                       cMin=cMin)
     thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
     ## }}}       
     if(thediff==0){
@@ -217,12 +219,14 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                            Info.max=If*mycoef,
                            InfoR.i=InfoR.i,
                            InfoR.d=InfoR.d,
-                           theta=theta,
+                           delta=delta,
                            abseps=abseps,
                            toldiff=toldiff,
                            binding=binding,
                            binding_type=binding_type,
-                           direction=direction)
+                           direction=direction,
+                           sided=sided,
+                           cMin=cMin)
         thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
         if(thediff>toldiff){
           if(Trace){
@@ -284,7 +288,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
   ImaxAnticipated <- Info.i>=Info.max | Info.d>=Info.max
   
   # compute the mean of the multivariate normal distribution under the alternative H1
-  thetheta <- theta*sqrt(Info.i)
+  thetheta <- delta*sqrt(Info.i)
   ## }}} 
   ## {{{ case k=1 
   IncAlpha[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
@@ -304,7 +308,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                   sided=sided,
                   cMin=cMin,
                   ImaxAnticipated=ImaxAnticipated[1],
-                  rho=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
+                  rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
                   alpha=alpha,
                   bindingFutility = binding)
     
@@ -317,12 +321,12 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
     #probability to conclude futility
     pmvnorm(lower = c(uk[1],-Inf),
             upper = c(Inf,ck),
-            mean=c(thetheta[1],theta*sqrt(Info.d[1])),
+            mean=c(thetheta[1],delta*sqrt(Info.d[1])),
             sigma= sigmaZk2,
             abseps = abseps) +
     pmvnorm(lower = c(-Inf,-Inf),
             upper = c(lk,ck),
-            mean=c(thetheta[1],theta*sqrt(Info.d[1])),
+            mean=c(thetheta[1],delta*sqrt(Info.d[1])),
             sigma= sigmaZk2,
             abseps = abseps) - IncBeta[1]
       
@@ -336,7 +340,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                    sided=sided,
                    cMin=cMin,
                    ImaxAnticipated=ImaxAnticipated[1],
-                   rho=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
+                   rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
                    alpha=alpha,
                    bindingFutility = binding)
     #------------
@@ -396,7 +400,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                               sided=sided,
                               cMin=cMin,
                               ImaxAnticipated=ImaxAnticipated[k],
-                              rho=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
+                              rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
                               alpha=alpha,
                               bindingFutility = binding)
                 
@@ -409,12 +413,12 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                 #probability to conclude futility
                 pmvnorm(lower = c(lk[1:(k-1)],uk[k],-Inf),
                         upper = c(uk[1:(k-1)],Inf,ck),
-                        mean=c(thetheta[1:k],theta*sqrt(Info.d[k])),
+                        mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
                         sigma= sigmaZk2,
                         abseps = abseps) +
                 pmvnorm(lower = c(lk[1:(k-1)],-Inf,-Inf),
                         upper = c(uk[1:(k-1)],lk,ck),
-                        mean=c(thetheta[1:k],theta*sqrt(Info.d[k])),
+                        mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
                         sigma= sigmaZk2,
                         abseps = abseps) - IncBeta[k]
                 
@@ -430,7 +434,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                                sided=sided,
                                cMin=cMin,
                                ImaxAnticipated=ImaxAnticipated[k],
-                               rho=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
+                               rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
                                alpha=alpha,
                                bindingFutility = binding)
               } else {
@@ -531,13 +535,15 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
               Info.max=Info.max,
               Info.i=Info.i,
               Info.d=Info.d,
-              theta=theta,
+              delta=delta,
               coef=mycoef,
               abseps=abseps,
               toldiff=toldiff,
               binding=binding,
               binding_type=binding_type,
-              direction=direction)
+              direction=direction,
+              sided=sided,
+              cMin=cMin)
   class(out) <- "SeqCR"
   ## }}}
   .Random.seed <<- old # restore the current seed (before the call to the function)

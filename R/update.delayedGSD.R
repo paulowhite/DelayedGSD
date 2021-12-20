@@ -33,8 +33,8 @@
 #'                      alpha=theAlpha,
 #'                      beta=theBeta,
 #'                      InfoR.i=c(0.5,1),
-#'                      gammaA=2,
-#'                      gammaB=2,
+#'                      rho_alpha=2,
+#'                      rho_beta=2,
 #'                      method=1,
 #'                      delta=theDelta,
 #'                      InfoR.d=0.55)
