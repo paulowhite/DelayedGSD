@@ -1,11 +1,9 @@
-#updated function from previous tutorial such that it uses same naming and errorspending functions
-#updated function such that it can handle any specified information levels rather than just equally spaced
-
-#next step: implement HJ non-binding rule
-#TBD: do we want to use our own function instead of gsDesign?
+#Notes:
+#cannot reject H0 after recruitment is stopped due to futility boundary crossing at interim
+#requires prediction of information at interim, but ck can be adjusted upon observing this info
 
 #' @title Calculate boundaries for a group sequential design
-#' @description Calculate boundaries for a group sequential design without delayed endpoints based on planned and/or observed information using an error spending approach. The function can also give the boundaries for a non-binding futility rule for delayed endpoints following a method proposed by Hampson and Jennison.
+#' @description Calculate boundaries for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach. The function gives the boundaries for a non-binding futility rule using Method 2 as proposed by Hampson and Jennison.
 #' 
 #' 
 #' 
@@ -13,14 +11,12 @@
 #' @param rho_beta rho parameter of the rho-family spending functions (Kim-DeMets) for beta
 #' @param alpha type I error
 #' @param beta type II error
-#' @param Kmax max number of analyses (including final)
+#' @param kMax max number of analyses (including final)
 #' @param Info.max maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
-#' @param Info.i Expected or observed (wherever possible) information at the interim and final analyses 1:Kmax
-#' @param Info.d Expected or observed information at all potential decision analyses 1:(Kmax-1)
+#' @param InfoR.i Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
+#' @param InfoR.d Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
 #' @param delta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
 #' @param abseps tolerance for precision when finding roots or computing integrals
-#' @param binding binding or non-binding futility boundary (i.e FALSE if it is allowed to continue after crossing the futility boundary)
-#' @param binding_type type of non-binding futility rule to use. "HJ" corresponds to the method proposed by Hampson and Jennison, "BBO" corresponds to the method proposed by Baayen, Blanche and Ozenne
 #' @param direction greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
 #' @param Trace Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
 #' @param nWhileMax Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
@@ -29,91 +25,96 @@
 #' @param mycoefMax Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
 #' @param mycoefL Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
 #' @param myseed seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
-#' 
+#' @param sided one or two sided
+#'  
 #'
 #' @examples
 #'
-#' ## Example to check that code matches
-#' b1 <- CalcBoundaries(kMax=2,  #max number of analyses (including final)
-#'                     sided=1,  #one or two-sided
-#'                     alpha=0.025,  #type I error
-#'                     beta=0.2,  #type II error
-#'                     InfoR.i=c(0.6,1),  #planned information rates
-#'                     rho_alpha=2,  #rho parameter for alpha error spending function
-#'                     rho_beta=2,  #rho parameter for beta error spending function
-#'                     method=1,  #use method 1 or 2 from paper H&J
-#'                     delta=1.5,  #effect that the study is powered for
-#'                     InfoR.d=0.65,
-#'                     bindingFutility=FALSE)
-#'
-#' b12 <- NonBindingHJ(Kmax=2,Info.max=b1$Info.max,delta=1.5,binding=FALSE,alpha=0.025,Info.i=c(0.6,1)*b1$Info.max)
+#' Example to check that code matches
 #' 
-#' all.equal(b1$uk, b12$boundaries[,"u.k"])
-#' all.equal(b1$lk, b12$boundaries[,"l.k"])
+#' to reproduce bounds from CJ DSBS course slide 106
+#'               
+#' bCJ <- NonBindingHJ(rho_alpha=1.345,
+#'            rho_beta=1.345,
+#'            alpha=0.025,
+#'            beta=0.1,
+#'            Kmax=3,
+#'            Info.max=12,
+#'            InfoR.i=c(3.5,6.75,12)/12,
+#'            InfoR.d=c(5.5,8.75)/12,
+#'            delta=1,  
+#'            abseps = 1e-06, 
+#'            direction="smaller",
+#'            sided=1
+#'            )
 
-## * NonBindingHJ (code)
-#' @export
-NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
-                         rho_beta=2,           # rho parameter of the rho-family spending functions (Kim-DeMets) for beta
-                         alpha=0.025,          # Type-I error (overall)
-                         beta=0.2,             # Type-II error (overall)
-                         Kmax,                 # number of planned analyses (including the final analysis)
-                         Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
-                         Info.i=NULL,          # Expected or observed (wherever possible) information at the interim and final analyses 1:Kmax
-                         Info.d=NULL,          # Expected or observed information at all potential decision analyses 1:(Kmax-1)
-                         delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
-                         abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                         binding=TRUE,         # binding or non-binding futility boundary (i.e FALSE if it is allowed to continue after crossing the futility boundary)
-                         binding_type="BBO",   # type of non-binding futility rule to use. "HJ" corresponds to the method proposed by Hampson and Jennison, "BBO" corresponds to the method proposed by Baayen, Blanche and Ozenne
-                         direction="smaller",  # greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
-                         Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
-                         nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
-                         toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
-                         tolcoef= 1e-04,       # Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
-                         mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
-                         mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
-                         myseed=2902           # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
+require(mvtnorm)
+
+
+## * Method2_PC (code)
+NonBindingHJ <- function(rho_alpha=2,        # rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
+                       rho_beta=2,           # rho parameter of the rho-family spending functions (Kim-DeMets) for beta
+                       alpha=0.025,          # Type-I error (overall)
+                       beta=0.2,             # Type-II error (overall)
+                       Kmax,                 # number of planned analyses (including the final analysis)
+                       Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
+                       InfoR.i=NULL,         # Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
+                       InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
+                       delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
+                       abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
+                       direction="smaller",  # greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
+                       Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
+                       nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
+                       toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
+                       tolcoef= 1e-04,       # Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
+                       mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
+                       mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
+                       myseed=2902,          # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
+                       sided=1              # one or two sided
 ){
-
   ## {{{ set seed
   old <- .Random.seed # to save the current seed
   set.seed(myseed)
   ## }}}
   ## {{{ preliminaries
+  cMin <- qnorm(1-alpha)
   mycoef <- NULL # initialize as needed for output
-  if(direction=="smaller"){
-    lk <- rep(-Inf,Kmax)
-    uk <- rep(Inf,Kmax)     
-  }else{
-    if(direction=="greater"){
-      lk <- rep(Inf,Kmax)
-      uk <- rep(-Inf,Kmax)
-    }else{
-      stop("direction should be either greater or smaller")}
-  }
-
+  lk <- rep(-Inf,Kmax)
+  uk <- rep(Inf,Kmax) 
+  ck <- rep(cMin,Kmax)
+  
   if( (direction=="smaller" & delta<0) | (direction=="greater" & delta>0)){
     stop("The values given for arguments direction and delta are inconsistent.\n When direction=smaller, delta should be positive.\n When direction=greater, delta should be negative.")
   }
+  
+  if(direction=="greater"){
+    delta <- -delta
+  }else if(!direction%in%c("greater","smaller")){
+      stop("direction should be either greater or smaller")
+  }
+  
   # initialize
   thealpha <- rep(0,Kmax)  # alpha spent up to step k
   thebeta <- rep(0,Kmax)   # beta spent up to step k
   IncAlpha <- rep(0,Kmax)  # alpha spent at step k
   IncBeta <- rep(0,Kmax)   # beta spent at step k     
+ 
   # compute variance-covariance matrix of vector (Z_1,...,Z_k)
   sigmaZk <- diag(1,Kmax)
   for(i in 1:Kmax){
     for(j in i:Kmax){
-      sigmaZk[i,j] <- sqrt(Info.i[i]/Info.i[j])
-      sigmaZk[j,i] <- sqrt(Info.i[i]/Info.i[j])
+      sigmaZk[i,j] <- sqrt(InfoR.i[i]/InfoR.i[j])
+      sigmaZk[j,i] <- sqrt(InfoR.i[i]/InfoR.i[j])
     }
   }
+  
   # compute If (see Jennison book page 87
-  If <- (stats::qnorm(1-alpha)+stats::qnorm(1-beta))^2/delta^2
+  If <- (qnorm(1-alpha)+qnorm(1-beta))^2/delta^2
   if(Trace){
     cat("\n If computed as =",If,"\n")
   }
   ## }}}
+  
   if(is.null(Info.max)){
     ## {{{ Compute Info.max from If and the other arguments (Recursive calls to the function)
     if(Trace){
@@ -130,20 +131,19 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
       cat("\n Check whether the interval within which to search for coef large enough. \n")
     }
     xx <- NonBindingHJ(rho_alpha=rho_alpha,
-                         rho_beta=rho_beta,
-                         alpha=alpha,
-                         beta=beta,
-                         Kmax=Kmax,         
-                         Info.max=If*mycoefU,
-                         Info.i=Info.i,
-                         Info.d=Info.d,
-                         delta=delta,
-                         abseps=abseps,
-                         toldiff=toldiff,
-                         binding=binding,
-                         binding_type=binding_type,
-                         direction=direction,
-                         Trace=FALSE)
+                     rho_beta=rho_beta,
+                     alpha=alpha,
+                     beta=beta,
+                     Kmax=Kmax,         
+                     Info.max=If*mycoefU,
+                     InfoR.i=InfoR.i,
+                     InfoR.d=InfoR.d,
+                     delta=delta,
+                     abseps=abseps,
+                     toldiff=toldiff,
+                     direction=direction,
+                     Trace=FALSE,
+                     sided=sided)
     thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
     ## }}}       
     if(thediff==0){
@@ -159,25 +159,24 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
           cat("\n Step :",nwhile,"(out of max.", nWhileMax,")")
         }
         xx <- NonBindingHJ(rho_alpha=rho_alpha,
-                             rho_beta=rho_beta,
-                             alpha=alpha,
-                             beta=beta,
-                             Kmax=Kmax,         
-                             Info.max=If*mycoef,
-                             Info.i=Info.i,
-                             Info.d=Info.d,
-                             delta=delta,
-                             abseps=abseps,
-                             toldiff=toldiff,
-                             binding=binding,
-                             binding_type=binding_type,
-                             direction=direction)
+                         rho_beta=rho_beta,
+                         alpha=alpha,
+                         beta=beta,
+                         Kmax=Kmax,         
+                         Info.max=If*mycoef,
+                         InfoR.i=InfoR.i,
+                         InfoR.d=InfoR.d,
+                         delta=delta,
+                         abseps=abseps,
+                         toldiff=toldiff,
+                         direction=direction,
+                         sided=sided)
         thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
         if(thediff>toldiff){
           if(Trace){
             cat("\n Value coef=",mycoef,"is too small  \n")
-            cat("\n coef=",mycoef,"leads to u.K-l.K=",thediff, "(whereas tol=",toldiff,") \n")
-            ## cat("\n u.K=",xx$boundaries[K,"u.k"]," and l.K=",xx$boundaries[Kmax,"l.k"]," \n")
+            cat("\n coef=",mycoef,"leads to b.K-a.K=",thediff, "(whereas tol=",toldiff,") \n")
+            ## cat("\n b.K=",xx$boundaries[K,"b.k"]," and a.K=",xx$boundaries[Kmax,"a.k"]," \n")
           }
           mycoefL <- (mycoefL+mycoefU)/2
           if(Trace){
@@ -188,8 +187,8 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
         if(thediff==0){
           if(Trace){
             cat("\n Value coef=",mycoef,"is too large  \n")
-            cat("\n coef=",mycoef,"leads to u.K-l.K=",thediff, "(whereas tol=",toldiff,") \n")
-            ## cat("\n u.K=",xx$boundaries[Kmax,"u.k"]," and l.K=",xx$boundaries[Kmax,"l.k"]," \n")
+            cat("\n coef=",mycoef,"leads to b.K-a.K=",thediff, "(whereas tol=",toldiff,") \n")
+            ## cat("\n b.K=",xx$boundaries[Kmax,"b.k"]," and a.K=",xx$boundaries[Kmax,"a.k"]," \n")
           }
           mycoefU <- (mycoefL+mycoefU)/2
           if(Trace){
@@ -200,7 +199,7 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
         }
         if((thediff<=toldiff & thediff!=0) | abs(mycoefL-mycoefU)<= tolcoef ){
           if(Trace){
-            cat("\n coef value FOUND : coef=",mycoef,"\n (leads to u.K-l.K=",thediff, " and tol.=",toldiff," and search interval length is=",abs(mycoefL-mycoefU),"and tol.=",tolcoef,")\n")
+            cat("\n coef value FOUND : coef=",mycoef,"\n (leads to b.K-a.K=",thediff, " and tol.=",toldiff," and search interval length is=",abs(mycoefL-mycoefU),"and tol.=",tolcoef,")\n")
           }
           Info.max <- mycoef*If
           if(Trace){
@@ -226,31 +225,66 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
     mycoef <- Info.max/If
   }
   ## {{{ compute vector of means under the alternative H1
+  
+  #compute information at each analysis
+  Info.i <- InfoR.i*Info.max
+  Info.d <- InfoR.d*Info.max
+  
   # compute the mean of the multivariate normal distribution under the alternative H1
   thetheta <- delta*sqrt(Info.i)
   ## }}} 
   ## {{{ case k=1 
   IncAlpha[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
   IncBeta[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
-  if(direction=="smaller"){
-    uk[1] <- stats::qnorm(p=1-IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
-    lk[1] <- stats::qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
-  }else{
-    if(direction=="greater"){
-      uk[1] <- stats::qnorm(p=IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
-      lk[1] <- stats::qnorm(p=1-IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
-    }else{
-      stop("direction should be either greater or smaller")
-    }
+  
+  #efficacy boundary
+  find.uk <- function(x){
+    
+    #information matrix for first interim and decision analysis
+    sigmaZk2 <- matrix(NA,ncol=2,nrow=2)
+    sigmaZk2[1,1] <- sigmaZk[1,1]
+    sigmaZk2[2,2] <- 1
+    sigmaZk2[1,2] <- sigmaZk2[2,1] <- sqrt(Info.i[1]/Info.d[1])
+    
+    #probability to conclude efficacy
+    pmvnorm(lower = c(x,cMin),
+            upper = c(Inf,Inf),
+            mean=c(0,0),
+            sigma= sigmaZk2,
+            abseps = abseps) - IncAlpha[1]
   }
+  
+  uk[1] <- uniroot(find.uk,lower=-10,upper=10)$root  #dirty solution to use -10 and 10 for bounds
+  
+  #futility boundary
+  find.lk <- function(x){
+    
+    #information matrix for first interim and decision analysis
+    sigmaZk2 <- matrix(NA,ncol=2,nrow=2)
+    sigmaZk2[1,1] <- sigmaZk[1,1]
+    sigmaZk2[2,2] <- 1
+    sigmaZk2[1,2] <- sigmaZk2[2,1] <- sqrt(Info.i[1]/Info.d[1])
+    
+    #probability to conclude futility
+    pmvnorm(lower = c(uk[1],-Inf),
+            upper = c(Inf,cMin),
+            mean=c(thetheta[1],delta*sqrt(Info.d[1])),
+            sigma= sigmaZk2,
+            abseps = abseps) +
+      pmvnorm(lower = c(-Inf,-Inf),
+              upper = c(x,Inf),
+              mean=c(thetheta[1],delta*sqrt(Info.d[1])),
+              sigma= sigmaZk2,
+              abseps = abseps) - IncBeta[1]
+    
+  }
+  lk[1] <- uniroot(find.lk,lower=uk[1]-10,upper=uk[1])$root  #dirty solution to use -10 for lower bound
   
   thealpha[1] <- IncAlpha[1]   
   thebeta[1] <- IncBeta[1]
-  if(direction=="smaller"){
-    lk <- pmin(lk,uk) # just in case of over-running
-  }else{
-    uk <- pmin(lk,uk) # just in case of over-running
-  }
+  
+  lk <- pmin(lk,uk) # just in case of over-running
+  
   ## if(Trace){
   ## cat("\n a.1 computed as",lk[1],"and b.1 as",uk[1]," \n")
   ## }
@@ -264,142 +298,95 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
         IncAlpha[k] <- thealpha[k] - thealpha[(k-1)]   
         thebeta[k] <- ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
         IncBeta[k] <- thebeta[k] - thebeta[(k-1)]   
-        if(binding){
-          ## {{{ 
-          if(direction=="smaller"){
-            ## {{{ b_k by solving what follows 
-            uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows (when binding = TRUE )
-            try(uk[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(lk[1:(k-1)],x),
-                                                       upper = c(uk[1:(k-1)],Inf),
-                                                       mean=rep(0,k),
-                                                       sigma= sigmaZk[1:k,1:k],
-                                                       abseps = abseps) - IncAlpha[k]},
-                                   lower = lk[k-1],
-                                   upper = uk[k-1],
-                                   tol = abseps)$root, silent = TRUE)
-            IsbkOK <- !(uk[k]==((uk[k-1] + lk[k-1])/2))
-            ## }}}
-            ## {{{ a_k by solving what follows 
-            if(IsbkOK){
-              lk[k] <- uk[k] # just to handle cases in which there is no root in what follows 
-              try(lk[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(lk[1:(k-1)],-Inf),
-                                                         upper = c(uk[1:(k-1)],x),
-                                                         mean=thetheta[1:k],
-                                                         sigma= sigmaZk[1:k,1:k],
-                                                         abseps = abseps) - IncBeta[k]},
-                                     lower = lk[k-1], 
-                                     upper = uk[k], 
-                                     tol = abseps)$root, silent = TRUE)
-            }else{
-              lk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what is above
-            }
-            ## }}}
-          }
-          if(direction=="greater"){
-            ## {{{ b_k by solving what follows 
-            uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows  (when binding = TRUE )
-            try(uk[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(uk[1:(k-1)],-Inf),
-                                                       upper = c(lk[1:(k-1)],x),
-                                                       mean=rep(0,k), 
-                                                       sigma= sigmaZk[1:k,1:k],
-                                                       abseps = abseps) - IncAlpha[k]},
-                                   lower = uk[k-1],
-                                   upper = lk[k-1],
-                                   tol = abseps)$root, silent = TRUE)
-            IsbkOK <- !(uk[k]==((uk[k-1] + lk[k-1])/2))
-            ## }}}
-            ## {{{ a_k by solving what follows 
-            if(IsbkOK){
-              lk[k] <- uk[k] # just to handle cases in which there is no root in what follows                            
-              try(lk[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(uk[1:(k-1)],x),
-                                                         upper = c(lk[1:(k-1)],Inf),
-                                                         mean=thetheta[1:k],
-                                                         sigma= sigmaZk[1:k,1:k],
-                                                         abseps = abseps) - IncBeta[k]},
-                                     lower = uk[k],
-                                     upper = lk[k-1],
-                                     tol = abseps)$root, silent = TRUE)
-            }else{
-              lk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what is above
-            }
-            ## }}}
-          }
-          ## }}}
-        }else if(binding_type=="BBO"){
-            ## {{{ 
-            if(direction=="smaller"){
-              ## {{{ b_k by solving what follows
-              uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows
-              try(uk[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(rep(-Inf, k-1),x),
-                                                         upper = c(uk[1:(k-1)],Inf),                                                                   
-                                                         mean=rep(0,k),
-                                                         sigma= sigmaZk[1:k,1:k],
-                                                         abseps = abseps) - IncAlpha[k]},
-                                     lower = lk[1],
-                                     upper = uk[1],
-                                     tol = abseps)$root, silent = TRUE)
-              ## browser()
-              IsbkOK <- !(uk[k]==((uk[k-1] + lk[k-1])/2))
-              ## }}}
-              ## {{{ a_k by solving what follows
-              if(IsbkOK){
-                lk[k] <- uk[k] # just to handle cases in which there is no root in what follows 
-                try(lk[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(lk[1:(k-1)],-Inf),
-                                                           upper = c(uk[1:(k-1)],x),
-                                                           mean=thetheta[1:k],
-                                                           sigma= sigmaZk[1:k,1:k],
-                                                           abseps = abseps) - IncBeta[k]},
-                                       lower = lk[1],
-                                       upper = uk[1],
-                                       tol = abseps)$root, silent = TRUE)
-              }else{
-                lk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what is above
-              }
-              ## }}}
-            }
-            if(direction=="greater"){
-              ## {{{ b_k by solving what follows
-              ## browser()
-              uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows
-              try(uk[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(uk[1:(k-1)],-Inf),
-                                                         upper = c(rep(Inf, k-1),x),
-                                                         mean=rep(0,k), #thetheta[1:k],
-                                                         sigma= sigmaZk[1:k,1:k],
-                                                         abseps = abseps) - IncAlpha[k]},
-                                     lower = uk[k-1],
-                                     upper = lk[k-1],
-                                     tol = abseps)$root, silent = TRUE)
-              IsbkOK <- !(uk[k]==((uk[k-1] + lk[k-1])/2))
-              ## }}}
-              ## {{{ a_k by solving what follows
-              if(IsbkOK){
-                lk[k] <- uk[k] # just to handle cases in which there is no root in what follows                            
-                try(lk[k] <- stats::uniroot(function(x){mvtnorm::pmvnorm(lower = c(uk[1:(k-1)],x),
-                                                           upper = c(lk[1:(k-1)],Inf),
-                                                           mean=thetheta[1:k],
-                                                           sigma= sigmaZk[1:k,1:k],
-                                                           abseps = abseps) - IncBeta[k]},
-                                       lower = uk[1],
-                                       upper = lk[1],
-                                       tol = abseps)$root, silent = TRUE)
-              }else{
-                lk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what is above
-              }
-              ## }}}
-            }
-            ## }}}
-          } else if(binding_type=="HJ"){
-            stop("not implemented yet")
-          } else {
-            stop("Please specify binding_type is HJ or BBO")
-          }
-        ## {{{ to deal with over-running (see chapter Jennison) 
-        if(direction=="smaller"){
-          lk <- pmin(lk,uk)
-        }else{
-          uk <- pmin(lk,uk)
+        ## {{{ 
+        ## {{{ u_k by solving what follows 
+        uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows (when binding = TRUE )
+        
+        if(!k==Kmax){
+          
+          #information matrix for interim analyses and decision analysis
+          sigmaZk2 <- matrix(NA,ncol=k+1,nrow=k+1)
+          sigmaZk2[1:k,1:k] <- sigmaZk[1:k,1:k]
+          sigmaZk2[k+1,k+1] <- 1
+          sigmaZk2[1:k,k+1] <- sigmaZk2[k+1,1:k] <- sqrt(Info.i[1:k]/Info.d[k])
+          
+          try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(rep(-Inf,k-1),x,cMin),
+                                                   upper = c(uk[1:(k-1)],Inf,Inf),
+                                                   mean=rep(0,k+1),
+                                                   sigma= sigmaZk2,
+                                                   abseps = abseps) - IncAlpha[k]},
+                               lower = lk[k-1],
+                               upper = uk[k-1],
+                               tol = abseps)$root, silent = TRUE)
+        } else {
+          try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(rep(-Inf,k-1),x),
+                                                   upper = c(uk[1:(k-1)],Inf),
+                                                   mean=rep(0,k),
+                                                   sigma= sigmaZk[1:k,1:k],
+                                                   abseps = abseps) - IncAlpha[k]},
+                               lower = lk[k-1],
+                               upper = uk[k-1],
+                               tol = abseps)$root, silent = TRUE)
         }
+        
+        IsbkOK <- !(uk[k]==((uk[k-1] + lk[k-1])/2))
+        
+        if(!IsbkOK){warning(paste0("Could not compute uk[",k,"]"))}
+        
         ## }}}
+        ## {{{ a_k by solving what follows 
+        if(IsbkOK){
+           if(k!=Kmax){
+             find.lkk <- function(x){
+               
+               #information matrix for interim analyses and decision analysis
+               sigmaZk2 <- matrix(NA,ncol=k+1,nrow=k+1)
+               sigmaZk2[1:k,1:k] <- sigmaZk[1:k,1:k]
+               sigmaZk2[k+1,k+1] <- 1
+               sigmaZk2[1:k,k+1] <- sigmaZk2[k+1,1:k] <- sqrt(Info.i[1:k]/Info.d[k])
+               
+               #probability to conclude futility
+               pmvnorm(lower = c(lk[1:(k-1)],uk[k],-Inf),
+                       upper = c(uk[1:(k-1)],Inf,cMin),
+                       mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
+                       sigma= sigmaZk2,
+                       abseps = abseps) +
+               pmvnorm(lower = c(lk[1:(k-1)],-Inf,-Inf),
+                       upper = c(uk[1:(k-1)],x,Inf),
+                       mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
+                       sigma= sigmaZk2,
+                       abseps = abseps) - IncBeta[k]
+               
+             }
+             lk[k] <- try(uniroot(find.lkk,lower=uk[k]-10,upper=uk[k])$root)
+              
+             if(inherits(lk[k], "try-error")){
+               lk[k] <- uk[k] # just to handle cases in which there is no root
+               warning(paste0("try-error for calculation of lk[",k,"]"))
+             }
+           }
+           if(k==Kmax){
+             lk[k] <- uk[k] # just to handle cases in which there is no root
+              
+             try(lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
+                                                      upper = c(uk[1:(k-1)],x),
+                                                      mean=thetheta[1:k],
+                                                      sigma= sigmaZk[1:k,1:k],
+                                                      abseps = abseps) - IncBeta[k]},
+                                                      lower = lk[k-1], 
+                                                      upper = uk[k], 
+                                                      tol = abseps)$root, silent = TRUE)
+            if(inherits(lk[k],"try-error")){warning("try-error for calculation of lk[Kmax]")}
+              
+          }
+            #----------------------------
+            
+         }else{
+           lk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what is above
+         }
+         ## }}}
+        ## {{{ to deal with over-running (see chapter Jennison) 
+        lk <- pmin(lk,uk)
         ## }}}
       }else{
         ## {{{ if  over-running has already occurred
@@ -410,9 +397,21 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
     }
   }
   ## }}}
+  
+  if(direction=="greater"){
+    lk <- -lk
+    uk <- -uk
+    delta <- -delta
+  }
+  
+  ck[Kmax] <- NA
+  #ck[kMax] <- uk[kMax]
+  #lk[kMax] <- uk[kMax] <- NA
+  
   ## {{{ create  output
   d <- data.frame(l.k=lk,
                   u.k=uk,
+                  c.k=ck,
                   Type.I.Error=thealpha,
                   Type.II.Error=thebeta,
                   Inc.Type.I=IncAlpha,
@@ -433,9 +432,10 @@ NonBindingHJ <- function(rho_alpha=2,          # rho parameter of the rho-family
               coef=mycoef,
               abseps=abseps,
               toldiff=toldiff,
-              binding=binding,
-              binding_type=binding_type,
-              direction=direction)
+              direction=direction,
+              sided=sided,
+              binding=FALSE,
+              cMin=cMin)
   class(out) <- "SeqCR"
   ## }}}
   .Random.seed <<- old # restore the current seed (before the call to the function)

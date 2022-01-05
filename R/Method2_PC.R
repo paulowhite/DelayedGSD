@@ -1,12 +1,5 @@
-#updated function from previous tutorial such that it uses same naming and errorspending functions
-#updated function such that it can handle any specified information levels rather than just equally spaced
-#updated function so it uses Method 2 and the one sided testing direction "greater" is simplified.
-
-#next step: implement HJ non-binding rule
-#TBD: do we want to use our own function instead of gsDesign?
-
-#' @title Calculate boundaries for a group sequential design
-#' @description Calculate boundaries for a group sequential design without delayed endpoints based on planned and/or observed information using an error spending approach. The function can also give the boundaries for a non-binding futility rule for delayed endpoints following a method proposed by Hampson and Jennison.
+#' @title Calculate boundaries for a group sequential design using Method 2
+#' @description Calculate boundaries for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach with a binding futility boundary.
 #' 
 #' 
 #' 
@@ -20,8 +13,6 @@
 #' @param InfoR.d Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
 #' @param delta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
 #' @param abseps tolerance for precision when finding roots or computing integrals
-#' @param binding binding or non-binding futility boundary (i.e FALSE if it is allowed to continue after crossing the futility boundary)
-#' @param binding_type type of non-binding futility rule to use. "HJ" corresponds to the method proposed by Hampson and Jennison, "BBO" corresponds to the method proposed by Baayen, Blanche and Ozenne
 #' @param direction greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
 #' @param Trace Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
 #' @param nWhileMax Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
@@ -42,14 +33,14 @@
 #'                     alpha=0.025,  #type I error
 #'                     beta=0.2,  #type II error
 #'                     InfoR.i=c(0.6,1),  #planned information rates
-#'                     gammaA=2,  #rho parameter for alpha error spending function
-#'                     gammaB=2,  #rho parameter for beta error spending function
+#'                     rho_alpha=2,  #rho parameter for alpha error spending function
+#'                     rho_beta=2,  #rho parameter for beta error spending function
 #'                     method=1,  #use method 1 or 2 from paper H&J
 #'                     delta=1.5,  #effect that the study is powered for
 #'                     InfoR.d=0.65,
-#'                     bindingFutility=FALSE)
+#'                     bindingFutility=TRUE)
 #'
-#' b12 <- Method2_PC(Kmax=2,Info.max=b1$Info.max,delta=1.5,binding=FALSE,alpha=0.025,InfoR.i=c(0.6,1),InfoR.d=0.65)
+#' b12 <- Method2_PC(Kmax=2,Info.max=b1$Info.max,delta=1.5,alpha=0.025,InfoR.i=c(0.6,1),InfoR.d=0.65)
 #' 
 #' 
 #' b1FT <- CalcBoundaries(kMax=2,  #max number of analyses (including final)
@@ -57,8 +48,8 @@
 #'                     alpha=0.025,  #type I error
 #'                     beta=0.2,  #type II error
 #'                     InfoR.i=c(0.6,1),  #planned information rates
-#'                     gammaA=2,  #rho parameter for alpha error spending function
-#'                     gammaB=2,  #rho parameter for beta error spending function
+#'                     rho_alpha=2,  #rho parameter for alpha error spending function
+#'                     rho_beta=2,  #rho parameter for beta error spending function
 #'                     method=1,  #use method 1 or 2 from paper H&J
 #'                     delta=1.5,  #effect that the study is powered for
 #'                     InfoR.d=0.65,
@@ -73,7 +64,7 @@
 #' all.equal(b1$uk, b12$boundaries[,"b.k"])
 #' all.equal(b1$lk, b12$boundaries[,"a.k"])
 #' 
-#' b13 <- Method2_PC(Kmax=2,delta=1.5,binding=FALSE,alpha=0.025,Trace=T,InfoR.i=c(0.6,1))
+#' b13 <- Method2_PC(Kmax=2,delta=1.5,alpha=0.025,Trace=T,InfoR.i=c(0.6,1))
 #' 
 #' 
 #' to reproduce bounds from CJ DSBS course slide 106 REQUIRES NON-BINDING FUTILITY
@@ -88,8 +79,6 @@
 #'            InfoR.d=c(5.5,8.75)/12,
 #'            delta=1,  
 #'            abseps = 1e-06, 
-#'            binding=FALSE,
-#'            binding_type="HJ",   
 #'            direction="smaller",
 #'            sided=1,
 #'            cMin=1.96
@@ -109,8 +98,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                          InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
                          delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
                          abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                         binding=TRUE,         # binding or non-binding futility boundary (i.e FALSE if it is allowed to continue after crossing the futility boundary)
-                         binding_type="BBO",   # type of non-binding futility rule to use. "HJ" corresponds to the method proposed by Hampson and Jennison, "BBO" corresponds to the method proposed by Baayen, Blanche and Ozenne
                          direction="smaller",  # greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
                          Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
                          nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
@@ -122,7 +109,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                          sided=1,              # one or two sided
                          cMin=-Inf           # minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
 ){
-  if(!binding)stop("The function does not handle non binding boundaries yet")
   ## {{{ set seed
   old <- .Random.seed # to save the current seed
   set.seed(myseed)
@@ -133,18 +119,16 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
   uk <- rep(Inf,Kmax) 
   ck <- rep(NA,Kmax)
   
-  if(direction=="smaller"){
-    #nothing to be done
-  }else{
-    if(direction=="greater"){
-      delta <- -delta
-    }else{
-      stop("direction should be either greater or smaller")}
-  }
-  
   if( (direction=="smaller" & delta<0) | (direction=="greater" & delta>0)){
     stop("The values given for arguments direction and delta are inconsistent.\n When direction=smaller, delta should be positive.\n When direction=greater, delta should be negative.")
   }
+  
+  if(direction=="greater"){
+    delta <- -delta
+  }else if(!direction%in%c("greater","smaller")){
+    stop("direction should be either greater or smaller")
+  }
+  
   # initialize
   thealpha <- rep(0,Kmax)  # alpha spent up to step k
   thebeta <- rep(0,Kmax)   # beta spent up to step k
@@ -191,8 +175,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                        delta=delta,
                        abseps=abseps,
                        toldiff=toldiff,
-                       binding=binding,
-                       binding_type=binding_type,
                        direction=direction,
                        Trace=FALSE,
                        sided=sided,
@@ -222,8 +204,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                            delta=delta,
                            abseps=abseps,
                            toldiff=toldiff,
-                           binding=binding,
-                           binding_type=binding_type,
                            direction=direction,
                            sided=sided,
                            cMin=cMin)
@@ -298,19 +278,19 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
   #thea[1] <- qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
 
   #------------
-  find.lk <- function(lk){
+  find.lk <- function(x){
     #calculate c corresponding to lk
     ck <- Method1(uk=uk[1],
-                  lk=lk,
+                  lk=x,
                   Info.i=Info.i[1],
                   Info.d=Info.d[1],
                   Info.max=Info.max,
                   sided=sided,
                   cMin=cMin,
                   ImaxAnticipated=ImaxAnticipated[1],
-                  rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
+                  rho_alpha=rho_alpha,
                   alpha=alpha,
-                  bindingFutility = binding)
+                  bindingFutility = TRUE)
     
     #information matrix for first interim and decision analysis
     sigmaZk2 <- matrix(NA,ncol=2,nrow=2)
@@ -325,7 +305,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
             sigma= sigmaZk2,
             abseps = abseps) +
     pmvnorm(lower = c(-Inf,-Inf),
-            upper = c(lk,ck),
+            upper = c(x,ck),
             mean=c(thetheta[1],delta*sqrt(Info.d[1])),
             sigma= sigmaZk2,
             abseps = abseps) - IncBeta[1]
@@ -342,7 +322,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                    ImaxAnticipated=ImaxAnticipated[1],
                    rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
                    alpha=alpha,
-                   bindingFutility = binding)
+                   bindingFutility = TRUE)
     #------------
   
   thealpha[1] <- IncAlpha[1]   
@@ -363,140 +343,92 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
         IncAlpha[k] <- thealpha[k] - thealpha[(k-1)]   
         thebeta[k] <- ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
         IncBeta[k] <- thebeta[k] - thebeta[(k-1)]   
-        if(binding){
-          ## {{{ 
-            ## {{{ u_k by solving what follows 
-          uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows (when binding = TRUE )
-          try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],x),
-                                                     upper = c(uk[1:(k-1)],Inf),
-                                                     mean=rep(0,k),
-                                                     sigma= sigmaZk[1:k,1:k],
-                                                     abseps = abseps) - IncAlpha[k]},
+        ## {{{ 
+        ## {{{ u_k by solving what follows 
+        uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows (when binding = TRUE )
+        try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],x),
+                                                 upper = c(uk[1:(k-1)],Inf),
+                                                 mean=rep(0,k),
+                                                 sigma= sigmaZk[1:k,1:k],
+                                                 abseps = abseps) - IncAlpha[k]},
                                  lower = lk[k-1],
                                  upper = uk[k-1],
                                  tol = abseps)$root, silent = TRUE)
-          IsbkOK <- !(uk[k]==((uk[k-1] + lk[k-1])/2))
-          ## }}}
-          ## {{{ a_k by solving what follows 
-          if(IsbkOK){
-            #try(lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
-            #                                           upper = c(uk[1:(k-1)],x),
-            #                                           mean=thetheta[1:k],
-            #                                           sigma= sigmaZk[1:k,1:k],
-            #                                           abseps = abseps) - IncBeta[k]},
-            #                       lower = lk[k-1], 
-            #                       upper = uk[k], 
-            #                       tol = abseps)$root, silent = TRUE)
-            
-            #----------------------------
-            if(k!=Kmax){
-              find.lkk <- function(lk){
-                #calculate c corresponding to lk
-                ck <- Method1(uk=uk[1:k],
-                              lk=c(1:(k-1),lk),
-                              Info.i=Info.i[1:k],
-                              Info.d=Info.d[k],
-                              Info.max=Info.max,
-                              sided=sided,
-                              cMin=cMin,
-                              ImaxAnticipated=ImaxAnticipated[k],
-                              rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
-                              alpha=alpha,
-                              bindingFutility = binding)
+        IsbkOK <- !(uk[k]==((uk[k-1] + lk[k-1])/2))
+        ## }}}
+        ## {{{ a_k by solving what follows 
+        if(IsbkOK){
+          if(k!=Kmax){
+            find.lkk <- function(x){
+              #calculate c corresponding to lk
+              ck <- Method1(uk=uk[1:k],
+                            lk=c(lk[1:(k-1)],x),
+                            Info.i=Info.i[1:k],
+                            Info.d=Info.d[k],
+                            Info.max=Info.max,
+                            sided=sided,
+                            cMin=cMin,
+                            ImaxAnticipated=ImaxAnticipated[k],
+                            rho_alpha=rho_alpha,
+                            alpha=alpha,
+                            bindingFutility = TRUE)
                 
-                #information matrix for first interim and decision analysis
-                sigmaZk2 <- matrix(NA,ncol=k+1,nrow=k+1)
-                sigmaZk2[1:k,1:k] <- sigmaZk[1:k,1:k]
-                sigmaZk2[k+1,k+1] <- 1
-                sigmaZk2[1:k,k+1] <- sigmaZk2[k+1,1:k] <- sqrt(Info.i[1:k]/Info.d[k])
+              #information matrix for first interim and decision analysis
+              sigmaZk2 <- matrix(NA,ncol=k+1,nrow=k+1)
+              sigmaZk2[1:k,1:k] <- sigmaZk[1:k,1:k]
+              sigmaZk2[k+1,k+1] <- 1
+              sigmaZk2[1:k,k+1] <- sigmaZk2[k+1,1:k] <- sqrt(Info.i[1:k]/Info.d[k])
                 
-                #probability to conclude futility
-                pmvnorm(lower = c(lk[1:(k-1)],uk[k],-Inf),
-                        upper = c(uk[1:(k-1)],Inf,ck),
-                        mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
-                        sigma= sigmaZk2,
-                        abseps = abseps) +
-                pmvnorm(lower = c(lk[1:(k-1)],-Inf,-Inf),
-                        upper = c(uk[1:(k-1)],lk,ck),
-                        mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
-                        sigma= sigmaZk2,
-                        abseps = abseps) - IncBeta[k]
-                
-              }
-              lk[k] <- try(uniroot(find.lkk,lower=uk[k]-10,upper=uk[k])$root)
+              #probability to conclude futility
+              pmvnorm(lower = c(lk[1:(k-1)],uk[k],-Inf),
+                      upper = c(uk[1:(k-1)],Inf,ck),
+                      mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
+                      sigma= sigmaZk2,
+                      abseps = abseps) +
+              pmvnorm(lower = c(lk[1:(k-1)],-Inf,-Inf),
+                      upper = c(uk[1:(k-1)],x,ck),
+                      mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
+                      sigma= sigmaZk2,
+                      abseps = abseps) - IncBeta[k]
+              
+            }
+            lk[k] <- try(uniroot(find.lkk,lower=uk[k]-10,upper=uk[k])$root)
 
-              if(!inherits(lk[k], "try-error")){
-                ck[k] <- Method1(uk=uk[1:k],
-                               lk=lk[1:k],
-                               Info.i=Info.i[1:k],
-                               Info.d=Info.d[k],
-                               Info.max=Info.max,
-                               sided=sided,
-                               cMin=cMin,
-                               ImaxAnticipated=ImaxAnticipated[k],
-                               rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
-                               alpha=alpha,
-                               bindingFutility = binding)
-              } else {
-                lk[k] <- uk[k] # just to handle cases in which there is no root
-                if(inherits(lk[k],"try-error")){warning(paste0("try-error for calculation of lk[",k,"]"))}
-              }
-            }
-            if(k==Kmax){
+            if(!inherits(lk[k], "try-error")){
+              ck[k] <- Method1(uk=uk[1:k],
+                             lk=lk[1:k],
+                             Info.i=Info.i[1:k],
+                             Info.d=Info.d[k],
+                             Info.max=Info.max,
+                             sided=sided,
+                             cMin=cMin,
+                             ImaxAnticipated=ImaxAnticipated[k],
+                             rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
+                             alpha=alpha,
+                             bindingFutility = TRUE)
+            } else {
               lk[k] <- uk[k] # just to handle cases in which there is no root
-              
-              try(lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
-                                                       upper = c(uk[1:(k-1)],x),
-                                                       mean=thetheta[1:k],
-                                                       sigma= sigmaZk[1:k,1:k],
-                                                       abseps = abseps) - IncBeta[k]},
-                                     lower = lk[k-1], 
-                                     upper = uk[k], 
-                                     tol = abseps)$root, silent = TRUE)
-              if(inherits(lk[k],"try-error")){warning("try-error for calculation of lk[Kmax]")}
-                
+              if(inherits(lk[k],"try-error")){warning(paste0("try-error for calculation of lk[",k,"]"))}
             }
-            #----------------------------
-              
-            }else{
-              lk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what is above
-            }
-            ## }}}
-        }else if(binding_type=="BBO"){
-          stop("the function cannot handle binding_type=BBO yet")
-          ## {{{ b_k by solving what follows
-          uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows
-          try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(rep(-Inf, k-1),x),
-                                                     upper = c(uk[1:(k-1)],Inf),                                                                   
-                                                     mean=rep(0,k),
-                                                     sigma= sigmaZk[1:k,1:k],
-                                                     abseps = abseps) - IncAlpha[k]},
-                                 lower = lk[1],
-                                 upper = uk[1],
-                                 tol = abseps)$root, silent = TRUE)
-          ## browser()
-          IsbkOK <- !(uk[k]==((uk[k-1] + lk[k-1])/2))
-          ## }}}
-          ## {{{ a_k by solving what follows
-          if(IsbkOK){
-            lk[k] <- uk[k] # just to handle cases in which there is no root in what follows 
+          }
+          if(k==Kmax){
+            lk[k] <- uk[k] # just to handle cases in which there is no root
+            
             try(lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
                                                      upper = c(uk[1:(k-1)],x),
                                                      mean=thetheta[1:k],
                                                      sigma= sigmaZk[1:k,1:k],
                                                      abseps = abseps) - IncBeta[k]},
-                                   lower = lk[1],
-                                   upper = uk[1],
+                                   lower = lk[k-1], 
+                                   upper = uk[k], 
                                    tol = abseps)$root, silent = TRUE)
-          }else{
-            lk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what is above
+            if(inherits(lk[k],"try-error")){warning("try-error for calculation of lk[Kmax]")}
+                
           }
-          ## }}}
-        } else if(binding_type=="HJ"){
-          stop("not implemented binding_type=HJ yet")
-        } else {
-          stop("Please specify binding_type is HJ or BBO")
+        }else{
+            lk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what is above
         }
+          ## }}}
         ## {{{ to deal with over-running (see chapter Jennison) 
         lk <- pmin(lk,uk)
         ## }}}
@@ -513,6 +445,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
   if(direction=="greater"){
     lk <- -lk
     uk <- -uk
+    delta <- -delta
   }
   
   ## {{{ create  output
@@ -539,10 +472,9 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
               coef=mycoef,
               abseps=abseps,
               toldiff=toldiff,
-              binding=binding,
-              binding_type=binding_type,
               direction=direction,
               sided=sided,
+              binding=TRUE,
               cMin=cMin)
   class(out) <- "SeqCR"
   ## }}}
