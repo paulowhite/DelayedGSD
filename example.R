@@ -8,7 +8,7 @@ sourceDir <- function(path, trace = TRUE, ...) {
 }
 
 #Source Paul's functions
-sourceDir("Rfunctions")
+sourceDir("R")
 library(rpact) #Library for group sequential designs (and other)
 library(gsDesign)
 
@@ -28,13 +28,13 @@ b1 <- CalcBoundaries(kMax=theK,  #max number of analyses (including final)
                      sided=1,  #one or two-sided
                      alpha=theAlpha,  #type I error
                      beta=theBeta,  #type II error
-                     informationRates=c(0.5,1),  #planned or observed information rates
+                     InfoR.i=c(0.5,1),  #planned or observed information rates
                      gammaA=2,  #rho parameter for alpha error spending function
                      gammaB=2,  #rho parameter for beta error spending function
                      method=1,  #use method 1 or 2 from paper H&J
                      delta=theDelta,  #effect that the study is powered for
-                     Id=0.55)
-PlotBoundaries(b1)
+                     InfoR.d=0.55)
+plot(b1)
 
 #planned sample size
 n <- power.t.test(delta=1.5,sd=3,sig.level=0.025,power=0.8,alternative = "one.sided")$n/0.82
@@ -60,7 +60,10 @@ xx <- SelectData(x$d,t=thet,Delta.t=theDelta.t*2)  #data at IA when deciding whe
 #xx[index12,c("t2","t3")] <- NA
 #xx[index13,"t3"] <- NA
 
-IA <- AnalyzeData(xx) #Interim analysis results - can we add Z-value to output?
+b.interim <- update(b1, data = xx, k = 1, type = "interim")
+
+IA <- analyzeData(xx) #Interim analysis results - can we add Z-value to output?
+class(IA)
 
 
 p <- PlotProgress(xx,Delta.t = theDelta.t)
@@ -71,7 +74,7 @@ sum(is.na(xx$t1))
 sum(is.na(xx$t2))
 sum(is.na(xx$t3))
 
-dIA <- Decision(IA,b1,Id=IA$getInformation["decision"]/b1$Imax,k=1,analysis="interim",Ik=c(IA$Info,b1$Imax))  
+dIA <- Decision(object = b1, k=1, type.k = "interim")   ## IA,Id=IA$getInformation["decision"]/b1$Imax,k=1,analysis="interim",Ik=c(IA$Info,b1$Imax)
 
 #Decision at decision analysis
 #index21 <- which(x$d$t1<=14.9)

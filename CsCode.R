@@ -8,7 +8,7 @@ sourceDir <- function(path, trace = TRUE, ...) {
 }
 
 #Source Paul's functions
-sourceDir("Rfunctions")
+sourceDir("R")
 library(rpact) #Library for group sequential designs (and other)
 
 x <- GenData(n=68*2)  #generate data with all data for in case trial completes
@@ -557,5 +557,4 @@ f+geom_point(aes(x=(Id/Imax)[1], y=ck[1]), colour="purple",size=3)+
   geom_point(aes(x=(Ik/Imax)[1], y=lk[1]), colour="green",size=3)+
   geom_point(aes(x=(Ik/Imax)[2], y=lk[2]), colour="green",size=3)
 
->>>>>>> f4530a6dda25a1eb365979a6d601906801966a85
 geom_point(aes(x=Ik/Imax, y=c2$lkd), colour="lightblue",size=3)
