@@ -24,7 +24,7 @@
 #'
 #' Update_ck(bCJ,k=2,Info.new=8)
 
-Update_ck <- function(obj,       #Output from NonBindingHJ.R
+Update_ck <- function(obj,       #Output from NonBindingHJ.R or Method2_PC
                       k,         #the analysis at which to update c
                       Info.new){ #the new observed information at decision analysis k
   
@@ -54,16 +54,26 @@ Update_ck <- function(obj,       #Output from NonBindingHJ.R
   sigmaZk2[1:k,k+1] <- sigmaZk2[k+1,1:k] <- sqrt(Info.i[1:k]/Info.new)
   
   if(binding){
-    stop("this has not been implemented yet")
+    c_new <- Method1(uk=uk[1:k],
+                     lk=lk[1:k],
+                     Info.i=Info.i[1:k],
+                     Info.d=Info.new,
+                     Info.max=obj$Info.max,
+                     sided=obj$sided,
+                     cMin=obj$cMin,
+                     ImaxAnticipated=FALSE, # (FIX) consider case ImaxAnticipated=TRUE
+                     rho_alpha=obj$rho_alpha, 
+                     alpha=obj$alpha,
+                     bindingFutility = TRUE)
   } else {
-    c_new <- uniroot(function(x){pmvnorm(lower = c(rep(-Inf,k-1),uk[k],x),
-                                         upper = c(uk[1:(k-1)],Inf,Inf),
-                                         mean=rep(0,k+1),
-                                         sigma= sigmaZk2,
-                                         abseps = obj$abseps) - IncAlpha[k]},
-                     lower = lk[k-1],
-                     upper = uk[k-1],
-                     tol = obj$abseps)$root
+      c_new <- uniroot(function(x){pmvnorm(lower = c(rep(-Inf,k-1),uk[k],x),
+                                           upper = c(uk[1:(k-1)],Inf,Inf),
+                                           mean=rep(0,k+1),
+                                           sigma= sigmaZk2,
+                                           abseps = obj$abseps) - IncAlpha[k]},
+                       lower = lk[k-1],
+                       upper = uk[k-1],
+                       tol = obj$abseps)$root
   }
   
   max(obj$cMin,c_new)
