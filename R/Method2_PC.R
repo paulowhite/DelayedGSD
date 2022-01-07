@@ -403,7 +403,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                              sided=sided,
                              cMin=cMin,
                              ImaxAnticipated=ImaxAnticipated[k],
-                             rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
+                             rho_alpha=rho_alpha,
                              alpha=alpha,
                              bindingFutility = TRUE)
             } else {
