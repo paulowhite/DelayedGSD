@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #Function to automatically load all R functions in a directory
 sourceDir <- function(path, trace = TRUE, ...) {
   for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
