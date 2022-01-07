@@ -51,6 +51,10 @@
 require(mvtnorm)
 
 
+#-------------
+# No no longer need of this function, since binding option included in Method3 !!!!
+#-----------
+
 ## * Method2_PC (code)
 NonBindingHJ <- function(rho_alpha=2,        # rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
                        rho_beta=2,           # rho parameter of the rho-family spending functions (Kim-DeMets) for beta
@@ -436,7 +440,7 @@ NonBindingHJ <- function(rho_alpha=2,        # rho parameter of the rho-family s
               sided=sided,
               binding=FALSE,
               cMin=cMin)
-  class(out) <- "SeqCR"
+  ## class(out) <- "delayedGSD"
   ## }}}
   .Random.seed <<- old # restore the current seed (before the call to the function)
   out

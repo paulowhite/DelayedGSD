@@ -476,7 +476,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
               sided=sided,
               binding=TRUE,
               cMin=cMin)
-  class(out) <- "SeqCR"
+  class(out) <- "delayedGSD"
   ## }}}
   .Random.seed <<- old # restore the current seed (before the call to the function)
   out
