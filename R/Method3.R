@@ -31,7 +31,7 @@
 #' @param InfoR.d Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
 #' @param delta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
 #' @param abseps tolerance for precision when finding roots or computing integrals
-#' @param direction greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
+#' @param alternative greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
 #' @param Trace Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
 #' @param nWhileMax Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
 #' @param toldiff Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
@@ -39,7 +39,6 @@
 #' @param mycoefMax Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
 #' @param mycoefL Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
 #' @param myseed seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
-#' @param sided one or two sided
 #'  
 #'
 #' @examples
@@ -59,8 +58,7 @@
 #'            InfoR.d=c(5.5,8.75)/12,
 #'            delta=1,  
 #'            abseps = 1e-06, 
-#'            direction="smaller",
-#'            sided=1
+#'            alternative="less",
 #'            )
 
 
@@ -75,15 +73,14 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
                     InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
                     delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
                     abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                    direction="smaller",  # greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
+                    alternative="less",  # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
                     Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
                     nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
                     toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
                     tolcoef= 1e-04,       # Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
                     mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
                     mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
-                    myseed=2902,          # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
-                    sided=1              # one or two sided
+                    myseed=2902          # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
                     ){
     require(mvtnorm)
     ## {{{ set seed
@@ -97,14 +94,14 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
     uk <- rep(Inf,Kmax) 
     ck <- rep(cMin,Kmax)
   
-    if( (direction=="smaller" & delta<0) | (direction=="greater" & delta>0)){
-        stop("The values given for arguments direction and delta are inconsistent.\n When direction=smaller, delta should be positive.\n When direction=greater, delta should be negative.")
+    if( (alternative=="less" & delta<0) | (alternative=="greater" & delta>0)){
+        stop("The values given for arguments alternative and delta are inconsistent.\n When alternative=less, delta should be positive.\n When alternative=greater, delta should be negative.")
     }
   
-    if(direction=="greater"){
+    if(alternative=="greater"){
         delta <- -delta
-    }else if(!direction%in%c("greater","smaller")){
-        stop("direction should be either greater or smaller")
+    }else if(!alternative%in%c("greater","less")){
+        stop("alternative should be either greater or less")
     }
   
     # initialize
@@ -156,9 +153,8 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
                       delta=delta,
                       abseps=abseps,
                       toldiff=toldiff,
-                      direction=direction,
-                      Trace=FALSE,
-                      sided=sided)
+                      alternative=alternative,
+                      Trace=FALSE)
         thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
         ## }}}       
         if(thediff==0){
@@ -185,8 +181,7 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
                               delta=delta,
                               abseps=abseps,
                               toldiff=toldiff,
-                              direction=direction,
-                              sided=sided)
+                              alternative=alternative)
                 thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
                 if(thediff>toldiff){
                     if(Trace){
@@ -411,7 +406,7 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
         }
     }
     ## }}}
-    if(direction=="greater"){
+    if(alternative=="greater"){
         lk <- -lk
         uk <- -uk
         delta <- -delta
@@ -444,8 +439,7 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
                 coef=mycoef,
                 abseps=abseps,
                 toldiff=toldiff,
-                direction=direction,
-                sided=sided,
+                alternative=alternative,
                 binding=binding,
                 cMin=cMin)
     ## class(out) <- "delayedGSD" # need to update print function first

@@ -5,7 +5,6 @@
 #' @param Info.i Information for all analyses up to and including current stage k
 #' @param Info.d Observed information at decision analysis k
 #' @param Info.max Maximum information
-#' @param sided one or two sided
 #' @param cMin minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
 #' @param ImaxAnticipated set to TRUE if c should be calculated according to Eq 15 in HJ because study was stopped early due to Imax reached
 #' @param rho_alpha value of rho used for type I error spending function
@@ -18,7 +17,6 @@ Method1 <- function(uk,
                     Info.i,
                     Info.d,
                     Info.max=NULL,
-                    sided=1,
                     cMin=-Inf,
                     ImaxAnticipated=FALSE,
                     rho_alpha=2, 
@@ -27,10 +25,6 @@ Method1 <- function(uk,
   
     requireNamespace("mvtnorm")
     requireNamespace("BB")
-    
-    if(sided!=1){
-        stop("Function cannot handle two-sided tests yet")
-    }
   
     ## message("the method assumes that positive effects are good")
   
