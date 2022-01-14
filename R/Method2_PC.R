@@ -13,7 +13,7 @@
 #' @param InfoR.d Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
 #' @param delta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
 #' @param abseps tolerance for precision when finding roots or computing integrals
-#' @param direction greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
+#' @param alternative greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
 #' @param Trace Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
 #' @param nWhileMax Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
 #' @param toldiff Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
@@ -22,14 +22,12 @@
 #' @param mycoefL Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
 #' @param myseed seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
 #' @param cMin minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
-#' @param sided one or two sided
 #'  
 #'
 #' @examples
 #'
 #' Example to check that code matches
 #' b1 <- CalcBoundaries(kMax=2,  #max number of analyses (including final)
-#'                     sided=1,  #one or two-sided
 #'                     alpha=0.025,  #type I error
 #'                     beta=0.2,  #type II error
 #'                     InfoR.i=c(0.6,1),  #planned information rates
@@ -44,7 +42,6 @@
 #' 
 #' 
 #' b1FT <- CalcBoundaries(kMax=2,  #max number of analyses (including final)
-#'                     sided=1,  #one or two-sided
 #'                     alpha=0.025,  #type I error
 #'                     beta=0.2,  #type II error
 #'                     InfoR.i=c(0.6,1),  #planned information rates
@@ -79,8 +76,7 @@
 #'            InfoR.d=c(5.5,8.75)/12,
 #'            delta=1,  
 #'            abseps = 1e-06, 
-#'            direction="smaller",
-#'            sided=1,
+#'            alternative="less",
 #'            cMin=1.96
 #'            )
 
@@ -98,7 +94,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                          InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
                          delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
                          abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                         direction="smaller",  # greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
+                         alternative="less",  # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
                          Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
                          nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
                          toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
@@ -106,7 +102,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                          mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
                          mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
                          myseed=2902,           # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
-                         sided=1,              # one or two sided
                          cMin=-Inf           # minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
 ){
   ## {{{ set seed
@@ -119,14 +114,14 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
   uk <- rep(Inf,Kmax) 
   ck <- rep(NA,Kmax)
   
-  if( (direction=="smaller" & delta<0) | (direction=="greater" & delta>0)){
-    stop("The values given for arguments direction and delta are inconsistent.\n When direction=smaller, delta should be positive.\n When direction=greater, delta should be negative.")
+  if( (alternative=="less" & delta<0) | (alternative=="greater" & delta>0)){
+    stop("The values given for arguments alternative and delta are inconsistent.\n When alternative=less, delta should be positive.\n When alternative=greater, delta should be negative.")
   }
   
-  if(direction=="greater"){
+  if(alternative=="greater"){
     delta <- -delta
-  }else if(!direction%in%c("greater","smaller")){
-    stop("direction should be either greater or smaller")
+  }else if(!alternative%in%c("greater","less")){
+    stop("alternative should be either greater or less")
   }
   
   # initialize
@@ -175,9 +170,8 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                        delta=delta,
                        abseps=abseps,
                        toldiff=toldiff,
-                       direction=direction,
+                       alternative=alternative,
                        Trace=FALSE,
-                       sided=sided,
                        cMin=cMin)
     thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
     ## }}}       
@@ -204,8 +198,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                            delta=delta,
                            abseps=abseps,
                            toldiff=toldiff,
-                           direction=direction,
-                           sided=sided,
+                           alternative=alternative,
                            cMin=cMin)
         thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
         if(thediff>toldiff){
@@ -285,7 +278,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                   Info.i=Info.i[1],
                   Info.d=Info.d[1],
                   Info.max=Info.max,
-                  sided=sided,
                   cMin=cMin,
                   ImaxAnticipated=ImaxAnticipated[1],
                   rho_alpha=rho_alpha,
@@ -317,7 +309,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                    Info.i=Info.i[1],
                    Info.d=Info.d[1],
                    Info.max=Info.max,
-                   sided=sided,
                    cMin=cMin,
                    ImaxAnticipated=ImaxAnticipated[1],
                    rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
@@ -366,7 +357,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                             Info.i=Info.i[1:k],
                             Info.d=Info.d[k],
                             Info.max=Info.max,
-                            sided=sided,
                             cMin=cMin,
                             ImaxAnticipated=ImaxAnticipated[k],
                             rho_alpha=rho_alpha,
@@ -400,7 +390,6 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
                              Info.i=Info.i[1:k],
                              Info.d=Info.d[k],
                              Info.max=Info.max,
-                             sided=sided,
                              cMin=cMin,
                              ImaxAnticipated=ImaxAnticipated[k],
                              rho_alpha=rho_alpha,
@@ -442,7 +431,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
   }
   ## }}}
   
-  if(direction=="greater"){
+  if(alternative=="greater"){
     lk <- -lk
     uk <- -uk
     delta <- -delta
@@ -472,8 +461,7 @@ Method2_PC <- function(rho_alpha=2,          # rho parameter of the rho-family s
               coef=mycoef,
               abseps=abseps,
               toldiff=toldiff,
-              direction=direction,
-              sided=sided,
+              alternative=alternative,
               binding=TRUE,
               cMin=cMin)
   class(out) <- "delayedGSD"

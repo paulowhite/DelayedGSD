@@ -14,6 +14,7 @@
 #' @param delta effect that the study is powered for
 #' @param InfoR.d (expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.
 #' @param bindingFutility whether the futility stopping rule is binding
+#' @param alternative a character string specifying the alternative hypothesis, "greater" or "less".
 #' @param n planned sample size in each group. Optional argument.
 #' @param trace whether to print some messages
 #'
@@ -25,7 +26,7 @@
 #'               InfoR.i=c(0.5,1),
 #'               rho_alpha=2,
 #'               rho_beta=2,
-#'               method=1,
+#'               method=2,
 #'               cNotBelowFixedc=TRUE,
 #'               delta=1.5,
 #'               InfoR.d=0.55)
@@ -61,7 +62,8 @@ CalcBoundaries <- function(kMax=2,
                            cNotBelowFixedc=FALSE, 
                            delta=1.5, 
                            InfoR.d=0.55,   
-                           bindingFutility=TRUE,  #
+                           bindingFutility=TRUE,
+                           alternative = "less",
                            n=NULL,
                            trace=TRUE){  
 
@@ -69,6 +71,7 @@ CalcBoundaries <- function(kMax=2,
 
     ## ** normalize user input
     call <- match.call() ## keep track of how the user run the function
+    alternative <- match.arg(alternative, c("less","greater"))
     if(sided!=1){
         stop("Function cannot handle two-sided tests yet")
     }
@@ -146,19 +149,21 @@ CalcBoundaries <- function(kMax=2,
     
     } else if(method==2){
     
-        for(k in indexNNA.d){
-            delayedBnds <- Method2(uk = uk[1:k],
-                                   lk = lk[1:k],
-                                   Info.i = (InfoR.i*Info.max)[1:k],
-                                   Info.d = Info.d[k],
-                                   Info.max = Info.max,
-                                   delta = delta,
-                                   cMin = cMin,
-                                   bindingFutility = bindingFutility)
-            ck[k] <- delayedBnds$critval
-            lk[k] <- delayedBnds$lkd
-        }
-    
+        delayedBnds <- Method2(rho_alpha = rho_alpha,
+                               rho_beta = rho_beta,
+                               alpha = alpha,
+                               beta = beta, 
+                               Kmax = kMax,
+                               Info.max = NULL,
+                               InfoR.i = InfoR.i,
+                               InfoR.d = InfoR.d,
+                               delta = delta, 
+                               direction = alternative,
+                               Trace = trace,
+                               cMin = cMin) 
+        uk <- delayedBnds$boundaries$u.k
+        lk <- delayedBnds$boundaries$l.k
+        ck <- delayedBnds$boundaries$c.k
     }
 
 

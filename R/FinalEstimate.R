@@ -6,7 +6,6 @@
 #' @param ck decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
 #' @param lk lower bounds up to stage where study was stopped
 #' @param uk upper bounds up to stage where study was stopped
-#' @param sided one or two sided
 #' @param kMax maximum number of analyses
 #' @param estimate naive estimate (e.g. using  ML or REML).
 
@@ -17,7 +16,6 @@ FinalEstimate <- function(Info.d,
                           ck,   
                           lk,  
                           uk,  
-                          sided=1,  
                           kMax, 
                           estimate){ 
   
@@ -27,7 +25,6 @@ FinalEstimate <- function(Info.d,
                 ck=ck,
                 lk=lk,
                 uk=uk,
-                sided=sided,
                 kMax=kMax,
                 estimate=estimate,
                 delta=delta) - 0.5)^2

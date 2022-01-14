@@ -92,15 +92,24 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
     ## *** at interim
     if(type.k == "interim"){
 
-        if(k>1 && (Info.i[k] < Info.i[k-1])){ ## continue to the next interim when information decreased
+        if(k>1 && (Info.i[k] < Info.i[k-1])){
+            ## continue to the next interim when information decreased
             object$lk[k]  <- NA
             object$uk[k]  <- NA
             object$ck[k]  <- NA
-        }else if((Info.i[k] >= Info.max) || (Info.d[k] >= Info.max)){ ## stop and do decision when Imax is already reached or anticipated to be reached
+            object$conclusion["interim",k] <- "continue"
+            object$conclusion["reason.interim",k] <- "decreasing information"
+
+        }else if((Info.i[k] >= Info.max) || (Info.d[k] >= Info.max)){
+            ## stop and do decision when Imax is already reached or anticipated to be reached
             object$lk[k]  <- NA
             object$uk[k]  <- NA
             object$ck[k]  <- NA
-        }else{ ## usual evaluation
+            object$conclusion["interim",k] <- "stop"
+            object$conclusion["reason.interim",k] <- "Imax reached"
+
+        }else{
+            ## usual evaluation
 
             ## ## Handling information greater than Info.max at future interim or decision analyses or at the final analysis
             ## if(any(Info.i>object$Info.max)){
@@ -132,34 +141,56 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
     if(type.k == "decision"){
 
         ## Handling information greater than Info.max at future interim or decision analyses or at the final analysis:
-        ## we will never reach these analyses so no need to compute boundaries there and we should not need the information at those stages
+        ## we will never reach these analyses so no need to compute boundaries there
+        ## we should not need the information at those stages
         Info.i[(k+1):kMax] <- NA ## future interim or final
         if((k+1)>=(kMax-1)){Info.d[(k+1):(kMax-1)] <- NA} ## future decision
 
-
+        ## identify interim analyses that have been skipped due to decreasing information
+        index.DI <- which(object$conclusion["reason.interim",]=="decreasing information")
+        index.nDI <- setdiff(1:kMax,index.DI)
+        if(length(index.DI)>0){
+            ## When the interim analysis was skiped because of decreasing information
+            ## remove interim and decision
+            InfoR.i <- InfoR.i[index.nDI]
+            InfoR.d <- InfoR.d[setdiff(index.nDI,kMax)]
+            kMax <- kMax - length(index.DI) ## need to be after the update of InfoR.d as the previous line dependens on kMax
+        }
         
-        if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
-            ## the real problematic case is when Info.d[k] < Imax but Info.i[k] > Imax
-            ## What to do?
-            stop("Do not know how to deal when Information decreases between interim and decision. \n")
-        }else if((object$conclusion["reason.interim",k]=="Imax reached") || (Info.d[k] >= Info.max)){ ## if Imax has been reached at the interim and continue to increase, or has been reached at decision
-            ## recompute the decision boundary to spend all the alpha
-            if(object$method==1){
-                newBounds2 <- Method1(uk=uk[1:k],
-                                      lk=lk[1:k],
-                                      Info.i=Info.i[1:k],
-                                      Info.d=Info.d[k],
-                                      Info.max=Info.max,
-                                      sided=object$sided,
-                                      ImaxAnticipated=TRUE,
-                                      rho=object$rho_alpha,
-                                      alpha=object$alpha,
-                                      bindingFutility=bindingFutility)
-                object$ck[k:(kMax-1)]  <- c(newBounds2[k], rep(NA,kMax-k-1))
-            }else{
-                stop("Method ",object$method," not implemented when Imax reached. \n")
+
+        if(object$conclusion["reason.interim",k]=="Imax reached"){
+            if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
+            
+            }else if((Info.d[k] >= Info.max)){ ## if Imax has been reached at the interim and continue to increase, or has been reached at decision
+                
+                if(object$method==1){
+                    ## Recompute the decision boundary to spend all the alpha
+                    ## instead of just the portion planned for this interim
+                    ## --> via argument ImaxAnticipated 
+                    newBounds2 <- Method1(uk=uk[1:k],
+                                          lk=lk[1:k],
+                                          Info.i=Info.i[1:k],
+                                          Info.d=Info.d[k],
+                                          Info.max=Info.max,
+                                          sided=object$sided,
+                                          ImaxAnticipated=TRUE,
+                                          rho=object$rho_alpha,
+                                          alpha=object$alpha,
+                                          bindingFutility=bindingFutility)
+                    object$ck[k:(kMax-1)]  <- c(newBounds2[k], rep(NA,kMax-k-1))
+                }else if(object$method==2){
+                    Method2(uk = uk[1:k],
+                                   lk = lk[1:k],
+                                   Info.i = (InfoR.i*Info.max)[1:k],
+                                   Info.d = Info.d[k],
+                                   Info.max = Info.max,
+                                   delta = delta,
+                                   cMin = cMin,
+                                   bindingFutility = bindingFutility)
+                }
             }
-        }else { ## usual evaluation
+        }else{ ## object$conclusion["reason.interim",k] %in% c("efficacy","futility","no boundary crossed")
+            ## usual evaluation including the case of decreasing information between interim and decision
             newBounds <- CalcBoundaries(kMax=kMax,
                                         sided=object$sided,
                                         alpha=object$alpha, 

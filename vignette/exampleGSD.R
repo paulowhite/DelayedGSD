@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: Dec 16 2021 (08:56) 
 ## Version: 
-## Last-Updated: Dec 16 2021 (19:08) 
+## Last-Updated: jan  7 2022 (15:36) 
 ##           By: Brice Ozenne
-##     Update #: 18
+##     Update #: 20
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -33,8 +33,8 @@ GSD.2t <- CalcBoundaries(kMax=2,  ## max number of analyses (including final)
                          alpha=theAlpha,  ## type I error
                          beta=theBeta,  ## type II error
                          InfoR.i=c(0.5,1),  ## planned or observed information rates
-                         gammaA=2,  ## rho parameter for alpha error spending function
-                         gammaB=2,  ## rho parameter for beta error spending function
+                         rho_alpha=2,  ## rho parameter for alpha error spending function
+                         rho_beta=2,  ## rho parameter for beta error spending function
                          method=1,  ## use method 1 or 2 from paper H&J
                          delta=theDelta,  ## effect that the study is powered for
                          InfoR.d=0.55)
@@ -51,8 +51,8 @@ GSD.4t <- CalcBoundaries(kMax=4,  ## max number of analyses (including final)
                          alpha=theAlpha,  ## type I error
                          beta=theBeta,  ## type II error
                          InfoR.i=c(0.25,0.5,0.75,1),  ## planned or observed information rates
-                         gammaA=2,  ## rho parameter for alpha error spending function
-                         gammaB=2,  ## rho parameter for beta error spending function
+                         rho_alpha=2,  ## rho parameter for alpha error spending function
+                         rho_beta=2,  ## rho parameter for beta error spending function
                          method=1,  ## use method 1 or 2 from paper H&J
                          delta=theDelta,  ## effect that the study is powered for
                          InfoR.d=c(0.3,0.55,0.8))
@@ -132,6 +132,7 @@ print(GSDI3.4t)
 plot(GSDI3.4t, planned = "only")
 plot(GSDI3.4t, planned = TRUE)
 plot(GSDI3.4t, planned = FALSE)
+
 
 
 ##----------------------------------------------------------------------
