@@ -6,7 +6,6 @@
 #' @param ck decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
 #' @param lk lower bounds up to stage where study was stopped
 #' @param uk upper bounds up to stage where study was stopped
-#' @param sided whether the test is 1 or 2-sided
 #' @param kMax maximum number of analyses
 #' @param delta true effect under which to calculate the probability (should always be 0 for p-value, only change for calculation of CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
@@ -114,16 +113,11 @@ FinalPvalue <- function(Info.d,
                         ck,   
                         lk,  
                         uk,  
-                        sided=1,  
                         kMax, 
                         delta=0,  
                         estimate){
     
     requireNamespace("mvtnorm")
-  
-    if(sided!=1){
-        stop("Function cannot handle two-sided tests yet")
-    }
   
   ## message("the method assumes that positive effects are good")
   k <- length(Info.d)

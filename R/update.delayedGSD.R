@@ -29,7 +29,6 @@
 #'
 #' 
 #' myBound0 <- CalcBoundaries(kMax=theK,
-#'                           sided=1,
 #'                      alpha=theAlpha,
 #'                      beta=theBeta,
 #'                      InfoR.i=c(0.5,1),
@@ -156,7 +155,6 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
                                                      ck = object$ck,   
                                                      lk = object$kk,  
                                                      uk = object$uk,  
-                                                     sided = 1,  
                                                      kMax = kMax, 
                                                      delta = 0,  
                                                      estimate = delta[NROW(delta),"estimate"])
@@ -169,7 +167,6 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
                              ck = object$ck,   
                              lk = object$kk,  
                              uk = object$uk,  
-                             sided = 1,  
                              kMax = kMax, 
                              alpha = object$alpha,  
                              estimate = delta[NROW(delta),"estimate"])
@@ -186,7 +183,6 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
                                                         ck = object$ck,   
                                                         lk = object$kk,  
                                                         uk = object$uk,  
-                                                        sided = 1,  
                                                         kMax = kMax, 
                                                         estimate = delta[NROW(delta),"estimate"])
         }

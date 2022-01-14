@@ -6,7 +6,6 @@
 #' @param ck decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
 #' @param lk lower bounds up to stage where study was stopped
 #' @param uk upper bounds up to stage where study was stopped
-#' @param sided whether the test is 1 or 2-sided
 #' @param kMax maximum number of analyses
 #' @param alpha confidence level (to get a 100*(1-alpha)\% CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
@@ -19,7 +18,6 @@ FinalCI <- function(Info.d,
                     ck,  
                     lk,  
                     uk,  
-                    sided=1,
                     kMax, 
                     alpha=0.05,
                     estimate,
@@ -31,7 +29,6 @@ FinalCI <- function(Info.d,
                  ck=ck,
                  lk=lk,
                  uk=uk,
-                 sided=sided,
                  kMax=kMax,
                  estimate=estimate,
                  delta=delta) - alpha/2
@@ -43,7 +40,6 @@ FinalCI <- function(Info.d,
                  ck=ck,
                  lk=lk,
                  uk=uk,
-                 sided=sided,
                  kMax=kMax,
                  estimate=estimate,
                  delta=delta) - alpha/2

@@ -3,7 +3,8 @@
 #' 
 #' 
 #' 
-#' @param obj       output from either NonBindingHJ.R or Method2_PC.R
+#' @param obj       output from either Method2.R or Method3.R
+#' @param method    whether method 2 or 3 was used
 #' @param k         the analysis k at which to recalculate c_k  
 #' @param Info.new  the observed information at decision analysis k
 #'
@@ -18,13 +19,14 @@
 #'                     InfoR.d=c(5.5,8.75)/12,
 #'                     delta=1,  
 #'                     abseps = 1e-06, 
-#'                     direction="smaller",
+#'                     alternative="less",
 #'                     sided=1
 #'                    )
 #'
 #' Update_ck(bCJ,k=2,Info.new=8)
 
-Update_ck <- function(obj,       #Output from NonBindingHJ.R
+Update_ck <- function(obj,       #Output from NonBindingHJ.R or Method2_PC
+                      method,    #which method is used to calculate the boundaries (2 or 3)
                       k,         #the analysis at which to update c
                       Info.new){ #the new observed information at decision analysis k
   
@@ -35,7 +37,7 @@ Update_ck <- function(obj,       #Output from NonBindingHJ.R
   IncAlpha <- obj$boundaries[,"Inc.Type.I"]
   binding <- obj$binding
   
-  if(obj$direction=="greater"){
+  if(obj$alternative=="greater"){
     lk <- -lk
     uk <- -uk
   }
@@ -54,16 +56,44 @@ Update_ck <- function(obj,       #Output from NonBindingHJ.R
   sigmaZk2[1:k,k+1] <- sigmaZk2[k+1,1:k] <- sqrt(Info.i[1:k]/Info.new)
   
   if(binding){
-    stop("this has not been implemented yet")
+    if(method==2){
+      c_new <- Method1(uk=uk[1:k],
+                       lk=lk[1:k],
+                       Info.i=Info.i[1:k],
+                       Info.d=Info.new,
+                       Info.max=obj$Info.max,
+                       sided=obj$sided,
+                       cMin=obj$cMin,
+                       ImaxAnticipated=FALSE, # (FIX) consider case ImaxAnticipated=TRUE
+                       rho_alpha=obj$rho_alpha, 
+                       alpha=obj$alpha,
+                       bindingFutility = TRUE)
+    } else if(method==3){
+      c_new <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],uk[k],x),
+                                           upper = c(uk[1:(k-1)],Inf,Inf),
+                                           mean=rep(0,k+1),
+                                           sigma= sigmaZk2,
+                                           abseps = obj$abseps) - IncAlpha[k]},
+                       lower = lk[k-1],
+                       upper = uk[k-1],
+                       tol = obj$abseps)$root
+    } else {
+      stop("Please specify method=2 or method=3")
+    }
+    
   } else {
-    c_new <- uniroot(function(x){pmvnorm(lower = c(rep(-Inf,k-1),uk[k],x),
-                                         upper = c(uk[1:(k-1)],Inf,Inf),
-                                         mean=rep(0,k+1),
-                                         sigma= sigmaZk2,
-                                         abseps = obj$abseps) - IncAlpha[k]},
-                     lower = lk[k-1],
-                     upper = uk[k-1],
-                     tol = obj$abseps)$root
+    if(method!=3){
+      stop("Incorrect combination of method and binding")
+    } else {
+      c_new <- uniroot(function(x){pmvnorm(lower = c(rep(-Inf,k-1),uk[k],x),
+                                           upper = c(uk[1:(k-1)],Inf,Inf),
+                                           mean=rep(0,k+1),
+                                           sigma= sigmaZk2,
+                                           abseps = obj$abseps) - IncAlpha[k]},
+                       lower = lk[k-1],
+                       upper = uk[k-1],
+                       tol = obj$abseps)$root
+    }
   }
   
   max(obj$cMin,c_new)
