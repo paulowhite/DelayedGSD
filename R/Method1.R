@@ -102,11 +102,16 @@ Method1 <- function(uk,
             }
         }
     }
-  
-    c <- try(stats::uniroot(f, lower = lk[k], upper = uk[k]*1.1)$root,silent=T)
+
+    c <- try(stats::uniroot(f,
+                            lower = lk[utils::tail(intersect(which(!is.infinite(lk)),1:k),1)], ## last boundary among the k already computed that is not infinite  
+                            upper = uk[utils::tail(intersect(which(!is.infinite(uk)),1:k),1)]*1.1)$root,
+             silent=T)
     if(inherits(c,"try-error")){
         warning("uniroot produced an error, switching to dfsane")
-        c <- BB::dfsane(f, par = (uk[k]*1.1+lk[k])/2, control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
+        c <- BB::dfsane(f,
+                        par = (uk[utils::tail(intersect(which(!is.infinite(uk)),1:k),1)]*1.1+lk[utils::tail(intersect(which(!is.infinite(lk)),1:k),1)])/2,
+                        control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
     }
     max(c,cMin)
 }

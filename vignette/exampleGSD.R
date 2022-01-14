@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: Dec 16 2021 (08:56) 
 ## Version: 
-## Last-Updated: jan  7 2022 (15:36) 
+## Last-Updated: jan 14 2022 (16:28) 
 ##           By: Brice Ozenne
-##     Update #: 20
+##     Update #: 24
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -35,9 +35,10 @@ GSD.2t <- CalcBoundaries(kMax=2,  ## max number of analyses (including final)
                          InfoR.i=c(0.5,1),  ## planned or observed information rates
                          rho_alpha=2,  ## rho parameter for alpha error spending function
                          rho_beta=2,  ## rho parameter for beta error spending function
-                         method=1,  ## use method 1 or 2 from paper H&J
+                         method=3,  ## use method 1 or 2 from paper H&J
                          delta=theDelta,  ## effect that the study is powered for
-                         InfoR.d=0.55)
+                         InfoR.d=0.55,
+                         cNotBelowFixedc=TRUE)
 
 GSD.2t
 coef(GSD.2t, type = "information")
@@ -97,6 +98,28 @@ plot(GSDI.2t)
 
 GSDF.2t <- update(GSDI.2t, data = dataF.2t)
 
+## ** 4 interim (decreasing)
+GSDI1.4t <- update(GSD.4t, data = dataI1.4t)
+GSDI1.4t$conclusion
+GSDI1.4t$alphaSpent
+GSDI1.4t$planned$alphaSpent
+
+GSDI2.4t <- update(GSDI1.4t, data = dataI1.4t[-(1:10),])
+GSDI2.4t$alphaSpent
+GSDI2.4t$planned$alphaSpent
+
+GSDI2.4t$conclusion
+GSDI2.4t$delta
+plot(GSDI2.4t)
+
+GSDI3.4t <- update(GSDI2.4t, data = dataI3.4t)
+
+GSDI3D.4t <- update(GSDI3.4t, data = dataI3.4t[-(1:20),])
+
+
+
+GSDI3.4t$alphaSpent
+GSDI3.4t$planned$alphaSpent
 
 ## ** 4 interim
 GSDI1.4t <- update(GSD.4t, data = dataI1.4t)

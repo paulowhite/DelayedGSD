@@ -119,22 +119,25 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
     if(trace>0){cat("done \n", sep = "")}
 
     ## ** update information
-    if(trace>0){cat(" - udpate information: ", sep = "")}
+    if(trace>0){cat(" - update information: ", sep = "")}
     object <- updateInformation(object, lmm = lmm, k = k, type.k = type.k, update.stage = FALSE)
     if(trace>0){cat("done \n", sep = "")}
-    
+
     ## ** update boundaries
-    if(trace>0){cat(" - udpate boundaries: ", sep = "")}
+    if(trace>0){cat(" - update boundaries: ", sep = "")}
     object <- updateBoundaries(object, k = k, type.k = type.k, trace = trace-1, update.stage = TRUE)
     if(trace>0){cat("done \n", sep = "")}
 
     ## ** decision
-    if(trace>0){cat(" - udpate decision: ", sep = "")}
-    if(!is.null(PositiveIsGood)){
-        object <- Decision(object, PositiveIsGood = PositiveIsGood, k = k, type.k = type.k, trace = trace-1)
-    }else{
-        object <- Decision(object, k = k, type.k = type.k, trace = trace-1)
+    if(trace>0){cat(" - update decision: ", sep = "")}
+    if(type.k != "interim" || is.na(object$conclusion["interim",k])){
+        if(!is.null(PositiveIsGood)){
+            object <- Decision(object, PositiveIsGood = PositiveIsGood, k = k, type.k = type.k, trace = trace-1)
+        }else{
+            object <- Decision(object, k = k, type.k = type.k, trace = trace-1)
+        }
     }
+    
     if(trace>0){cat("done \n", sep = "")}
 
     ## ** estimate

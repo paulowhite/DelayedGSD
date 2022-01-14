@@ -73,7 +73,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
     lk <- object$lk
     ck <- object$ck
     bindingFutility <- object$bindingFutility
-    
+
     ## ** [optional] update information
     if(!is.null(lmm)){
         if(type.k %in% c("interim","final")){
@@ -89,50 +89,63 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
     Info.d <- object$Info.d
 
     ## ** update boundaries
+   
     ## *** at interim
     if(type.k == "interim"){
 
         if(k>1 && (Info.i[k] < Info.i[k-1])){
+            
             ## continue to the next interim when information decreased
-            object$lk[k]  <- NA
-            object$uk[k]  <- NA
+            object$lk[k]  <- -Inf
+            object$uk[k]  <- +Inf
             object$ck[k]  <- NA
             object$conclusion["interim",k] <- "continue"
             object$conclusion["reason.interim",k] <- "decreasing information"
-
+            object$alphaSpent[k] <- object$alphaSpent[k-1]
+            object$betaSpent[k] <- object$betaSpent[k-1]
+            
         }else if((Info.i[k] >= Info.max) || (Info.d[k] >= Info.max)){
+            
             ## stop and do decision when Imax is already reached or anticipated to be reached
-            object$lk[k]  <- NA
-            object$uk[k]  <- NA
+            object$lk[k]  <- -Inf
+            object$uk[k]  <- +Inf
             object$ck[k]  <- NA
             object$conclusion["interim",k] <- "stop"
             object$conclusion["reason.interim",k] <- "Imax reached"
+            object$alphaSpent[k] <- object$alpha
+            object$betaSpent[k] <- object$beta
 
         }else{
+            
             ## usual evaluation
+            newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
+                                       rho_beta = object$rho_beta,
+                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                       beta = object$beta, betaSpent = object$betaSpent, 
+                                       Kmax = object$kMax,
+                                       Info.max = object$Info.max,
+                                       uk = object$uk,
+                                       lk = object$lk,
+                                       k = k, type.k = type.k, conclusion = object$conclusion,
+                                       InfoR.i = object$Info.i/object$Info.max,
+                                       InfoR.d = object$Info.d/object$Info.max,
+                                       delta = object$delta, 
+                                       alternative = object$alternative,
+                                       Trace = trace,
+                                       cMin = object$cMin)
 
-            ## ## Handling information greater than Info.max at future interim or decision analyses or at the final analysis
-            ## if(any(Info.i>object$Info.max)){
-            ##     attr(Info.i,"InflationFactor") <- object$InflationFactor
-            ## }
-
-            newBounds <- CalcBoundaries(kMax=kMax,
-                                        sided=object$sided,
-                                        alpha=object$alpha, 
-                                        beta=object$beta,  
-                                        InfoR.i=Info.i/object$Info.max,  
-                                        rho_alpha=object$rho_alpha,
-                                        rho_beta=object$rho_beta,
-                                        method=object$method,
-                                        cNotBelowFixedc=object$cNotBelowFixedc, 
-                                        delta=object$delta,  
-                                        InfoR.d=Info.d/object$Info.max,  
-                                        trace=trace,
-                                        bindingFutility = bindingFutility)
-
-            object$lk  <- newBounds$lk
-            object$uk  <- newBounds$uk
-            object$ck  <- newBounds$ck
+            object$lk[k]  <- newBounds$lk[k]
+            object$uk[k]  <- newBounds$uk[k]
+            object$alphaSpent[k] <- newBounds$alphaSpent[k]
+            object$betaSpent[k] <- newBounds$betaSpent[k]
+            if(k<kMax){
+                object$lk[(k+1):kMax]  <- NA
+                object$uk[(k+1):kMax]  <- NA
+                object$ck[k]  <- newBounds$ck
+                if(k<kMax-1){
+                    object$ck[(k+1):(kMax-1)]  <- NA                    
+                }
+            }
         } 
 
     }
@@ -140,92 +153,91 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
     ## *** at decision
     if(type.k == "decision"){
 
-        ## Handling information greater than Info.max at future interim or decision analyses or at the final analysis:
-        ## we will never reach these analyses so no need to compute boundaries there
-        ## we should not need the information at those stages
-        Info.i[(k+1):kMax] <- NA ## future interim or final
-        if((k+1)>=(kMax-1)){Info.d[(k+1):(kMax-1)] <- NA} ## future decision
+        if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
+            object$conclusion["comment.decision",k] <- "decreasing information"
+            warning("Information has decreased between interim and decision. \n")
 
-        ## identify interim analyses that have been skipped due to decreasing information
-        index.DI <- which(object$conclusion["reason.interim",]=="decreasing information")
-        index.nDI <- setdiff(1:kMax,index.DI)
-        if(length(index.DI)>0){
-            ## When the interim analysis was skiped because of decreasing information
-            ## remove interim and decision
-            InfoR.i <- InfoR.i[index.nDI]
-            InfoR.d <- InfoR.d[setdiff(index.nDI,kMax)]
-            kMax <- kMax - length(index.DI) ## need to be after the update of InfoR.d as the previous line dependens on kMax
-        }
-        
+            ## Possible solution: when estimating ck by balancing the probability of reversal, add a term corresponding to the type 1 error we should have spent vs. the type 1 error we spent.
+            ## usual evaluation
+            newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
+                                       rho_beta = object$rho_beta,
+                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                       beta = object$beta, betaSpent = object$betaSpent, 
+                                       Kmax = object$kMax,
+                                       Info.max = object$Info.max,
+                                       uk = object$uk,
+                                       lk = object$lk,
+                                       k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
+                                       InfoR.i = object$Info.i/object$Info.max,
+                                       InfoR.d = object$Info.d/object$Info.max,
+                                       delta = object$delta, 
+                                       alternative = object$alternative,
+                                       Trace = trace,
+                                       cMin = object$cMin)
 
-        if(object$conclusion["reason.interim",k]=="Imax reached"){
-            if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
+
+            object$ck[k]  <- newBounds$ck
+            if(k<kMax-1){
+                object$ck[(k+1):(kMax-1)]  <- NA                    
+            }
             
-            }else if((Info.d[k] >= Info.max)){ ## if Imax has been reached at the interim and continue to increase, or has been reached at decision
-                
-                if(object$method==1){
-                    ## Recompute the decision boundary to spend all the alpha
-                    ## instead of just the portion planned for this interim
-                    ## --> via argument ImaxAnticipated 
-                    newBounds2 <- Method1(uk=uk[1:k],
-                                          lk=lk[1:k],
-                                          Info.i=Info.i[1:k],
-                                          Info.d=Info.d[k],
-                                          Info.max=Info.max,
-                                          sided=object$sided,
-                                          ImaxAnticipated=TRUE,
-                                          rho=object$rho_alpha,
-                                          alpha=object$alpha,
-                                          bindingFutility=bindingFutility)
-                    object$ck[k:(kMax-1)]  <- c(newBounds2[k], rep(NA,kMax-k-1))
-                }else if(object$method==2){
-                    Method2(uk = uk[1:k],
-                                   lk = lk[1:k],
-                                   Info.i = (InfoR.i*Info.max)[1:k],
-                                   Info.d = Info.d[k],
-                                   Info.max = Info.max,
-                                   delta = delta,
-                                   cMin = cMin,
-                                   bindingFutility = bindingFutility)
+        }else{
+
+            ## NOTE: include special case Info.d[k] >= Info.max which is treated as usual - conservative procedure
+
+            ## usual evaluation
+            newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
+                                       rho_beta = object$rho_beta,
+                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                       beta = object$beta, betaSpent = object$betaSpent, 
+                                       Kmax = object$kMax,
+                                       Info.max = object$Info.max,
+                                       uk = object$uk,
+                                       lk = object$lk,
+                                       k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
+                                       InfoR.i = object$Info.i/object$Info.max,
+                                       InfoR.d = object$Info.d/object$Info.max,
+                                       delta = object$delta, 
+                                       alternative = object$alternative,
+                                       Trace = trace,
+                                       cMin = object$cMin)
+
+                object$ck[k]  <- newBounds$ck
+                if(k<kMax-1){
+                    object$ck[(k+1):(kMax-1)]  <- NA                    
                 }
             }
-        }else{ ## object$conclusion["reason.interim",k] %in% c("efficacy","futility","no boundary crossed")
-            ## usual evaluation including the case of decreasing information between interim and decision
-            newBounds <- CalcBoundaries(kMax=kMax,
-                                        sided=object$sided,
-                                        alpha=object$alpha, 
-                                        beta=object$beta,  
-                                        InfoR.i=Info.i/object$Info.max,  
-                                        rho_alpha=object$rho_alpha,
-                                        rho_beta=object$rho_beta,
-                                        method=object$method,
-                                        cNotBelowFixedc=object$cNotBelowFixedc, 
-                                        delta=object$delta,  
-                                        InfoR.d=Info.d/object$Info.max,  
-                                        trace=trace,
-                                        bindingFutility = bindingFutility)
-
-            object$lk  <- newBounds$lk
-            object$uk  <- newBounds$uk
-            object$ck  <- newBounds$ck
-        }
     }
     
     ## *** at final
     if(type.k == "final"){ ##  that could be replace by a call to CalcBoundaries
-        if(bindingFutility){test.type <- 3}else{test.type <- 4}
 
-        StandardDesign <- gsDesign::gsDesign(k = k, test.type = test.type, alpha = object$alpha, beta = object$beta,
-                                             timing = c(Info.i[1:(k-1)], object$Info.max)/object$Info.max,
-                                             n.fix = 1, n.I = Info.i / (object$Info.max/object$InflationFactor), maxn.IPlan = object$InflationFactor,
-                                             ## n.fix=object$Info.max/object$InflationFactor, n.I=Info.i, maxn.IPlan=object$Info.max ## should be equivalent
-                                             sfu = gsDesign::sfPower, sfupar = object$rho_alpha,
-                                             sfl = gsDesign::sfPower, sflpar = object$rho_beta)
+        if(Info.i[k] < Info.i[k-1]){
+            object$conclusion["comment.decision",k] <- "decreasing information"
+        }
 
-        object$lk[k]  <- StandardDesign$upper$bound[k]
-        object$uk[k]  <- StandardDesign$upper$bound[k]
+        newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
+                                   rho_beta = object$rho_beta,
+                                   alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                   beta = object$beta, betaSpent = object$betaSpent, 
+                                   Kmax = object$kMax,
+                                   Info.max = object$Info.max,
+                                   uk = object$uk,
+                                   lk = object$lk,
+                                   k = k, type.k = type.k, ImaxAnticipated = FALSE,
+                                   InfoR.i = object$Info.i/object$Info.max,
+                                   InfoR.d = object$Info.d/object$Info.max,
+                                   delta = object$delta, 
+                                   alternative = object$alternative,
+                                   Trace = trace,
+                                   cMin = object$cMin)
+
+        object$uk[k]  <- newBounds$uk[k]
+        object$lk[k]  <- newBounds$lk[k]
+        object$alphaSpent[k] <- newBounds$alphaSpent[k]
+        object$betaSpent[k] <- newBounds$betaSpent[k]
     }
-
+        
 
     ## ** export stage
     if(update.stage){
@@ -236,3 +248,5 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
     ## ** export object
     return(object)
 }
+
+
