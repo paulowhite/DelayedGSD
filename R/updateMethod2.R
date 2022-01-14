@@ -12,7 +12,8 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                           k = NULL, type.k = NULL, ImaxAnticipated = FALSE, # current stage, type of analysis, and conclusion for all previous analyses
                           delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
                           abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                          alternative="less",  # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
+                          alternative="less",   # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
+                          binding=TRUE,         # whether the futility boundary is binding
                           Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
                           nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
                           toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
@@ -92,7 +93,7 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                               ImaxAnticipated=FALSE, ## Should not be here at interim with I>Imax because this case is handled in the parent function (updateBoundary)
                               rho_alpha=rho_alpha,
                               alpha=alpha,
-                              bindingFutility = TRUE)
+                              bindingFutility = binding)
     
                 ## information matrix for first interim and decision analysis
                 sigmaZk2 <- matrix(NA,ncol=2,nrow=2)
@@ -125,12 +126,18 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                       ImaxAnticipated=ImaxAnticipated,
                       rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
                       alpha=alpha,
-                      bindingFutility = TRUE)
+                      bindingFutility = binding)
                                         #------------
     }else{
         
         alphaSpentInc <- diff(c(0,alphaSpent))
         betaSpentInc <- diff(c(0,betaSpent))
+        
+        if(binding){
+          TheLowerValues <- lk[1:(k-1)]
+        }else{
+          TheLowerValues <- rep(-Inf,k-1)
+        }
         
         if(type.k=="interim"){
 
@@ -139,9 +146,10 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
             alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
             betaSpent[k] <- ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
             betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
+            
             ## {{{ 
             ## {{{ u_k by solving what follows
-            uk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],x),
+            uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
                                                  upper = c(uk[1:(k-1)],Inf),
                                                  mean=rep(0,k),
                                                  sigma= sigmaZk[1:k,1:k],
@@ -164,7 +172,7 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                               ImaxAnticipated=FALSE, ## Should not be here at interim with I>Imax because this case is handled in the parent function (updateBoundary)
                               rho_alpha=rho_alpha,
                               alpha=alpha,
-                              bindingFutility = TRUE)
+                              bindingFutility = binding)
                 
                 ## information matrix for first interim and decision analysis
                 sigmaZk2 <- matrix(NA,ncol=k+1,nrow=k+1)
@@ -198,14 +206,14 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                           ImaxAnticipated=ImaxAnticipated,
                           rho_alpha=rho_alpha,
                           alpha=alpha,
-                          bindingFutility = TRUE)
+                          bindingFutility = binding)
         }else if(type.k=="final"){
             alphaSpent[k] <- alpha
             alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
             betaSpent[k] <- beta
             betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
            
-            uk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],x),
+            uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
                                                  upper = c(uk[1:(k-1)],Inf),
                                                  mean=rep(0,k),
                                                  sigma= sigmaZk[1:k,1:k],

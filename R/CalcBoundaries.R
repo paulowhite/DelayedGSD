@@ -66,7 +66,7 @@ CalcBoundaries <- function(kMax=2,
                            bindingFutility=TRUE,
                            alternative = "less",
                            n=NULL,
-                           trace=TRUE){  
+                           trace=FALSE){  
 
     requireNamespace("gsDesign")
 
@@ -113,44 +113,19 @@ CalcBoundaries <- function(kMax=2,
 
     if(method==1){
     
-    if(bindingFutility){test.type <- 3}else{test.type <- 4}
-
-        if(alternative=="greater"){
-            delta <- -delta
-        }
-        ## ** compute boundaries at interim
-        StandardDesign <- gsDesign::gsDesign(k=kMax, test.type=test.type, alpha=alpha, beta=beta,
-                                             timing=InfoR.i,
-                                             sfu=gsDesign::sfPower, sfupar=rho_alpha,
-                                             sfl=gsDesign::sfPower, sflpar=rho_beta)
-        ## R <- getDesignCharacteristics(StandardDesign)$inflationFactor
-        R <- StandardDesign$n.I[kMax]
-        Info.max <- ((stats::qnorm(1-alpha)+stats::qnorm(1-beta))/delta)^2*R
-        Info.d <- InfoR.d*Info.max
-
-        ##uk <- StandardDesign$criticalValues
-        ##lk <- c(StandardDesign$futilityBounds,uk[kMax])
-        uk <- StandardDesign$upper$bound
-        lk <- StandardDesign$lower$bound
-        ck <- rep(0,kMax-1)
-        alphaSpent <- StandardDesign$upper$spend
-        betaSpent <- StandardDesign$lower$spend
-        for(k in 1:(kMax-1)){
-            ck[k] <- Method1(uk = uk[1:k],
-                             lk = lk[1:k],
-                             Info.i = (InfoR.i*Info.max)[1:k],
-                             Info.d = Info.d[k],
-                             Info.max = Info.max,
-                             cMin = cMin,
-                             bindingFutility = bindingFutility)
-        }
-
-        if(alternative=="greater"){
-            uk <- -uk
-            lk <- -lk
-            ck <- -ck
-            delta <- -delta
-        }
+      delayedBnds <- Method1_full(rho_alpha = rho_alpha,
+                             rho_beta = rho_beta,
+                             alpha = alpha,
+                             beta = beta, 
+                             Kmax = kMax,
+                             Info.max = NULL,
+                             InfoR.i = InfoR.i,
+                             InfoR.d = InfoR.d,
+                             delta = delta, 
+                             alternative = alternative,
+                             binding=bindingFutility,
+                             Trace = trace,
+                             cMin = cMin)
         
     } else if(method==2){
     
@@ -164,16 +139,9 @@ CalcBoundaries <- function(kMax=2,
                                InfoR.d = InfoR.d,
                                delta = delta, 
                                alternative = alternative,
+                               binding=bindingFutility,
                                Trace = trace,
                                cMin = cMin)
-        uk <- delayedBnds$boundaries$u.k
-        lk <- delayedBnds$boundaries$l.k
-        ck <- delayedBnds$boundaries$c.k[1:(kMax-1)]
-        R <- delayedBnds$coef
-        Info.d <- delayedBnds$Info.d
-        Info.max <- delayedBnds$Info.max
-        alphaSpent <- delayedBnds$boundaries$Inc.Type.I
-        betaSpent <- delayedBnds$boundaries$Inc.Type.II
 
     }else if(method==3){
 
@@ -187,16 +155,8 @@ CalcBoundaries <- function(kMax=2,
                                InfoR.d = InfoR.d,
                                delta = delta, 
                                alternative = alternative,
+                               binding=bindingFutility,
                                Trace = trace) 
-
-        uk <- delayedBnds$boundaries$u.k
-        lk <- delayedBnds$boundaries$l.k
-        ck <- delayedBnds$boundaries$c.k[1:(kMax-1)]
-        R <- delayedBnds$coef
-        Info.d <- delayedBnds$Info.d
-        Info.max <- delayedBnds$Info.max
-        alphaSpent <- delayedBnds$boundaries$Inc.Type.I
-        betaSpent <- delayedBnds$boundaries$Inc.Type.II
 
     }
 
@@ -205,20 +165,20 @@ CalcBoundaries <- function(kMax=2,
                 n.obs = n,
                 stage = data.frame(k = 0, type = "planning"),
                 conclusion = matrix(as.character(NA), nrow = 4, ncol = kMax, dimnames = list(c("interim","reason.interim","decision","comment.decision"),NULL)),
-                uk = uk, 
-                lk = lk,
-                ck = ck,
-                Info.i = InfoR.i*Info.max,
-                Info.d = Info.d,
-                Info.max = Info.max,
+                uk = delayedBnds$boundaries$u.k, 
+                lk = delayedBnds$boundaries$l.k,
+                ck = delayedBnds$boundaries$c.k[1:(kMax-1)],
+                Info.i = InfoR.i*delayedBnds$Info.max,
+                Info.d = delayedBnds$Info.d,
+                Info.max = delayedBnds$Info.max,
                 lmm = vector(mode = "list", length = kMax),
-                InflationFactor = R,
+                InflationFactor = delayedBnds$coef,
                 alpha = alpha,
-                alphaSpent = cumsum(alphaSpent),
+                alphaSpent = cumsum(delayedBnds$boundaries$Inc.Type.I),
                 kMax = kMax,
                 sided = sided,
                 beta = beta,
-                betaSpent = cumsum(betaSpent),
+                betaSpent = cumsum(delayedBnds$boundaries$Inc.Type.II),
                 rho_alpha = rho_alpha,
                 rho_beta = rho_beta,
                 method = method,
@@ -227,13 +187,13 @@ CalcBoundaries <- function(kMax=2,
                 cMin = cMin,
                 bindingFutility = bindingFutility,
                 alternative = alternative,
-                planned = list(uk = uk,
-                               lk = lk,
-                               ck = ck,
-                               alphaSpent = cumsum(alphaSpent),
-                               betaSpent = cumsum(betaSpent),
-                               Info.i = InfoR.i*Info.max,
-                               Info.d = Info.d,
+                planned = list(uk = delayedBnds$boundaries$u.k,
+                               lk = delayedBnds$boundaries$l.k,
+                               ck = delayedBnds$boundaries$c.k[1:(kMax-1)],
+                               alphaSpent = cumsum(delayedBnds$boundaries$Inc.Type.I),
+                               betaSpent = cumsum(delayedBnds$boundaries$Inc.Type.II),
+                               Info.i = InfoR.i*delayedBnds$Info.max,
+                               Info.d = delayedBnds$Info.d,
                                delta = delta))
     class(out) <- append("delayedGSD",class(out))
     return(out)

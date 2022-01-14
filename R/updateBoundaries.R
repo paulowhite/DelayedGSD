@@ -65,7 +65,7 @@
 
 ## * updateBoundaries (code)
 #' @export
-updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE, trace = TRUE){
+updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE, trace = FALSE){
 
     kMax <- object$kMax
     Info.max <- object$Info.max
@@ -131,6 +131,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                        InfoR.d = object$Info.d/object$Info.max,
                                        delta = object$delta, 
                                        alternative = object$alternative,
+                                       binding=bindingFutility,
                                        Trace = trace,
                                        cMin = object$cMin)
 
@@ -172,6 +173,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                        InfoR.d = object$Info.d/object$Info.max,
                                        delta = object$delta, 
                                        alternative = object$alternative,
+                                       binding=bindingFutility,
                                        Trace = trace,
                                        cMin = object$cMin)
 
@@ -199,6 +201,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                        InfoR.d = object$Info.d/object$Info.max,
                                        delta = object$delta, 
                                        alternative = object$alternative,
+                                       binding=bindingFutility,
                                        Trace = trace,
                                        cMin = object$cMin)
 
@@ -229,6 +232,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                    InfoR.d = object$Info.d/object$Info.max,
                                    delta = object$delta, 
                                    alternative = object$alternative,
+                                   binding=bindingFutility,
                                    Trace = trace,
                                    cMin = object$cMin)
 
