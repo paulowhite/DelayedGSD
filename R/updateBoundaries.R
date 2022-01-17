@@ -153,6 +153,22 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                            binding=bindingFutility,
                                            Trace = trace,
                                            cMin = object$cMin)
+            } else if(method==3){
+                newBounds <- updateMethod3(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = FALSE,
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace)
             }
             
 
@@ -217,6 +233,22 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                            Trace = trace,
                                            cMin = object$cMin)
                 
+            } else if(method==3){
+                newBounds <- updateMethod3(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace)
             }
             
 
@@ -266,6 +298,22 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                            Trace = trace,
                                            cMin = object$cMin)
                 
+            } else if(method==3){
+                newBounds <- updateMethod3(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace)
             }
             
                 object$ck[k]  <- newBounds$ck
@@ -274,6 +322,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                 }
             }
     }
+
     
     ## *** at final
     if(type.k == "final"){ ##  that could be replace by a call to CalcBoundaries
@@ -316,6 +365,22 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                        binding=bindingFutility,
                                        Trace = trace,
                                        cMin = object$cMin)
+        } else if(method==3){
+            newBounds <- updateMethod3(rho_alpha = object$rho_alpha,
+                                       rho_beta = object$rho_beta,
+                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                       beta = object$beta, betaSpent = object$betaSpent, 
+                                       Kmax = object$kMax,
+                                       Info.max = object$Info.max,
+                                       uk = object$uk,
+                                       lk = object$lk,
+                                       k = k, type.k = type.k, ImaxAnticipated = FALSE,
+                                       InfoR.i = object$Info.i/object$Info.max,
+                                       InfoR.d = object$Info.d/object$Info.max,
+                                       delta = object$delta, 
+                                       alternative = object$alternative,
+                                       binding=bindingFutility,
+                                       Trace = trace)
         }
         
 

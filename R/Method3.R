@@ -328,7 +328,7 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
                     sigmaZk2[k+1,k+1] <- 1
                     sigmaZk2[1:k,k+1] <- sigmaZk2[k+1,1:k] <- sqrt(Info.i[1:k]/Info.d[k])
                     #---
-                    try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x,cMin),
+                    try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues[1:(k-1)],x,cMin),
                                                              upper = c(uk[1:(k-1)],Inf,Inf),
                                                              mean=rep(0,k+1),
                                                              sigma= sigmaZk2,
@@ -337,7 +337,7 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
                                          upper = uk[k-1],
                                          tol = abseps)$root, silent = TRUE)
                 }else{
-                    try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
+                    try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues[1:(k-1)],x),
                                                              upper = c(uk[1:(k-1)],Inf),
                                                              mean=rep(0,k),
                                                              sigma= sigmaZk[1:k,1:k],
