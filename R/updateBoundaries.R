@@ -73,6 +73,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
     lk <- object$lk
     ck <- object$ck
     bindingFutility <- object$bindingFutility
+    method <- object$method
 
     ## ** [optional] update information
     if(!is.null(lmm)){
@@ -118,22 +119,42 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
         }else{
             
             ## usual evaluation
-            newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
-                                       rho_beta = object$rho_beta,
-                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
-                                       beta = object$beta, betaSpent = object$betaSpent, 
-                                       Kmax = object$kMax,
-                                       Info.max = object$Info.max,
-                                       uk = object$uk,
-                                       lk = object$lk,
-                                       k = k, type.k = type.k, conclusion = object$conclusion,
-                                       InfoR.i = object$Info.i/object$Info.max,
-                                       InfoR.d = object$Info.d/object$Info.max,
-                                       delta = object$delta, 
-                                       alternative = object$alternative,
-                                       binding=bindingFutility,
-                                       Trace = trace,
-                                       cMin = object$cMin)
+            if(method==1){
+                newBounds <- updateMethod1(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = FALSE,
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace,
+                                           cMin = object$cMin)
+            } else if(method==2){
+                newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = FALSE,
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace,
+                                           cMin = object$cMin)
+            }
+            
 
             object$lk[k]  <- newBounds$lk[k]
             object$uk[k]  <- newBounds$uk[k]
@@ -160,23 +181,44 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
 
             ## Possible solution: when estimating ck by balancing the probability of reversal, add a term corresponding to the type 1 error we should have spent vs. the type 1 error we spent.
             ## usual evaluation
-            newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
-                                       rho_beta = object$rho_beta,
-                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
-                                       beta = object$beta, betaSpent = object$betaSpent, 
-                                       Kmax = object$kMax,
-                                       Info.max = object$Info.max,
-                                       uk = object$uk,
-                                       lk = object$lk,
-                                       k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
-                                       InfoR.i = object$Info.i/object$Info.max,
-                                       InfoR.d = object$Info.d/object$Info.max,
-                                       delta = object$delta, 
-                                       alternative = object$alternative,
-                                       binding=bindingFutility,
-                                       Trace = trace,
-                                       cMin = object$cMin)
-
+            if(method==1){
+                newBounds <- updateMethod1(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace,
+                                           cMin = object$cMin)
+                
+            } else if(method==2){
+                newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace,
+                                           cMin = object$cMin)
+                
+            }
+            
 
             object$ck[k]  <- newBounds$ck
             if(k<kMax-1){
@@ -188,23 +230,44 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
             ## NOTE: include special case Info.d[k] >= Info.max which is treated as usual - conservative procedure
 
             ## usual evaluation
-            newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
-                                       rho_beta = object$rho_beta,
-                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
-                                       beta = object$beta, betaSpent = object$betaSpent, 
-                                       Kmax = object$kMax,
-                                       Info.max = object$Info.max,
-                                       uk = object$uk,
-                                       lk = object$lk,
-                                       k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
-                                       InfoR.i = object$Info.i/object$Info.max,
-                                       InfoR.d = object$Info.d/object$Info.max,
-                                       delta = object$delta, 
-                                       alternative = object$alternative,
-                                       binding=bindingFutility,
-                                       Trace = trace,
-                                       cMin = object$cMin)
-
+            if(method==1){
+                newBounds <- updateMethod1(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace,
+                                           cMin = object$cMin)
+                
+            } else if(method==2){
+                newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
+                                           rho_beta = object$rho_beta,
+                                           alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                           beta = object$beta, betaSpent = object$betaSpent, 
+                                           Kmax = object$kMax,
+                                           Info.max = object$Info.max,
+                                           uk = object$uk,
+                                           lk = object$lk,
+                                           k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
+                                           InfoR.i = object$Info.i/object$Info.max,
+                                           InfoR.d = object$Info.d/object$Info.max,
+                                           delta = object$delta, 
+                                           alternative = object$alternative,
+                                           binding=bindingFutility,
+                                           Trace = trace,
+                                           cMin = object$cMin)
+                
+            }
+            
                 object$ck[k]  <- newBounds$ck
                 if(k<kMax-1){
                     object$ck[(k+1):(kMax-1)]  <- NA                    
@@ -219,22 +282,42 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
             object$conclusion["comment.decision",k] <- "decreasing information"
         }
 
-        newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
-                                   rho_beta = object$rho_beta,
-                                   alpha = object$alpha, alphaSpent = object$alphaSpent,
-                                   beta = object$beta, betaSpent = object$betaSpent, 
-                                   Kmax = object$kMax,
-                                   Info.max = object$Info.max,
-                                   uk = object$uk,
-                                   lk = object$lk,
-                                   k = k, type.k = type.k, ImaxAnticipated = FALSE,
-                                   InfoR.i = object$Info.i/object$Info.max,
-                                   InfoR.d = object$Info.d/object$Info.max,
-                                   delta = object$delta, 
-                                   alternative = object$alternative,
-                                   binding=bindingFutility,
-                                   Trace = trace,
-                                   cMin = object$cMin)
+        if(method==1){
+            newBounds <- updateMethod1(rho_alpha = object$rho_alpha,
+                                       rho_beta = object$rho_beta,
+                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                       beta = object$beta, betaSpent = object$betaSpent, 
+                                       Kmax = object$kMax,
+                                       Info.max = object$Info.max,
+                                       uk = object$uk,
+                                       lk = object$lk,
+                                       k = k, type.k = type.k, ImaxAnticipated = FALSE,
+                                       InfoR.i = object$Info.i/object$Info.max,
+                                       InfoR.d = object$Info.d/object$Info.max,
+                                       delta = object$delta, 
+                                       alternative = object$alternative,
+                                       binding=bindingFutility,
+                                       Trace = trace,
+                                       cMin = object$cMin)
+        } else if(method==2){
+            newBounds <- updateMethod2(rho_alpha = object$rho_alpha,
+                                       rho_beta = object$rho_beta,
+                                       alpha = object$alpha, alphaSpent = object$alphaSpent,
+                                       beta = object$beta, betaSpent = object$betaSpent, 
+                                       Kmax = object$kMax,
+                                       Info.max = object$Info.max,
+                                       uk = object$uk,
+                                       lk = object$lk,
+                                       k = k, type.k = type.k, ImaxAnticipated = FALSE,
+                                       InfoR.i = object$Info.i/object$Info.max,
+                                       InfoR.d = object$Info.d/object$Info.max,
+                                       delta = object$delta, 
+                                       alternative = object$alternative,
+                                       binding=bindingFutility,
+                                       Trace = trace,
+                                       cMin = object$cMin)
+        }
+        
 
         object$uk[k]  <- newBounds$uk[k]
         object$lk[k]  <- newBounds$lk[k]

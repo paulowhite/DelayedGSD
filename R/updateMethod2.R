@@ -124,7 +124,7 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                       Info.max=Info.max,
                       cMin=cMin,
                       ImaxAnticipated=ImaxAnticipated,
-                      rho_alpha=rho_alpha,  #needs updating in Method1 to allow different rhos for beta and alpha
+                      rho_alpha=rho_alpha,  
                       alpha=alpha,
                       bindingFutility = binding)
                                         #------------

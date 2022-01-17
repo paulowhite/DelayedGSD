@@ -26,44 +26,29 @@
 #'  
 #'
 #' @examples
-#' b1 <- CalcBoundaries(kMax=2,  #max number of analyses (including final)
-#'                     alpha=0.025,  #type I error
-#'                     beta=0.2,  #type II error
-#'                     InfoR.i=c(0.6,1),  #planned information rates
-#'                     rho_alpha=2,  #rho parameter for alpha error spending function
-#'                     rho_beta=2,  #rho parameter for beta error spending function
-#'                     method=1,  #use method 1 or 2 from paper H&J
-#'                     delta=1.5,  #effect that the study is powered for
-#'                     InfoR.d=0.65,
-#'                     bindingFutility=TRUE)
+#'                     
+#' b1 <- gsDesign(k=2,alpha=0.025,beta=0.2,test.type=3,timing=c(0.6,1),sfu=sfPower,sfl=sfPower,sfupar=2,sflpar=2)
 #'
 #' b12 <- Method1_full(Kmax=2,delta=1.5,alpha=0.025,beta=0.2,InfoR.i=c(0.6,1),InfoR.d=0.65,binding=T)
+#' 
+#' all.equal(b1$lower$bound, b12$boundaries[,"l.k"])
+#' all.equal(b1$upper$bound, b12$boundaries[,"u.k"])
 #'
-#' b1nb <- CalcBoundaries(kMax=2,  #max number of analyses (including final)
-#'                     alpha=0.025,  #type I error
-#'                     beta=0.2,  #type II error
-#'                     InfoR.i=c(0.6,1),  #planned information rates
-#'                     rho_alpha=2,  #rho parameter for alpha error spending function
-#'                     rho_beta=2,  #rho parameter for beta error spending function
-#'                     method=1,  #use method 1 or 2 from paper H&J
-#'                     delta=1.5,  #effect that the study is powered for
-#'                     InfoR.d=0.65,
-#'                     bindingFutility=FALSE)
+#' b1nb <- gsDesign(k=2,alpha=0.025,beta=0.2,test.type=4,timing=c(0.6,1),sfu=sfPower,sfl=sfPower,sfupar=2,sflpar=2)
 #'
 #' b12nb <- Method1_full(Kmax=2,delta=1.5,alpha=0.025,beta=0.2,InfoR.i=c(0.6,1),InfoR.d=0.65,binding=F)
 #'
-#' b2 <- CalcBoundaries(kMax=3,  #max number of analyses (including final)
-#'                     alpha=0.025,  #type I error
-#'                     beta=0.2,  #type II error
-#'                     InfoR.i=c(0.5,0.75,1),  #planned information rates
-#'                     rho_alpha=2,  #rho parameter for alpha error spending function
-#'                     rho_beta=2,  #rho parameter for beta error spending function
-#'                     method=1,  #use method 1 or 2 from paper H&J
-#'                     delta=1.5,  #effect that the study is powered for
-#'                     InfoR.d=c(0.65,0.85),
-#'                     bindingFutility=TRUE)
+#' all.equal(b1nb$lower$bound, b12nb$boundaries[,"l.k"])
+#' all.equal(b1nb$upper$bound, b12nb$boundaries[,"u.k"])
+#'
+#' b2 <- gsDesign(k=3,alpha=0.025,beta=0.2,test.type=3,timing=c(0.5,0.75,1),sfu=sfPower,sfl=sfPower,sfupar=2,sflpar=2)
 #'
 #' b22 <- Method1_full(Kmax=3,delta=1.5,alpha=0.025,beta=0.2,InfoR.i=c(0.5,0.75,1),InfoR.d=c(0.65,0.85),binding=T)
+#' 
+#' all.equal(b2$lower$bound, b22$boundaries[,"l.k"])
+#' all.equal(b2$upper$bound, b22$boundaries[,"u.k"])
+#' all.equal(b2$n.I[3],b22$coef)
+
 
 
 
