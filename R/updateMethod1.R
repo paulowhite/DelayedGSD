@@ -12,7 +12,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                           k = NULL, type.k = NULL, ImaxAnticipated = FALSE, # current stage, type of analysis, and conclusion for all previous analyses
                           delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
                           abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                          alternative="less",   # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
+                          alternative="greater",   # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
                           binding=TRUE,         # whether the futility boundary is binding
                           Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
                           nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
@@ -59,17 +59,17 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       lk[1] <- qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
     }
     
-    ck <- Method1(uk=uk[1],
-                  lk=lk[1],
-                  Info.i=Info.i[1],
-                  Info.d=Info.d[1],
-                  Info.max=Info.max,
-                  cMin=cMin,
-                  ImaxAnticipated=ImaxAnticipated,
-                  rho_alpha=rho_alpha, 
-                  alpha=alpha,
-                  bindingFutility = binding)
-    #------------
+      ck <- calc_ck(uk=uk[1],
+                    lk=lk[1],
+                    Info.i=Info.i[1],
+                    Info.d=Info.d[1],
+                    Info.max=Info.max,
+                    cMin=cMin,
+                    ImaxAnticipated=ImaxAnticipated,
+                    rho_alpha=rho_alpha, 
+                    alpha=alpha,
+                    bindingFutility = binding)
+                                        #------------
   }else{
     
     alphaSpentInc <- diff(c(0,alphaSpent))
@@ -113,7 +113,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                            tol = abseps)$root
     }
     if(type.k %in% c("interim","decision")){
-      ck <- Method1(uk=uk[1:k],
+      ck <- calc_ck(uk=uk[1:k],
                     lk=lk[1:k],
                     Info.i=Info.i[1:k],
                     Info.d=Info.d[k],

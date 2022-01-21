@@ -1,28 +1,43 @@
-## * Method2 (code)
-updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
-                          rho_beta=2,           # rho parameter of the rho-family spending functions (Kim-DeMets) for beta
-                          alpha=0.025, alphaSpent = NULL,         # Type-I error (overall) or spent up to the interim analysis (i.e. cumulative)
-                          beta=0.2, betaSpent = NULL,            # Type-II error (overall) or spent at to the interim analysis (i.e. cumulative)
-                          Kmax,                 # number of planned analyses (including the final analysis)
-                          Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
-                          InfoR.i=NULL,         # Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
-                          InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
-                          uk = NULL,            # efficacy boundary from the previous interim analyses or planning
-                          lk = NULL,            # futility boundary from the previous interim analyses or planning
-                          k = NULL, type.k = NULL, ImaxAnticipated = FALSE, # current stage, type of analysis, and conclusion for all previous analyses
-                          delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
-                          abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                          alternative="less",   # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
-                          binding=TRUE,         # whether the futility boundary is binding
-                          Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
-                          nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
-                          toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
-                          tolcoef= 1e-04,       # Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
-                          mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
-                          mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
-                          myseed=2902,           # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
-                          cMin=-Inf           # minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
-                          ){
+## * updateMethod2 (documentation)
+
+#' @title Update boundaries for a group sequential design using Method 2
+#' @description Calculate boundaries for a group sequential design with delayed endpoints based observed information at interim/decision/final using an error spending approach.
+
+#' @param rho_alpha rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
+#' @param rho_beta rho parameter of the rho-family spending functions (Kim-DeMets) for beta
+#' @param uk efficacy boundary from the previous interim analyses or planning
+#' @param lk futility boundary from the previous interim analyses or planning
+#' @param k [integer] current stage
+#' @param type [character] type of analysis (\code{"interim"}, \code{"decision"}, \code{"final"}).
+#' @param ImaxAnticipated [logical] Was the predicted information for this stage exceeding the maximum information?
+#' @inheritParams Method2
+
+## * updateMethod2 (code)
+updateMethod2 <- function(rho_alpha=2,
+                          rho_beta=2,
+                          alpha=0.025,
+                          alphaSpent = NULL,
+                          beta=0.2,
+                          betaSpent = NULL, 
+                          Kmax,
+                          Info.max=NULL, 
+                          InfoR.i=NULL,  
+                          InfoR.d=NULL,
+                          uk = NULL,
+                          lk = NULL,
+                          k = NULL, type.k = NULL, ImaxAnticipated = FALSE,
+                          delta=0,
+                          abseps = 1e-06,
+                          alternative="greater",
+                          binding=TRUE,         
+                          Trace=FALSE,          
+                          nWhileMax=30,         
+                          toldiff= 1e-05,       
+                          tolcoef= 1e-04,       
+                          mycoefMax= 1.2,       
+                          mycoefL=1,            
+                          myseed=2902,          
+                          cMin=-Inf){
     ## {{{ set seed
 
 
@@ -84,7 +99,7 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                                         #------------
             find.lk <- function(x){
                                         #calculate c corresponding to lk
-                ck <- Method1(uk=uk[1],
+                ck <- calc_ck(uk=uk[1],
                               lk=x,
                               Info.i=Info.i[1],
                               Info.d=Info.d[1],
@@ -117,7 +132,7 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
             lk[1] <- uniroot(find.lk,lower=uk[1]-10,upper=uk[1])$root  #dirty solution to use -10 for lower bound
         }
         
-        ck <- Method1(uk=uk[1],
+        ck <- calc_ck(uk=uk[1],
                       lk=lk[1],
                       Info.i=Info.i[1],
                       Info.d=Info.d[1],
@@ -163,7 +178,7 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
             ## ** Estimate lk
             find.lkk <- function(x){
                 ## calculate c corresponding to lk
-                ck <- Method1(uk=uk[1:k],
+                ck <- calc_ck(uk=uk[1:k],
                               lk=c(lk[1:(k-1)],x),
                               Info.i=Info.i[1:k],
                               Info.d=Info.d[k],
@@ -197,7 +212,7 @@ updateMethod2 <- function(rho_alpha=2,          # rho parameter of the rho-famil
             lk[k] <- uniroot(find.lkk,lower=uk[k]-10,upper=uk[k])$root
         }
         if(type.k %in% c("interim","decision")){
-            ck <- Method1(uk=uk[1:k],
+            ck <- calc_ck(uk=uk[1:k],
                           lk=lk[1:k],
                           Info.i=Info.i[1:k],
                           Info.d=Info.d[k],

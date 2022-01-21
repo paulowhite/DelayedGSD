@@ -14,8 +14,9 @@
 #' @param delta effect that the study is powered for
 #' @param InfoR.d (expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.
 #' @param bindingFutility whether the futility stopping rule is binding
-#' @param alternative a character string specifying the alternative hypothesis, "greater" or "less".
-#' greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
+#' @param alternative a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
+#' H0 \eqn{\theta=0} vs H1 \eqn{theta<0} (\code{"less"}) or theta > 0 (\code{"greater"}).
+#' Note that in Jennison and Turnbull's book chapter (2013) they consider greater.
 #' @param n planned sample size in each group. Optional argument.
 #' @param trace whether to print some messages
 #'
@@ -64,7 +65,7 @@ CalcBoundaries <- function(kMax=2,
                            delta=1.5, 
                            InfoR.d=0.55,   
                            bindingFutility=TRUE,
-                           alternative = "less",
+                           alternative = "greater",
                            n=NULL,
                            trace=FALSE){  
 
@@ -85,47 +86,34 @@ CalcBoundaries <- function(kMax=2,
         stop("Please specify method=1, method=2, or method=3.")
     }
     
-    if( (alternative=="less" & delta<0) | (alternative=="greater" & delta>0)){
-        stop("The values given for arguments alternative and delta are inconsistent.\n When alternative=less, delta should be positive.\n When alternative=greater, delta should be negative.")
+    if(alternative=="greater" & delta<0){
+        stop("The values given for arguments \'alternative\' and \'delta\' are inconsistent. \n",
+             "When alternative=\"greater\", argument \'delta\' should be positive. \n")
+    }else if(alternative=="less" & delta>0){
+        stop("The values given for arguments alternative and delta are inconsistent. \n",
+             "When alternative=\"less\", delta should be negative. \n")
     }
 
     ## ** compute boundaries at decision and possibly update futility boundary at interim
     cMin <- ifelse(cNotBelowFixedc,stats::qnorm(1-alpha),-Inf)
     
     ## ## ** remove boundaries corresponding to stage that will not be reached
-    ## ## e.g. we stop early (stage 1) and need to re-compute the boundary at decision
-    ## ##      futility and efficacy boundaries at stage 2 or later will never be used
-    ## ##      same for the decision boundaries at stage 2 or later
-
-    ## indexNNA.i <- which(!is.na(InfoR.i))
-    ## indexNNA.d <- which(!is.na(InfoR.d))
-    ## uk[-indexNNA.i] <- NA
-    ## lk[-indexNNA.i] <- NA
-    ## ck[-indexNNA.d] <- NA
-
-    ## if(any(max(Info.d[indexNNA.d]) >= Info.max)){
-    ##     warning("Information at decision exceed maximum planned information. \n",
-    ##             "Use the maximum planned information to compute the boundary at decision. \n")
-    ##     browser()
-    ##     ## max(Info.d[indexNNA.d]) >= Info.max)
-    ## }
-
 
     if(method==1){
     
-      delayedBnds <- Method1_full(rho_alpha = rho_alpha,
-                             rho_beta = rho_beta,
-                             alpha = alpha,
-                             beta = beta, 
-                             Kmax = kMax,
-                             Info.max = NULL,
-                             InfoR.i = InfoR.i,
-                             InfoR.d = InfoR.d,
-                             delta = delta, 
-                             alternative = alternative,
-                             binding=bindingFutility,
-                             Trace = trace,
-                             cMin = cMin)
+        delayedBnds <- Method1(rho_alpha = rho_alpha,
+                               rho_beta = rho_beta,
+                               alpha = alpha,
+                               beta = beta, 
+                               Kmax = kMax,
+                               Info.max = NULL,
+                               InfoR.i = InfoR.i,
+                               InfoR.d = InfoR.d,
+                               delta = delta, 
+                               alternative = alternative,
+                               binding=bindingFutility,
+                               Trace = trace,
+                               cMin = cMin)
         
     } else if(method==2){
     

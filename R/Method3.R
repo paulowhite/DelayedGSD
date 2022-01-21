@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Jan  7 2022 (13:47) 
 ## Version: 
-## Last-Updated: Jan  7 2022 (14:47) 
-##           By: Paul Blanche
-##     Update #: 46
+## Last-Updated: jan 21 2022 (17:16) 
+##           By: Brice Ozenne
+##     Update #: 51
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -31,7 +31,9 @@
 #' @param InfoR.d Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
 #' @param delta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
 #' @param abseps tolerance for precision when finding roots or computing integrals
-#' @param alternative greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
+#' @param alternative a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
+#' H0 \eqn{\theta=0} vs H1 \eqn{theta<0} (\code{"less"}) or theta > 0 (\code{"greater"}).
+#' Note that in Jennison and Turnbull's book chapter (2013) they consider greater.
 #' @param Trace Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
 #' @param nWhileMax Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
 #' @param toldiff Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
@@ -58,30 +60,29 @@
 #'            InfoR.d=c(5.5,8.75)/12,
 #'            delta=1,  
 #'            abseps = 1e-06, 
-#'            alternative="less",
+#'            alternative=greater",
 #'            )
 
 
-Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
-                    rho_beta=2,           # rho parameter of the rho-family spending functions (Kim-DeMets) for beta
-                    alpha=0.025,          # Type-I error (overall)
-                    beta=0.2,             # Type-II error (overall)
-                    Kmax,                 # number of planned analyses (including the final analysis)
-                    binding=FALSE,        # binding futility bounds?
-                    Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
-                    InfoR.i=NULL,         # Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
-                    InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
-                    delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
-                    abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                    alternative="less",  # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
-                    Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
-                    nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
-                    toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
-                    tolcoef= 1e-04,       # Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
-                    mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
-                    mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
-                    myseed=2902          # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
-                    ){
+Method3 <- function(rho_alpha=2,
+                    rho_beta=2,
+                    alpha=0.025,
+                    beta=0.2,
+                    Kmax,  
+                    binding=FALSE,
+                    Info.max=NULL,
+                    InfoR.i=NULL,
+                    InfoR.d=NULL,
+                    delta=0,     
+                    abseps = 1e-06,
+                    alternative="greater",
+                    Trace=FALSE,
+                    nWhileMax=30,
+                    toldiff= 1e-05,
+                    tolcoef= 1e-04,
+                    mycoefMax= 1.2,
+                    mycoefL=1,     
+                    myseed=2902){
     require(mvtnorm)
     ## {{{ set seed
     old <- .Random.seed # to save the current seed
@@ -94,14 +95,18 @@ Method3 <- function(rho_alpha=2,          # rho parameter of the rho-family spen
     uk <- rep(Inf,Kmax) 
     ck <- rep(cMin,Kmax)
   
-    if( (alternative=="less" & delta<0) | (alternative=="greater" & delta>0)){
-        stop("The values given for arguments alternative and delta are inconsistent.\n When alternative=less, delta should be positive.\n When alternative=greater, delta should be negative.")
+    if(alternative=="greater" & delta<0){
+        stop("The values given for arguments \'alternative\' and \'delta\' are inconsistent. \n",
+             "When alternative=\"greater\", argument \'delta\' should be positive. \n")
+    }else if(alternative=="less" & delta>0){
+        stop("The values given for arguments alternative and delta are inconsistent. \n",
+             "When alternative=\"less\", delta should be negative. \n")
     }
   
-    if(alternative=="greater"){
+    if(alternative=="less"){
         delta <- -delta
-    }else if(!alternative%in%c("greater","less")){
-        stop("alternative should be either greater or less")
+    }else if(alternative != "greater"){
+        stop("alternative should be either \"greater\" or \"less\".")
     }
   
     # initialize
