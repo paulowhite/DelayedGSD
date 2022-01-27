@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: Dec 16 2021 (08:56) 
 ## Version: 
-## Last-Updated: jan 14 2022 (16:28) 
+## Last-Updated: jan 21 2022 (18:07) 
 ##           By: Brice Ozenne
-##     Update #: 24
+##     Update #: 26
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -35,7 +35,7 @@ GSD.2t <- CalcBoundaries(kMax=2,  ## max number of analyses (including final)
                          InfoR.i=c(0.5,1),  ## planned or observed information rates
                          rho_alpha=2,  ## rho parameter for alpha error spending function
                          rho_beta=2,  ## rho parameter for beta error spending function
-                         method=3,  ## use method 1 or 2 from paper H&J
+                         method=2,  ## use method 1 or 2 from paper H&J
                          delta=theDelta,  ## effect that the study is powered for
                          InfoR.d=0.55,
                          cNotBelowFixedc=TRUE)

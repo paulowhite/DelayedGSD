@@ -57,35 +57,40 @@ require(mvtnorm)
 
 ## * Method2_PC (code)
 NonBindingHJ <- function(rho_alpha=2,        # rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
-                       rho_beta=2,           # rho parameter of the rho-family spending functions (Kim-DeMets) for beta
-                       alpha=0.025,          # Type-I error (overall)
-                       beta=0.2,             # Type-II error (overall)
-                       Kmax,                 # number of planned analyses (including the final analysis)
-                       Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
-                       InfoR.i=NULL,         # Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
-                       InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
-                       delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
-                       abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                       direction="smaller",  # greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
-                       Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
-                       nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
-                       toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
-                       tolcoef= 1e-04,       # Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
-                       mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
-                       mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
-                       myseed=2902,          # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
-                       sided=1              # one or two sided
-){
-  ## {{{ set seed
-  old <- .Random.seed # to save the current seed
-  set.seed(myseed)
-  ## }}}
-  ## {{{ preliminaries
-  cMin <- qnorm(1-alpha)
-  mycoef <- NULL # initialize as needed for output
-  lk <- rep(-Inf,Kmax)
-  uk <- rep(Inf,Kmax) 
-  ck <- rep(cMin,Kmax)
+                         rho_beta=2,           # rho parameter of the rho-family spending functions (Kim-DeMets) for beta
+                         alpha=0.025,          # Type-I error (overall)
+                         beta=0.2,             # Type-II error (overall)
+                         Kmax,                 # number of planned analyses (including the final analysis)
+                         Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
+                         InfoR.i=NULL,         # Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
+                         InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
+                         delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
+                         abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
+                         direction="smaller",  # greater is for Ho= theta > 0, "smaller" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider smaller)
+                         Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
+                         nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
+                         toldiff= 1e-05,       # Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max
+                         tolcoef= 1e-04,       # Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)
+                         mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
+                         mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
+                         myseed=2902,          # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
+                         sided=1              # one or two sided
+                         ){
+    ## {{{ set seed
+    if(!is.null(myseed)){
+        if(!is.null(get0(".Random.seed"))){ ## avoid error when .Random.seed do not exists, e.g. fresh R session with no call to RNG
+            old <- .Random.seed # to save the current seed
+            on.exit(.Random.seed <<- old) # restore the current seed (before the call to the function)
+        }
+        set.seed(myseed)
+    }
+    ## }}}
+    ## {{{ preliminaries
+    cMin <- qnorm(1-alpha)
+    mycoef <- NULL # initialize as needed for output
+    lk <- rep(-Inf,Kmax)
+    uk <- rep(Inf,Kmax) 
+    ck <- rep(cMin,Kmax)
   
   if( (direction=="smaller" & delta<0) | (direction=="greater" & delta>0)){
     stop("The values given for arguments direction and delta are inconsistent.\n When direction=smaller, delta should be positive.\n When direction=greater, delta should be negative.")
