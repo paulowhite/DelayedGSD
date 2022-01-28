@@ -144,7 +144,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       
       ## {{{ 
       ## {{{ u_k by solving what follows
-      uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues[1:(k-1)],x,cMin),
+      uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x,cMin),
                                            upper = c(uk[1:(k-1)],Inf,Inf),
                                            mean=rep(0,k+1),
                                            sigma= sigmaZk2,
@@ -172,7 +172,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       ck[k] <- cMin
     }
     if(type.k %in% c("decision")){
-      c_new <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues[1:(k-1)],uk[k],x),
+      c_new <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,uk[k],x),
                                                  upper = c(uk[1:(k-1)],Inf,Inf),
                                                  mean=rep(0,k+1),
                                                  sigma= sigmaZk2,
@@ -187,7 +187,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       betaSpent[k] <- beta
       betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
       
-      uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues[1:(k-1)],x),
+      uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
                                            upper = c(uk[1:(k-1)],Inf),
                                            mean=rep(0,k),
                                            sigma= sigmaZk[1:k,1:k],

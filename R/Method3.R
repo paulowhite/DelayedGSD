@@ -338,7 +338,7 @@ Method3 <- function(rho_alpha=2,
                     sigmaZk2[k+1,k+1] <- 1
                     sigmaZk2[1:k,k+1] <- sigmaZk2[k+1,1:k] <- sqrt(Info.i[1:k]/Info.d[k])
                     #---
-                    try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues[1:(k-1)],x,cMin),
+                    try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x,cMin),
                                                              upper = c(uk[1:(k-1)],Inf,Inf),
                                                              mean=rep(0,k+1),
                                                              sigma= sigmaZk2,
@@ -347,7 +347,7 @@ Method3 <- function(rho_alpha=2,
                                          upper = uk[k-1],
                                          tol = abseps)$root, silent = TRUE)
                 }else{
-                    try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues[1:(k-1)],x),
+                    try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
                                                              upper = c(uk[1:(k-1)],Inf),
                                                              mean=rep(0,k),
                                                              sigma= sigmaZk[1:k,1:k],
