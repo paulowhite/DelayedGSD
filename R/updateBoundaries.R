@@ -312,7 +312,7 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                            InfoR.d = object$Info.d/object$Info.max,
                                            delta = object$delta, 
                                            alternative = object$alternative,
-                                           binding=bindingFutility,
+                                           binding = bindingFutility,
                                            Trace = trace)
             }
             
@@ -382,14 +382,11 @@ updateBoundaries <- function(object, lmm = NULL, k, type.k, update.stage = TRUE,
                                        binding=bindingFutility,
                                        Trace = trace)
         }
-        
-
         object$uk[k]  <- newBounds$uk[k]
         object$lk[k]  <- newBounds$lk[k]
         object$alphaSpent[k] <- newBounds$alphaSpent[k]
         object$betaSpent[k] <- newBounds$betaSpent[k]
     }
-        
 
     ## ** export stage
     if(update.stage){

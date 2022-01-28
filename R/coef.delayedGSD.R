@@ -87,7 +87,7 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, k = NULL, t
 
             if(test.planning){
                 Info.i <- c(object$planned$Info.i[1:(kMax-1)],NA) ## interim for each stage but the last (no interim before final)
-                Info.d <- c(object$planned$Info.d,object$planned$Info.i[kMax]) ## decision plus final
+                Info.d <- c(object$planned$Info.d[1:(kMax-1)],object$planned$Info.i[kMax]) ## decision plus final
                 InfoR.i <- Info.i/object$Info.max
                 InfoR.d <- Info.d/object$Info.max
                 if(!is.null(object$n.obs)){

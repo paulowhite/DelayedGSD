@@ -82,7 +82,7 @@ Method1 <- function(rho_alpha=2,
     }else if(alternative != "greater"){
         stop("alternative should be either \"greater\" or \"less\".")
     }
-  
+
     ## initialize
     thealpha <- rep(0,Kmax)  ## alpha spent up to step k
     thebeta <- rep(0,Kmax)   ## beta spent up to step k
@@ -130,7 +130,7 @@ Method1 <- function(rho_alpha=2,
                       delta=delta,
                       abseps=abseps,
                       toldiff=toldiff,
-                      alternative=alternative,
+                      alternative="greater",
                       binding=binding,
                       Trace=FALSE,
                       cMin=cMin)
@@ -159,7 +159,7 @@ Method1 <- function(rho_alpha=2,
                               delta=delta,
                               abseps=abseps,
                               toldiff=toldiff,
-                              alternative=alternative,
+                              alternative="greater",
                               binding=binding,
                               cMin=cMin)
                 thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])

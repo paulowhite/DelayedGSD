@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Jan  7 2022 (13:47) 
 ## Version: 
-## Last-Updated: jan 27 2022 (11:31) 
+## Last-Updated: Jan 28 2022 (09:30) 
 ##           By: Brice Ozenne
-##     Update #: 53
+##     Update #: 54
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -163,7 +163,7 @@ Method3 <- function(rho_alpha=2,
                       delta=delta,
                       abseps=abseps,
                       toldiff=toldiff,
-                      alternative=alternative,
+                      alternative="greater",
                       Trace=FALSE)
         thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
         ## }}}       
@@ -191,7 +191,7 @@ Method3 <- function(rho_alpha=2,
                               delta=delta,
                               abseps=abseps,
                               toldiff=toldiff,
-                              alternative=alternative)
+                              alternative="greater")
                 thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
                 if(thediff>toldiff){
                     if(Trace){

@@ -63,7 +63,7 @@ Decision <- function(object,
     ## ** identify stage of the trial
     kMax <- object$kMax
     
-    if(trace){
+    if(trace>0){
         if(type.k == "final"){
             cat("Decision to be taken at the final analysis  (stage ",k,") \n",sep="")
         }else if(type.k == "decision"){

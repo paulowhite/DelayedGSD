@@ -8,6 +8,8 @@
 #' @param PositiveIsGood [logical] whether a positive effect is considered beneficial.
 #' @param ddf [character] method used to compute the degrees of freedom of the test statistics. Argument passed to \code{\link{analyzeData}}.
 #' @param k [integer] index of the analysis.
+#' @param n.decision [integer] expected number of patients at decision analysis. Used at interim in method 2 and 3 to compute boundaries when predicted the information.
+#' @param info.skipped.decision [numeric vector] information that would have been observed at each previous decision analysis. Used to compute p-values and confidence intervals.
 #' @param type.k [character] type of analysis: \code{"interim"} (after continuing recruitment),
 #' \code{"decision"} (after stopping recruitment for efficacy or futility),
 #' or \code{"final"} (after reaching the last stage of the trial).
@@ -69,7 +71,8 @@
 
 ## * update.delayedGSD (code)
 #' @export
-update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k = NULL, type.k = NULL,
+update.delayedGSD <- function(object, data, n.decision = NULL, info.skipped.decision = NULL,
+                              PositiveIsGood=NULL, ddf = NULL, k = NULL, type.k = NULL,
                               p.value = TRUE, ci = TRUE, estimate = TRUE,
                               trace = TRUE, ...){
 
@@ -120,7 +123,7 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
 
     ## ** update information
     if(trace>0){cat(" - update information: ", sep = "")}
-    object <- updateInformation(object, lmm = lmm, k = k, type.k = type.k, update.stage = FALSE)
+    object <- updateInformation(object, lmm = lmm, n.decision = n.decision, k = k, type.k = type.k, update.stage = FALSE)
     if(trace>0){cat("done \n", sep = "")}
 
     ## ** update boundaries
@@ -151,28 +154,46 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
                                         upper=NA,
                                         p.value=NA)
 
+        ## *** get the information at all skipped decision analyses
+        if(p.value || ci || estimate){
+            Info.d <- rep(NA,min(k,object$kMax-1))
+            if(type.k=="decision"){
+                Info.d[k] <- object$Info.d[k]
+            }
+            if(k>1){
+                if(length(info.skipped.decision)!=k-1){
+                    stop("Argument \'info.skipped.decision\' must have length ",length(setdiff(1:(k-1),kMax))," i.e. contain the information at all skipped decision analyzes. \n")
+                }
+                Info.d[setdiff(1:(k-1),kMax)] <- info.skipped.decision
+            }
+        }
+        
         ## *** p.value
         if(p.value){
-            object$correction$p.value <- FinalPvalue(Info.d = object$Info.d,  
-                                                     Info.i = object$Info.i,  
+            object$correction$p.value <- FinalPvalue(Info.d = Info.d,  
+                                                     Info.i = object$Info.i[1:k],
                                                      ck = object$ck,   
-                                                     lk = object$kk,  
+                                                     lk = object$lk,  
                                                      uk = object$uk,  
                                                      kMax = kMax, 
                                                      delta = 0,  
-                                                     estimate = delta[NROW(delta),"estimate"])
+                                                     estimate = delta[NROW(delta),"estimate"],
+                                                     futility2efficacy = object$method!=3,
+                                                     bindingFutility = object$bindingFutility)
         }
         
         ## *** CI
         if(ci){
-            resCI <- FinalCI(Info.d = object$Info.d,  
-                             Info.i = object$Info.i,  
+            resCI <- FinalCI(Info.d = Info.d,  
+                             Info.i = object$Info.i[1:k],  
                              ck = object$ck,   
-                             lk = object$kk,  
+                             lk = object$lk,  
                              uk = object$uk,  
                              kMax = kMax, 
                              alpha = object$alpha,  
-                             estimate = delta[NROW(delta),"estimate"])
+                             estimate = delta[NROW(delta),"estimate"],
+                             futility2efficacy = object$method!=3,
+                             bindingFutility = object$bindingFutility)
             object$correction$lower <- resCI["lower"]
             attr(object$correction$lower,"error") <- attr(resCI,"error")["lower"]
             object$correction$upper <- resCI["upper"]
@@ -181,13 +202,15 @@ update.delayedGSD <- function(object, data, PositiveIsGood=NULL, ddf = NULL, k =
         
         ## *** Estimate
         if(estimate){
-            object$correction$estimate <- FinalEstimate(Info.d = object$Info.d,  
-                                                        Info.i = object$Info.i,  
+            object$correction$estimate <- FinalEstimate(Info.d = Info.d,  
+                                                        Info.i = object$Info.i[1:k],  
                                                         ck = object$ck,   
-                                                        lk = object$kk,  
+                                                        lk = object$lk,  
                                                         uk = object$uk,  
                                                         kMax = kMax, 
-                                                        estimate = delta[NROW(delta),"estimate"])
+                                                        estimate = delta[NROW(delta),"estimate"],
+                                                        futility2efficacy = object$method!=3,
+                                                        bindingFutility = object$bindingFutility)
         }
         
         if(trace>0){cat("done \n", sep = "")}

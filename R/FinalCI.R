@@ -10,6 +10,8 @@
 #' @param alpha confidence level (to get a 100*(1-alpha)\% CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
 #' @param optimizer the observed treatment estimate at decision
+#' @param futility2efficacy [logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.
+#' @param bindingFutility [logical]  whether the futility stopping rule is binding.
 
 ## * FinalCI (code)
 #' @export
@@ -21,38 +23,44 @@ FinalCI <- function(Info.d,
                     kMax, 
                     alpha=0.05,
                     estimate,
-                    optimizer = "optimise"){
+                    optimizer = "optimise",
+                    futility2efficacy,
+                    bindingFutility){
 
-  f <- function(delta){
-    FinalPvalue(Info.d=Info.d,
-                 Info.i=Info.i,
-                 ck=ck,
-                 lk=lk,
-                 uk=uk,
-                 kMax=kMax,
-                 estimate=estimate,
-                 delta=delta) - alpha/2
-  }
+    f <- function(delta){
+        FinalPvalue(Info.d=Info.d,
+                    Info.i=Info.i,
+                    ck=ck,
+                    lk=lk,
+                    uk=uk,
+                    kMax=kMax,
+                    estimate=estimate,
+                    delta=delta,
+                    futility2efficacy=futility2efficacy,
+                    bindingFutility=bindingFutility) - alpha/2
+    }
 
-  g <- function(delta){
-    1-FinalPvalue(Info.d=Info.d,
-                 Info.i=Info.i,
-                 ck=ck,
-                 lk=lk,
-                 uk=uk,
-                 kMax=kMax,
-                 estimate=estimate,
-                 delta=delta) - alpha/2
-  }
+    g <- function(delta){
+        1-FinalPvalue(Info.d=Info.d,
+                      Info.i=Info.i,
+                      ck=ck,
+                      lk=lk,
+                      uk=uk,
+                      kMax=kMax,
+                      estimate=estimate,
+                      delta=delta,
+                      futility2efficacy=futility2efficacy,
+                      bindingFutility=bindingFutility) - alpha/2
+    }
 
     if(optimizer=="optimise"){
-        lbnd <- stats::optimise(function(x){f(x)^2},lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]))
-        ubnd <- stats::optimise(function(x){g(x)^2},lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]))
+        lbnd <- stats::optimise(function(x){f(x)^2},lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]), tol = 1e-10)
+        ubnd <- stats::optimise(function(x){g(x)^2},lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]), tol = 1e-10)
         out <- c(lower = lbnd$minimum, upper = ubnd$minimum)
         attr(out,"error") <- c(lower = lbnd$objective, upper = ubnd$objective)
     }else if(optimizer=="uniroot"){
-        lbnd <- stats::uniroot(f,lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]))
-        ubnd <- stats::uniroot(g,lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]))
+        lbnd <- stats::uniroot(f,lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]), tol = 1e-10)
+        ubnd <- stats::uniroot(g,lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]), tol = 1e-10)
         out <- c(lower = lbnd$root, upper = ubnd$root)
         attr(out,"error") <- c(lower = lbnd$f.root, upper = ubnd$f.root)
         attr(out,"iter") <- c(lower = lbnd$iter, upper = ubnd$iter)

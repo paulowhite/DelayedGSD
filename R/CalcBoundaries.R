@@ -3,7 +3,6 @@
 #' @description Calculate boundaries (interim and decision) for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach
 #' 
 #' @param kMax max number of analyses (including final)
-#' @param sided one or two-sided
 #' @param alpha type I error
 #' @param beta type II error
 #' @param InfoR.i planned or observed information rates at interim analysis, including the final analysis.
@@ -13,7 +12,7 @@
 #' @param cNotBelowFixedc whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
 #' @param delta effect that the study is powered for
 #' @param InfoR.d (expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.
-#' @param bindingFutility whether the futility stopping rule is binding
+#' @param bindingFutility [logical]  whether the futility stopping rule is binding.
 #' @param alternative a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
 #' H0 \eqn{\theta=0} vs H1 \eqn{theta<0} (\code{"less"}) or theta > 0 (\code{"greater"}).
 #' Note that in Jennison and Turnbull's book chapter (2013) they consider greater.
@@ -22,7 +21,6 @@
 #'
 #' @examples
 #' myBound <- CalcBoundaries(kMax=2,
-#'               sided=1,
 #'               alpha=0.025,  
 #'               beta=0.2,  
 #'               InfoR.i=c(0.5,1),
@@ -37,7 +35,6 @@
 #' 
 #' ## to reproduce bounds from CJ DSBS course slide 106
 #' myBound <- CalcBoundaries(kMax=3,
-#'               sided=1,
 #'               alpha=0.025,  
 #'               beta=0.1,  
 #'               InfoR.i=c(3.5,6.75,12)/12,
@@ -54,7 +51,6 @@
 ## * CalcBoundaries (code)
 #' @export
 CalcBoundaries <- function(kMax=2,  
-                           sided=1,  
                            alpha=0.025, 
                            beta=0.2,  
                            InfoR.i=c(0.5,1),  
@@ -74,9 +70,6 @@ CalcBoundaries <- function(kMax=2,
     ## ** normalize user input
     call <- match.call() ## keep track of how the user run the function
     alternative <- match.arg(alternative, c("less","greater"))
-    if(sided!=1){
-        stop("Function cannot handle two-sided tests yet")
-    }
   
     if(sum(InfoR.d < InfoR.i[-length(InfoR.i)])>0){
         stop("Information at decision analysis should not be smaller than information at interim analysis")
@@ -85,7 +78,7 @@ CalcBoundaries <- function(kMax=2,
     if(method %in% 1:3 == FALSE){
         stop("Please specify method=1, method=2, or method=3.")
     }
-    
+
     if(alternative=="greater" & delta<0){
         stop("The values given for arguments \'alternative\' and \'delta\' are inconsistent. \n",
              "When alternative=\"greater\", argument \'delta\' should be positive. \n")
@@ -114,9 +107,9 @@ CalcBoundaries <- function(kMax=2,
                                binding=bindingFutility,
                                Trace = trace,
                                cMin = cMin)
-        
+
     } else if(method==2){
-    
+
         delayedBnds <- Method2(rho_alpha = rho_alpha,
                                rho_beta = rho_beta,
                                alpha = alpha,
@@ -164,7 +157,6 @@ CalcBoundaries <- function(kMax=2,
                 alpha = alpha,
                 alphaSpent = cumsum(delayedBnds$boundaries$Inc.Type.I),
                 kMax = kMax,
-                sided = sided,
                 beta = beta,
                 betaSpent = cumsum(delayedBnds$boundaries$Inc.Type.II),
                 rho_alpha = rho_alpha,

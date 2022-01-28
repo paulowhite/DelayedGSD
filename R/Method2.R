@@ -173,7 +173,7 @@ Method2 <- function(rho_alpha=2,
                       delta=delta,
                       abseps=abseps,
                       toldiff=toldiff,
-                      alternative=alternative,
+                      alternative="greater",
                       binding=binding,
                       Trace=FALSE,
                       cMin=cMin)
@@ -202,7 +202,7 @@ Method2 <- function(rho_alpha=2,
                               delta=delta,
                               abseps=abseps,
                               toldiff=toldiff,
-                              alternative=alternative,
+                              alternative="greater",
                               binding=binding,
                               cMin=cMin)
                 thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
