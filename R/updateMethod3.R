@@ -12,7 +12,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                           k = NULL, type.k = NULL, ImaxAnticipated = FALSE, # current stage, type of analysis, and conclusion for all previous analyses
                           delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
                           abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
-                          alternative="less",   # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
+                          alternative="greater",   # greater is for Ho= theta > 0, "less" is for Ho= theta < 0 (note that in Jennison and Turnbull's book chapter (2013) they consider less)
                           binding=FALSE,         # whether the futility boundary is binding
                           Trace=FALSE,          # Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).
                           nWhileMax=30,         # Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)
@@ -21,13 +21,15 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                           mycoefMax= 1.2,       # Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).
                           mycoefL=1,            # Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
                           myseed=2902           # seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
-){
-  ## {{{ set seed
-  
-  
-  old <- .Random.seed # to save the current seed
-  on.exit( .Random.seed <<- old)
-  set.seed(myseed)
+                          ){
+    ## {{{ set seed
+    if(!is.null(myseed)){
+        if(!is.null(get0(".Random.seed"))){ ## avoid error when .Random.seed do not exists, e.g. fresh R session with no call to RNG
+            old <- .Random.seed # to save the current seed
+            on.exit(.Random.seed <<- old) # restore the current seed (before the call to the function)
+        }
+        set.seed(myseed)
+    }
   
   cMin <- qnorm(1-alpha)
   

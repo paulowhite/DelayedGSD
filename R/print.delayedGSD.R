@@ -48,7 +48,7 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
     df.printBound$Fbound <- round(df.printBound$Fbound, digits)
     df.printBound$Ebound <- round(df.printBound$Ebound, digits)
     df.printBound$Cbound <- round(df.printBound$Cbound, digits)
-        
+    
     if(test.planning){
 
         if(abreviated){
@@ -57,6 +57,8 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
             colnames(df.printBound) <- c("Stage","Futility boundary","Efficacy boundary","Critical boundary")
         }
         df.printBound[is.na(df.printBound)] <- ""
+        df.printBound[["alpha-spent"]] <- x$planned$alphaSpent
+        df.printBound[["beta-spent"]] <- x$planned$betaSpent
 
         cat("\n * Planned boundaries: \n")
         print(df.printBound, row.names = FALSE, digits = digits, quotes="")
@@ -64,8 +66,19 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
     }else{
         df.printBound$statistic.interim <- round(df.printBound$statistic.interim, digits)
         df.printBound$statistic.decision <- round(df.printBound$statistic.decision, digits)
+        df.printBound[["alpha-spent"]] <- x$alphaSpent
+        df.printBound[["beta-spent"]] <- x$betaSpent
+        if(planning==FALSE){
+            df.printBound[["alpha-spent"]] <- NA
+            df.printBound[["beta-spent"]] <- NA
+            df.printBound[["alpha-spent"]][1:x$stage$k] <- x$alphaSpent[1:x$stage$k]
+            df.printBound[["beta-spent"]][1:x$stage$k] <- x$betaSpent[1:x$stage$k]
+        }else{
+            df.printBound[["alpha-spent"]] <- x$alphaSpent
+            df.printBound[["beta-spent"]] <- x$betaSpent
+        }
         df.printBound[is.na(df.printBound)] <- ""
-        
+    
         conclusion.interim.print <- .reformatInterimTxt(x$conclusion, kMax = kMax, abreviated = abreviated)
         conclusion.decision.print <- .reformatDecisionTxt(x$conclusion, kMax = kMax, abreviated = abreviated)
 
