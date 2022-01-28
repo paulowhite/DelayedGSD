@@ -118,8 +118,11 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, k = NULL, t
             rownames(out) <- NULL
 
         }else if(type == "decision"){
-            out <- stats::setNames(c(object$conclusion["interim",1:(kMax-1)],object$conclusion["decision",kMax]),
-                            paste0("stage ",1:kMax))
+            out <- stats::setNames(object$conclusion["interim",], paste0("stage ",1:kMax))
+            if(any(!is.na(object$conclusion["decision",]))){
+                toadd <- object$conclusion["decision",]
+                out[!is.na(toadd)] <- toadd[!is.na(toadd)]
+            }
         }
 
     ## ** export

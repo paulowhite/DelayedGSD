@@ -87,11 +87,12 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
                                      "Critical boundary" = df.printBound$Cbound,
                                      "Statistic" = df.printBound$statistic.decision,
                                      "Action" = conclusion.decision.print,
+                                     "alpha" = df.printBound[["alpha-spent"]],
+                                     "beta" = df.printBound[["beta-spent"]],
                                      check.names = FALSE)
 
         if(abreviated){
-            names(df.printBound2) <- c("Stage", "F-bound", "E-bound", "Stat", "", "C-bound", "Stat", "")
-            names(df.printBound2)[8] <- ""
+            names(df.printBound2) <- c("Stage", "F-bound", "E-bound", "Stat", "", "C-bound", "Stat", "","alpha","beta")
         }
 
         ## display
@@ -102,9 +103,11 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
         if(abreviated){
             names(df.printBound3)[3] <- "Interim"
             names(df.printBound3)[6] <- "Decision"
+            names(df.printBound3)[9] <- "Spent"
         }else{
             names(df.printBound3)[3] <- "Interim analysis"
             names(df.printBound3)[6] <- "Decision analysis"
+            names(df.printBound3)[9] <- "Error spent"
         }
         print(df.printBound3, row.names = FALSE, quote = FALSE)
     }
@@ -234,14 +237,14 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
     out <- sapply(1:kMax,function(iK){
         if(is.na(conclusion["decision",iK])){
             return("")
-        }else if(conclusion["decision",iK]=="Efficacy"){
+        }else if(conclusion["decision",iK]=="efficacy"){
             if(abreviated){
                 return("E")
             }else{
                 return("conclude efficacy")
             }
             return(out)
-        }else if(conclusion["decision",iK]=="Futility"){
+        }else if(conclusion["decision",iK]=="futility"){
             if(abreviated){
                 return("F")
             }else{

@@ -117,11 +117,14 @@ plot.delayedGSD <- function(x,
                                         # }}}
                                         # {{{ Values to plot
                                         # default (if type="Z")
-    xu <- Ival
-    xd <- Idval
-    yu <- uk
-    yl <- lk
-    yc <- ck
+
+    ## NOTE: subset by [!is.na(uk)] to handle the case where we end the study early, e.g. for efficacy
+    ## in that case bounds after the decision analysis are set to NA and should be ignored
+    xu <- Ival[!is.na(uk)]
+    xd <- Idval[!is.na(uk)]
+    yu <- uk[!is.na(uk)]
+    yl <- lk[!is.na(uk)]   
+    yc <- c(ck,utils::tail(uk,1))[!is.na(uk)]
     yh <- stats::qnorm(1-alpha)
     whereleg <- "bottomleft"
     ylab <- "Stopping boundary (Z-statistic)"
@@ -149,16 +152,20 @@ plot.delayedGSD <- function(x,
                        )
     }
     if(is.null(xlim)){
-        xlim <- c(0,max(xu,na.rm=TRUE))
+        if(Itype=="rate"){
+            xlim <- c(0,1)
+        }else{
+            xlim <- c(0,max(xu,na.rm=TRUE))
+        }
     }
                                         # }}}
                                         # {{{ Plot
     graphics::plot(xu,yu,type="l",lty=2,lwd=2,ylim=ylim,col="green3",xlab=xlb,ylab=ylab,axes=FALSE,
                    xlim=xlim,main=main)
     graphics::lines(xu,yl,col="red",lwd=2,lty=2)
-    graphics::points(xd,yc,col="black",pch=19,cex=1.5)
     graphics::points(xu,yl,col="red",pch=21,bg="red",cex=1.2)
     graphics::points(xu,yu,col="green3",pch=21,bg="green3",cex=1.2)
+    graphics::points(xd,yc,col="black",pch=19,cex=1.5)
     if(!is.null(delta)){
         xdelta <- xu[1:k]
         if(type.k=="decision"){
@@ -166,7 +173,7 @@ plot.delayedGSD <- function(x,
         }
         ## lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
         graphics::points(xdelta,delta,col="purple",pch=22,bg="purple",cex=1.2)
-        graphics::text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple",pos=1)
+        graphics::text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple")
         
     }
                                         #---
@@ -191,6 +198,7 @@ plot.delayedGSD <- function(x,
                                   green=colvectred[2],
                                   blue=colvectred[3],
                                   alpha=0.25)
+
     graphics::polygon(x=c(0,xu,rev(xu),0),
                       y=c(yl[1],yl,rep(ifelse(type=="P",max(ylim),min(ylim)),length(yu)+1)),
                       col=myrgbcolred,border=NA)

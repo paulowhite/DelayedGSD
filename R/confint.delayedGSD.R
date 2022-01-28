@@ -79,7 +79,7 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
                                      se = NA,
                                      lower = object$correction$lower,
                                      upper = object$correction$upper,
-                                     statistic = NA,
+                                     statistic = iLMM$statistic,
                                      df = NA,
                                      p.value = object$correction$p.value)
                      )

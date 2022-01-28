@@ -112,9 +112,9 @@ Decision <- function(object,
     if(type.k=="decision"){
                                         
         if(Z > ck[k]){
-            object$conclusion["decision",k] <- "Efficacy"
+            object$conclusion["decision",k] <- "efficacy"
         } else {
-            object$conclusion["decision",k] <- "Futility"
+            object$conclusion["decision",k] <- "futility"
         }
 
     }
@@ -123,9 +123,9 @@ Decision <- function(object,
     if(type.k == "final"){
 
         if(Z > uk[k]){
-            object$conclusion["decision",k] <- "Efficacy"
+            object$conclusion["decision",k] <- "efficacy"
         } else {
-            object$conclusion["decision",k] <- "Futility"
+            object$conclusion["decision",k] <- "futility"
         }
 
     }

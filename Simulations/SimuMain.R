@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: Jan 28 2022 (15:58) 
+## Last-Updated: Jan 28 2022 (16:56) 
 ##           By: Brice Ozenne
-##     Update #: 435
+##     Update #: 440
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -81,7 +81,7 @@ for(iMeth in 1:3){
 }
 inflationFactor <- sapply(plannedB,"[[","InflationFactor")
 nGSD <- ceiling(n*inflationFactor)
-
+##  plot(plannedB[[1]])
 
 #
 # --- just to check---
@@ -193,16 +193,17 @@ for(j in allj){ ## j <- 1
     ## {{{ analyze data at at interim
     currentGSD <- vector(mode = "list", length = 3)
     out.interim <- c()
-    for(iMeth in 1:3){
+    for(iMeth in 1:3){ ## iMeth <- 1
 
         currentGSD[[iMeth]] <- update(plannedB[[iMeth]], n.decision = sum(d$t1 <= thet + theDelta.t*TimeFactor), data = di, trace = FALSE)
+
         iConfint.interim <- confint(currentGSD[[iMeth]])
         iInfo.interim <- coef(currentGSD[[iMeth]], type = "information")
         iBoundary.interim <- coef(currentGSD[[iMeth]], type = "boundary")
 
         out.interim[paste0("est.interim",iMeth)] <- iConfint.interim[1,"estimate"]
         out.interim[paste0("se.interim",iMeth)] <- iConfint.interim[1,"se"]
-        out.interim[paste0("Z.interim1",iMeth)] <- iConfint.interim[1,"statistic"]
+        out.interim[paste0("Z.interim",iMeth)] <- iConfint.interim[1,"statistic"]
         out.interim[paste0("Info.interim",iMeth)] <- iInfo.interim[1,"Interim"]
         out.interim[paste0("InfoPC.interim",iMeth)] <- iInfo.interim[1,"Interim.pc"]
         out.interim[paste0("PInfoD.interim",iMeth)] <- iInfo.interim[1,"Decision"]  
@@ -217,15 +218,39 @@ for(j in allj){ ## j <- 1
     info.decision <- c(info.decision, analyzeData(dDecision)$getInformation["decision"])
     
     out.decision <- c()
-    for(iMeth in 1:3){
+    for(iMeth in 1:3){ ## iMeth <- 1
         if(out.interim[paste0("stop.at.interim",iMeth)]){
           
             currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], data = dDecision, trace = FALSE)
+            ## plot(currentGSD[[iMeth]])
+
+            iConfint.decision <- confint(currentGSD[[iMeth]])
+            iInfo.decision <- coef(currentGSD[[iMeth]], type = "information")
+            iBoundary.decision <- coef(currentGSD[[iMeth]], type = "boundary")
+
+            out.decision[paste0("est.decision",iMeth)] <- iConfint.decision[1,"estimate"]
+            out.decision[paste0("Z.decision",iMeth)] <- iConfint.decision[1,"statistic"]
+            out.decision[paste0("lower.decision",iMeth)] <- iConfint.decision[1,"lower"]
+            out.decision[paste0("upper.decision",iMeth)] <- iConfint.decision[1,"upper"]
+            out.decision[paste0("Info.decision",iMeth)] <- iInfo.decision[1,"Interim"]
+            out.decision[paste0("InfoPC.decision",iMeth)] <- iInfo.decision[1,"Interim.pc"]
+            out.decision[paste0("c.decision",iMeth)] <- iBoundary.decision[1,"Cbound"]  
+            out.decision[paste0("reject.at.decision",iMeth)] <- unname(coef(currentGSD[[iMeth]], type = "decision")["stage 1"])=="efficacy" ## 1 is stop
 
         }else{
 
+            out.decision[paste0("est.decision",iMeth)] <- NA
+            out.decision[paste0("Z.decision",iMeth)] <- NA
+            out.decision[paste0("lower.decision",iMeth)] <- NA
+            out.decision[paste0("upper.decision",iMeth)] <- NA
+            out.decision[paste0("Info.decision",iMeth)] <- NA
+            out.decision[paste0("InfoPC.decision",iMeth)] <- NA
+            out.decision[paste0("c.decision",iMeth)] <- NA
+            out.decision[paste0("reject.at.decision",iMeth)] <- NA
         }
     }
+
+
                                         # {{{ Decision at interim is to stop ("Efficacy" or "Futility"): move to decision analysis
     if(DecisionInterimB1$decision!="Continue"){
                                         # Make data available at Decision Analysis
