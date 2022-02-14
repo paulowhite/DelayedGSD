@@ -104,7 +104,6 @@ calc_ck <- function(uk,
         }
     }
 
-
     c <- try(stats::uniroot(f,
                             lower = lk[utils::tail(intersect(which(!is.infinite(lk)),1:k),1)], ## last boundary among the k already computed that is not infinite  
                             upper = uk[utils::tail(intersect(which(!is.infinite(uk)),1:k),1)]*1.1)$root,

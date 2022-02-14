@@ -2,7 +2,6 @@
 
 #' @title Update boundaries for a group sequential design using Method 2
 #' @description Calculate boundaries for a group sequential design with delayed endpoints based observed information at interim/decision/final using an error spending approach.
-
 #' @param rho_alpha rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
 #' @param rho_beta rho parameter of the rho-family spending functions (Kim-DeMets) for beta
 #' @param uk efficacy boundary from the previous interim analyses or planning

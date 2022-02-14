@@ -78,7 +78,6 @@ CalcBoundaries <- function(kMax=2,
     if(method %in% 1:3 == FALSE){
         stop("Please specify method=1, method=2, or method=3.")
     }
-
     if(alternative=="greater" & delta<0){
         stop("The values given for arguments \'alternative\' and \'delta\' are inconsistent. \n",
              "When alternative=\"greater\", argument \'delta\' should be positive. \n")
@@ -107,7 +106,6 @@ CalcBoundaries <- function(kMax=2,
                                binding=bindingFutility,
                                Trace = trace,
                                cMin = cMin)
-
     } else if(method==2){
 
         delayedBnds <- Method2(rho_alpha = rho_alpha,
