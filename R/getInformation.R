@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: Dec 16 2021 (18:47) 
+## Last-Updated: feb  8 2022 (10:09) 
 ##           By: Brice Ozenne
-##     Update #: 972
+##     Update #: 1089
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -267,9 +267,9 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
 
     ## ** design matrix and covariance pattern
     ## *** at decision
-
     ## design matrix
-    X.decision <- stats::model.matrix(f.gls, data = stats::model.frame(formula = f.gls, data = data, na.action = stats::na.pass)) ## instead of X <- model.matrix(stats::formula(object), data = data) to keep rows with missing data        
+    X.decision <- stats::model.matrix(f.gls, data = stats::model.frame(formula = f.gls, data = data, na.action = stats::na.pass))
+    ## instead of X <- model.matrix(stats::formula(object), data = data) to keep rows with missing data        
 
     ## covariance pattern
     resPattern.decision <- .getPattern(object, data = data, variance = NULL)
@@ -279,7 +279,7 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
 
     ## *** at interim: full information approach
     ## dataset
-    index.interim <- which(!is.na(data[[outcome.var]]))
+    index.interim <- which(rowSums(is.na(data[,all.vars(f.gls)]))==0)
     data.interim <- data[index.interim,,drop=FALSE]
 
     ## design matrix
@@ -324,9 +324,9 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
         ## number of observation per cluster in the complete case
         resPattern.interim.cc$nobs.vargroup <- stats::setNames(sapply(resPattern.interim.cc$variance.vargroup,NCOL)[resPattern.interim.cc$index.vargroup], names(resPattern.interim.cc$index.vargroup))
     }    
-        
+
     ## *** sanity checks
-    if(any(abs(X.decision[index.interim,]-X.interim)>1e-10)){ ## Sanity check
+    if(any(abs(X.decision[index.interim,,drop=FALSE]-X.interim)>1e-10)){ ## Sanity check
         warning("Something went wrong when selecting the data at interim. \n",
                 "Could be due to missing values in the regressors. \n")
     }
@@ -343,8 +343,9 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
 
     
     ## ** compute information
-
     ## *** at decision
+    ## computed as if all outcome values would be observed
+    ## do not handle missing values in covariates
     info.decision <- getInformation(X.decision,
                                     variance = resPattern.decision$variance.vargroup,
                                     index.variance = resPattern.decision$index.vargroup,
@@ -369,7 +370,7 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
     n.decision <- resPattern.decision$n.cluster ## number of patients at decision (with at least one observable proxy or outcome).
     n.interim <- resPattern.interim$n.cluster ## number of patients at interim (with at least one observation proxy or outcome). Same as decision except in the case of pipeline patients
     n.interim.cc <- resPattern.interim.cc$n.cluster ## number of patients at interim with complete data
-    
+
     ## ** export
     if(!is.null(attr(data,"df.allobs"))){
         n.all <- as.double(length(unique(attr(data,"df.allobs")[[cluster.var]])))
@@ -388,27 +389,26 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
                                   X = X.interim.cc,
                                   pattern = resPattern.interim.cc,
                                   vcov = solve(info.interim.cc)),
-                n = c(total = n.all, ## all patients in the original dataset: all patient including those who dropped out early and have no observable outcome
-                      decision = n.decision,  ## no missing data analysis: all patients with at least one observable outcome (i.e. including those with not yet observed values)
-                      interim = n.interim, ## full information analysis: all patients with at least one observed outcome
-                      interim.cc = n.interim.cc), ## complete case analysis: all patients with all observed outcomes
-                info = c(decision = 1/solve(info.decision)[name.coef,name.coef], interim = 1/solve(info.interim)[name.coef,name.coef], interim.cc = 1/solve(info.interim.cc)[name.coef,name.coef]),
+                sample.size = c(decision = n.decision,  ## no missing data analysis: all patients with at least one observable outcome (i.e. including those with not yet observed values)
+                                total = n.all, ## all patients in the original dataset: all patient including those who dropped out early and have no observable outcome
+                                interim = n.interim, ## full information analysis: all patients with at least one observed outcome
+                                interim.cc = n.interim.cc), ## complete case analysis: all patients with all observed outcomes
+                information = c(decision = 1/solve(info.decision)[name.coef,name.coef],
+                                interim = 1/solve(info.interim)[name.coef,name.coef],
+                                interim.cc = 1/solve(info.interim.cc)[name.coef,name.coef]),
                 formula.mean = f.gls, name.coef = name.coef, cluster.var = cluster.var
                 )
     if(details){
+        if(!is.null(newdata)){
+            out$information["decision"] <- getInformation.lmmGSD(c(out, list(fit = object)), newdata = newdata, variance = variance, ...)
+        }else if(any(is.na(data[,all.vars(f.gls)]))){ ## better handling of missing value compared to initial calculation
+            out$information["decision"] <- getInformation.lmmGSD(c(out, list(fit = object)), newdata = data, variance = variance, ...)
+        }
         return(out)
     }else if(is.null(newdata) && is.null(variance)){        
         return(stats::setNames(1/solve(info.interim)[name.coef,name.coef], name.coef))
     }else{
-
-        if(is.null(newdata)){
-            newdata <- try(eval(object$call$data), silent = TRUE)
-            if(inherits(data,"try-error")){
-                stop("Could not retrieve the data used to fit the gls model. \n",
-                     "Consider passing the data via the \'newdata\' argument. \n")
-            }
-        }
-        return(getInformation.lmmGSD(c(out, list(fit = object)), newdata = newdata, variance = variance))
+        return(getInformation.lmmGSD(c(out, list(fit = object)), newdata = newdata, variance = variance, ...))
     }
     return(out)
 }
@@ -416,9 +416,10 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
 ## * getInformation.lmmGSD
 #' @rdname getInformation
 #' @export
-getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weighting = FALSE, ...){
-
+getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, timevar = NULL, ...){
+    
     ## ** normalize arguments
+    if(is.null(newdata)){return(object$info)}
     if(!is.null(variance)){
         if(!is.list(variance)){
             variance <- list(variance)
@@ -429,86 +430,105 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
         
     }
 
-    ## ** extra from object
     cluster.var <- object$cluster.var
     f.gls <- object$formula.mean
     name.regressor <- all.vars(stats::update(f.gls,0~.))
     name.coef <- object$name.coef
-    test.missing <- object$n["total"]!=object$n["decision"]
+    name.outcome <- setdiff(all.vars(f.gls), name.regressor)
 
-    if(!is.null(attr(newdata,"df.allobs"))){ ## if individuals excluded because only missing data- get them back
-        data.estimate <- attr(object$decision$data, "df.allobs")
-        if(is.factor(data.estimate[[cluster.var]])){
-            level.cluster.estimate <- levels(droplevels(data.estimate[[cluster.var]]))
-        }else{
-            level.cluster.estimate <- unique(data.estimate[[cluster.var]])
-        }
-    }else{
-        level.cluster.estimate <- names(object$decision$pattern$nobs.vargroup)
-        data.estimate <- object$decision$data
-    }
-    n.estimate <- length(level.cluster.estimate)
-    
     ## ** design matrix
-    ## keep all observations despite missing values in the response
-    testNA.regressor <- any(is.na(newdata[,name.regressor]))
+    index.newdata <- which(rowSums(is.na(newdata[,all.vars(f.gls)]))==0)
+    newdataRed <- newdata[index.newdata,,drop=FALSE]
+    X.newdata <- stats::model.matrix(f.gls, data = newdataRed)
+    if(any(abs(X.newdata - stats::model.matrix(f.gls, data = newdata))>1e-10)){
+        warning("Something when wrong when subsetting the design matrix.")
+    }
     
-    if(testNA.regressor || test.missing){
+    ## ** covariance pattern
+    resPattern.newdata <- .getPattern(object$fit, data = newdataRed, variance = variance)
+    ## number of observation per cluster at decision
+    resPattern.newdata$nobs.vargroup <- stats::setNames(sapply(resPattern.newdata$variance.vargroup,NCOL)[resPattern.newdata$index.vargroup], names(resPattern.newdata$index.vargroup))
 
-        if(weighting == FALSE){
-            stop("Missing values in the regressors or cluster with no observation. \n",
-                 "Consider setting the argument weighting to TRUE to compute the information \n")
-        }
-        if(!is.null(attr(newdata,"df.allobs"))){
-            newdata.full <- attr(newdata,"df.allobs")
-        }else{
-            newdata.full <- newdata
+    ## ** weights
+    if(NROW(X.newdata) != NROW(newdata)){
+
+        ## find time variable
+        if(is.null(timevar)){
+            if(!is.null(object$fit$variable)){
+                timevar <- object$fit$variable["time"]
+            }else{
+                stop("Unknown time variable - consider specifying the argument \'timevar\'. \n")
+            }
         }
         ## regressors where there are missing values
         name.regressorNA <- name.regressor[sapply(name.regressor, function(iR){any(is.na(newdata[[iR]]))})]
-        ## index of the dataset with missing values in the regressors - to be excluded 
-        test.idNA <- rowSums(is.na(newdata[,name.regressorNA,drop=FALSE]))>0
         ## regressors where there are no missing values
         name.regressorNNA <- setdiff(name.regressor,name.regressorNA)
+        ## regressors where there are no missing values and that take constant values within clusters (used to reshape)
         test.cstRegressorCluster <- sapply(name.regressorNNA, function(iReg){ all(tapply(newdata[[iReg]], newdata[[cluster.var]], function(iX){length(unique(iX))})==1) })
-        ## regressors where there are no missing values and that take constant values within clusters (used to stratify)
         name.regressorNNA2 <- name.regressorNNA[test.cstRegressorCluster]
-        ## weight used to compensate for the missing values
-        if(length(name.regressorNNA2)==0){ ## no prior knowledge about the missing individuals
-            ratio <- length(unique(newdata.full$id))/object$n["total"]
-            weight <- stats::setNames(rep(ratio, times = n.estimate), level.cluster.estimate)
-        }else{ ## some prior knowledge about the missing individuals (e.g. randomization group)
-            ls.levels.newdata <- lapply(name.regressorNNA2, function(iReg){ tapply(newdata.full[[iReg]], newdata.full[[cluster.var]], function(iX){unique(iX)})==1 })
-            strata.cluster.newdata <- interaction(as.data.frame(do.call(cbind, ls.levels.newdata)))
-
-            ls.levels.estimate <- lapply(name.regressorNNA2, function(iReg){ tapply(data.estimate[[iReg]], data.estimate[[cluster.var]], function(iX){unique(iX)})==1 })
-            strata.cluster.estimate <- factor(interaction(as.data.frame(do.call(cbind, ls.levels.estimate))), levels = levels(strata.cluster.newdata))
-
-            if(any(is.na(table(strata.cluster.estimate))) || any(table(strata.cluster.estimate)==0)){
-                stop("Unexpected strata value for the weights \n",
-                     "Mismatch between the values for the regressors use to fit the model and those of the new dataset.\n ")
+        ## move dataset to wide format
+        newdataW <- stats::reshape(newdata[,c(cluster.var, all.vars(f.gls))], direction = "wide", idvar = c(cluster.var,name.regressorNNA2),
+                                   timevar = timevar, v.names = setdiff(all.vars(f.gls),name.regressorNNA2))
+        newdataW <- newdataW[order(newdataW[[cluster.var]]),]
+        for(iCol in paste(timevar,unique(newdata[[timevar]]),sep=".")){
+            if(length(stats::na.omit(unique(newdataW[[iCol]])))>1){
+                stop("Time column should only take a single value. \n")
             }
-
-            ## weight proportional to the expected vs. observed number of patients in the strata
-            weight <- (table(strata.cluster.newdata)/table(strata.cluster.estimate))[as.numeric(strata.cluster.estimate)]
+            newdataW[[iCol]][is.na(newdataW[[iCol]])] <- unique(stats::na.omit(newdataW[[iCol]]))
         }
-        ## design matrix
-        X.newdata <- stats::model.matrix(f.gls, data = stats::model.frame(formula = f.gls, data = newdata[!test.idNA,,drop=FALSE], na.action = stats::na.pass))
-        ## X.newdata - object$decision$X
-        ## covariance pattern
-        resPattern.newdata <- .getPattern(object$fit, data = newdata[!test.idNA,,drop=FALSE], variance = variance)
-        ## nobject$decision$pattern
+        ## individual with complete follow-up or who had the opportunity to have complete follow-up
+        Uid.NA <- as.character(unique(newdata[rowSums(is.na(newdata[,all.vars(f.gls)]))>0,cluster.var]))
+        Uid.NNA <- setdiff(as.character(newdata[[cluster.var]]),Uid.NA)
+        ## identify reference dataset (no missing value)
+        newdataW.NNA <- newdataW[newdataW[[cluster.var]] %in% Uid.NNA,,drop=FALSE]
+        ## identify columns with missing values
+        name.colNA <- names(which(colSums(is.na(newdataW))>0))
+        ## identify missing data patterns to be added to the information
+        newdataW.NA <- newdataW[newdataW[[cluster.var]] %in% Uid.NA,,drop=FALSE] ## only keep individuals with incomplete follow-up
+        test.newpatternNA <- do.call(cbind,lapply(name.colNA, function(iX){is.na(newdataW.NA[[iX]])}))
+        colnames(test.newpatternNA) <-  name.colNA
+        vec.newpatternNA <- interaction(as.data.frame(do.call(cbind,lapply(name.colNA, function(iX){ifelse(is.na(newdataW.NA[[iX]]),iX,"")}))),sep="_",drop=TRUE)
+        vec.newpatternNA <- factor(vec.newpatternNA, levels(vec.newpatternNA), gsub("_$","",gsub("^_","",levels(vec.newpatternNA))))
+        vec.UnewpatternNA <- as.character(unique(vec.newpatternNA))
+        n.newpatternNA <- length(vec.UnewpatternNA)
+        
+        ## generate weights
+        weight <- rep(1, NROW(X.newdata))
+        
+        for(iP in 1:n.newpatternNA){ ## iP <- 1
+            iPattern <- vec.UnewpatternNA[iP]
+            ## covariates with observed values in this pattern
+            iCov.pattern <- names(which(!colSums(test.newpatternNA[vec.newpatternNA==iPattern,,drop=FALSE])>0))
+                
+            ## stratify on randomization group
+            for(iZ in unique(newdataW.NA$Z)){ ## iZ <- 1
+                ## lines corresponding to the missing values
+                iId <- newdataW.NA[which( (vec.newpatternNA==iPattern) * (newdataW.NA$Z==iZ) == 1),cluster.var]
+                iNewdata <- newdata[newdata[[cluster.var]] %in% iId & rowSums(is.na(newdata[,c(name.regressor,name.outcome)]))>0,,drop=FALSE] ## lines with missing value for this pattern
+                iTime <- unique(iNewdata[[timevar]])
+                ## control lines matching the one with missing values
+                if(length(iCov.pattern)>0){
+                    iKeep.cluster <- newdataW.NNA[[cluster.var]][which(rowSums(is.na(newdataW.NNA[,iCov.pattern,drop=FALSE]))==0)]
+                    iIndex <- which((newdataRed$Z==iZ) * (newdataRed$id %in% iKeep.cluster) * (newdataRed[[timevar]] %in% iTime) == 1)
+                }else{
+                    iIndex <- intersect(which(newdataRed$Z==iZ), which(newdataRed[[timevar]] %in% iTime))
+                }
+                ## iDataW <- newdataRed[iIndex,]
+                ## update weigths
+                weight[iIndex] <- weight[iIndex] + NROW(iNewdata)/length(iIndex)
+                ## cat(sum(weight), " ", NROW(iNewdata),"\n")
+                ## technically numerator and denominator should be time specific, but taking the (non time specific) ratio leads to same result
+                
+            }
+        }
 
+        if(abs(sum(weight)-NROW(newdata)) > 1e-10){
+            stop("Something went wrong when attributing weights to account for not yet observed values in the information.")
+        }
     }else{
-        ## design matrix
-        X.newdata <- stats::model.matrix(f.gls, data = stats::model.frame(formula = f.gls, data = newdata, na.action = stats::na.pass)) ## instead of X <- model.matrix(stats::formula(object$fit), data = data) to keep rows with missing data
-        ## covariance pattern
-        resPattern.newdata <- .getPattern(object$fit, data = newdata, variance = variance)
-        ## weights
         weight <- NULL
     }
-    ## number of observation per cluster at decision
-    resPattern.newdata$nobs.vargroup <- stats::setNames(sapply(resPattern.newdata$variance.vargroup,NCOL)[resPattern.newdata$index.vargroup], names(resPattern.newdata$index.vargroup))
 
     ## ** predict information
     info.newdata <- getInformation(X.newdata,
@@ -524,81 +544,6 @@ getInformation.lmmGSD <- function(object, newdata = NULL, variance = NULL, weigh
 
 }
 
-## * getInformation.delayedGSD
-#' @rdname getInformation
-#' @export
-getInformation.delayedGSD <- function(object, planned = TRUE, ...){
-
-    ## ** check user input
-    if(!identical(planned,"only") && !is.logical(planned)){
-        stop("Argument \'planned\' should be TRUE, FALSE, or \"only\". \n")
-    }
-
-    ## ** extract information from object
-    kMax <- object$kMax
-    k <- object$stage$k
-    type.k <- object$stage$type
-
-    ## ** prepare output
-    out <- list(Info.i = NULL,
-                Info.d = NULL,
-                Info.max = object$Info.max,
-                uk = NULL,
-                lk = NULL,
-                ck = NULL,
-                delta = NULL,
-                index.lmm = NULL)
-
-    ## ** extract information, boundaries, and estimated effect
-
-    if(identical(planned,"only") || (type.k=="planning")){
-        out$Info.i <- object$planned$Info.i
-        out$Info.d <- object$planned$Info.d
-        out$uk <- object$planned$uk
-        out$lk <- object$planned$lk
-        out$ck <- object$planned$ck
-    }else{
-        if(planned){
-            out$Info.i <- object$Info.i
-            out$Info.d <- object$Info.d
-            out$uk <- object$uk
-            out$lk <- object$lk
-            out$ck <- object$ck
-            if(type.k=="final"){
-                out$index.lmm <- 1:kMax
-            }else if(type.k=="decision"){
-                out$index.lmm <- 1:(k+1)
-            }else if(type.k=="interim"){
-                out$index.lmm <- 1:k
-            }
-        }else{
-            out$lk <- c(object$lk[1:k], rep(NA, kMax-k))
-            out$uk <- c(object$uk[1:k], rep(NA, kMax-k))
-            out$Info.i <- c(object$Info.i[1:k], rep(NA, kMax-k))
-            out$ck <- rep(NA,kMax-1)
-            out$Info.d <- rep(NA,kMax-1)
-            if(type.k=="final"){
-                out$index.lmm <- 1:kMax
-            }else if(type.k=="decision"){
-                out$ck[k] <- object$ck[k]
-                out$Info.d[k] <- object$Info.d[k]
-                out$index.lmm <- 1:(k+1)
-            }else if(type.k=="interim"){
-                out$Info.d[k] <- object$Info.d[k]
-                out$index.lmm <- 1:k
-            }
-            
-        }
-
-        out$delta <- do.call(rbind,lapply(object$lmm[out$index.lmm], function(iLMM){
-            unlist(iLMM[c("estimate","statistic","p.value")])
-        }))
-    }
-
-    ## ** export
-    return(out)
-
-}
 
 ## * .getPattern
 .getPattern <- function(object, data, variance = NULL){

@@ -2,10 +2,12 @@
 #' @title Fit a Linear Mixed Model
 #' @description Fit a linear mixed model and extract the information relative to the parameter of interest.
 #' 
-#' @param d dataset
+#' @param data [data.frame] dataset for the current analysis.
 #' @param ddf [character] method used to compute the degrees of freedom of the Wald statistic.
 #' Can be \code{"satterthwaite"} or \code{"nlme"}.
 #' @param getinfo [logical] should the information be computed at interim and decision? Otherwise no information is computed.
+#' @param data.decision [integer or data.frame] data or total number of patients for the future decision analysis (only relevant at interim).
+#' Used to compute the predicted total information at decision where only current (or future) drop-out value are excluded but future observations are kept.
 #' @param trace [logical] should the execution of the function be traced?
 #' 
 #' @examples
@@ -22,13 +24,13 @@
 
 ## * analyzeData (code)
 #' @export
-analyzeData <- function(d, ddf = "nlme", getinfo = TRUE, trace = TRUE){
+analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL, trace = TRUE){
 
     requireNamespace("nlme")
 
     ## ** normalize arguments
     ddf <- match.arg(ddf, choices = c("nlme","satterthwaite"))
-    long <- wide2long(d, rm.na = TRUE) ## remove missing value but not pipeline value from the data.set
+    long <- wide2long(data, rm.na = TRUE) ## remove missing value but not pipeline value from the data.set
     ## head(long[order(long$id),],n=10)
     ## summary(long)
 
@@ -41,54 +43,69 @@ analyzeData <- function(d, ddf = "nlme", getinfo = TRUE, trace = TRUE){
                    weights = nlme::varIdent(form=~1|visit),
                    method = "REML",
                    na.action = stats::na.exclude)
+    m$variable <- c(cluster = "id", time = "visit")
 
-    ## ** store estimate from the gls model    
-    out <- list(d.long=long,
+    ## ** store estimate from the gls model
+    out <- list(data=long,
                 fit=m,
-                Info = 1/m$varBeta["Z1","Z1"], 
-                estimate = as.double(stats::coef(m)["Z1"]),
-                se = as.double(sqrt(m$varBeta["Z1","Z1"])),
-                statistic = NA,
-                df = NA,
-                p.value = NA
+                name.coef = "Z1",
+                delta = data.frame(estimate = as.double(stats::coef(m)["Z1"]),
+                                   se = as.double(sqrt(m$varBeta["Z1","Z1"])),
+                                   statistic = NA,
+                                   df = NA,
+                                   p.value = NA)
                 )
-    out$statistic <- abs(out$estimate)/out$se
+    out$delta$statistic <- abs(out$delta$estimate)/out$delta$se
 
     ## computation of the p-value  
     if(ddf=="nlme"){ ## with weird estimator of the degree of freedom from nlme::gls 
-        out$df <- as.double(m$dims$N - m$dims$p)
-        out$p.value <- as.double(2*(1-stats::pt(out$statistic, df = out$df)))
+        out$delta$df <- as.double(m$dims$N - m$dims$p)
+        out$delta$p.value <- as.double(2*(1-stats::pt(out$delta$statistic, df = out$delta$df)))
         ## summary(m)$tTable["Z1","p-value"]
     }else{ ## or using satterthwaite approximation
         requireNamespace("emmeans")
-        if(trace){
-            groupTest <- emmeans::emmeans(m, specs = ~Z|visit, data = long[!is.na(long$X),,drop=FALSE])
-        }else{
-            groupTest <- suppressMessages(emmeans::emmeans(m, specs = ~Z|visit, data = long[!is.na(long$X),,drop=FALSE]))
-        }
+        
+        groupTest <- suppressMessages(emmeans::emmeans(m, specs = ~Z|visit, data = long[!is.na(long$X),,drop=FALSE]))
         e.satterthwaite <- summary(graphics::pairs(groupTest, reverse = TRUE), by = NULL, infer = TRUE, adjust = "none")
         index <- which(e.satterthwaite$visit==levels(long$visit)[1])
 
-        if(abs(out$estimate - e.satterthwaite$estimate[index])>1e-10){
+        if(abs(out$delta$estimate - e.satterthwaite$estimate[index])>1e-10){
             warning("Something went wrong when extracting the coefficient from emmeans \n",
-                    "discrepancy estimate emmeans vs. gls: ",out$estimate-e.satterthwaite$estimate[index])
+                    "discrepancy estimate emmeans vs. gls: ",out$delta$estimate-e.satterthwaite$estimate[index])
         }
-        if(abs(out$se - e.satterthwaite$SE[index])>1e-10){
+        if(abs(out$delta$se - e.satterthwaite$SE[index])>1e-10){
             warning("Something went wrong when extracting the standard error in emeans \n",
-                    "discrepancy se emmeans vs. gls: ",e.satterthwaite$SE[index]-out$se)
+                    "discrepancy se emmeans vs. gls: ",out$delta$se-e.satterthwaite$SE[index])
         }
-        out$p.value <- e.satterthwaite$p.value[index]
+        out$delta$df <- e.satterthwaite$df[index]
+        out$delta$p.value <- e.satterthwaite$p.value[index]
     }
 
     ## ** Estimate the information
     if(getinfo){
-
-        ## current information and information at decision
-        out <- c(out,getInformation(m, name.coef = "Z1", data = long, details = TRUE))
-        names(out)[names(out)=="info"] <- "getInformation"
-        if(any(abs(out$interim$vcov - stats::vcov(m))>1e-10)){
+        if(is.null(data.decision) || inherits(data.frame, what = "data.frame")){
+            ## current information and information at decision
+            out <- c(out,getInformation(m, name.coef = "Z1", data = long, newdata = data.decision, details = TRUE))
+            if(!is.null(data.decision)){
+                out$sample.size["decision"] <- length(unique(data.decision[["id"]]))
+            }
+            ## details: extract information at interim (complete case) interim(full information)
+            ## to get information at decision (i.e. including rows for which the covariates are missing) upweight the rows with observed values.
+        }else if(inherits(data.decision,"numeric") || inherits(data.decision,"integer")){ 
+            out <- c(out,getInformation(m, name.coef = "Z1", data = long, newdata = NULL, details = TRUE))
+            if(data.decision < out$sample.size["total"]){
+                stop("Argument \'n.decision\' should be larger than the number of patients (=",out.info$sample.size["total"],") in the dataset. \n")
+            }
+            out$information["decision"] <- (data.decision/out$sample.size["total"])*as.double(out$information["decision"])
+            out$sample.size["decision"] <- data.decision
+        }else{
+            stop("When not NULL, argument \'data.decision\' should be a data.frame or an integer. \ns")
+        }
+        
+    
+        if(any(abs(out$Info$interim$vcov - stats::vcov(m))>1e-10)){
             warning("Something went wrong when extracting the variance covariance matrix from gls \n",
-                    "largest discrepancy between getInformation and gls: ",max(abs(out$interim$vcov - stats::vcov(m))))
+                    "largest discrepancy between getInformation and gls: ",max(abs(out.info$interim$vcov - stats::vcov(m))))
      
         }
     }
@@ -151,7 +168,6 @@ wide2long <- function(d, rm.na = FALSE, id.na = NULL, Z.id.na = TRUE){
         dL$Z <- droplevels(dL$Z)
         dL$visit <- droplevels(dL$visit)
     }
-
 
     ## export
     attr(dL,"df.allobs") <- dL.save

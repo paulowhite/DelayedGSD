@@ -4,12 +4,10 @@
 #' fit a mixed model, update the information, recompute the boundaries, take a decision, and possibly correct the estimated treatment effect.
 #' 
 #' @param object object of class \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
-#' @param data [data.frame] dataset used to fit the linear mixed model.
-#' @param PositiveIsGood [logical] whether a positive effect is considered beneficial.
-#' @param ddf [character] method used to compute the degrees of freedom of the test statistics. Argument passed to \code{\link{analyzeData}}.
+#' @param delta [data.frame or lmmGSD] estimated effect (\code{"estimate"}), standard error (\code{"se"}), test statistic (\code{"statistic"}), degrees of freedom (\code{"df"}), and p-value (\code{"p.value"}) all unadjusted for GSD. Alternatively output of \code{analyzeData}.
+#' @param Info.i [numeric] information at the current stage when interim or final. Not used when argument \code{beta} is a lmmGSD object.
+#' @param Info.d [numeric] information at the current stage when decision or at the coming decision when interim leading to early stop. Not used when argument \code{beta} is a lmmGSD object.
 #' @param k [integer] index of the analysis.
-#' @param n.decision [integer] expected number of patients at decision analysis. Used at interim in method 2 and 3 to compute boundaries when predicted the information.
-#' @param info.skipped.decision [numeric vector] information that would have been observed at each previous decision analysis. Used to compute p-values and confidence intervals.
 #' @param type.k [character] type of analysis: \code{"interim"} (after continuing recruitment),
 #' \code{"decision"} (after stopping recruitment for efficacy or futility),
 #' or \code{"final"} (after reaching the last stage of the trial).
@@ -51,8 +49,8 @@
 #'
 #'
 #' #### Analyse data at the first interim ####
-#' theInterimData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)
-#' 
+#' theInterimData <- SelectData(theData$d, t = tau.i)
+#' myLmm <- analyzeData(theInterimData)
 #' myInterim1 <- update(myBound0, data = theInterimData) ## k = 1, analysis = "interim"
 #' print(myInterim1)
 #' print(myInterim1, planned = FALSE)
@@ -71,8 +69,8 @@
 
 ## * update.delayedGSD (code)
 #' @export
-update.delayedGSD <- function(object, data, n.decision = NULL, info.skipped.decision = NULL,
-                              PositiveIsGood=NULL, ddf = NULL, k = NULL, type.k = NULL,
+update.delayedGSD <- function(object, delta, Info.i, Info.d, 
+                              k = NULL, type.k = NULL,
                               p.value = TRUE, ci = TRUE, estimate = TRUE,
                               trace = TRUE, ...){
 
@@ -89,6 +87,7 @@ update.delayedGSD <- function(object, data, n.decision = NULL, info.skipped.deci
     if(object.type.k %in% "final"){
         stop("No more boundary to update when the final analysis has been performed. \n")
     }
+    
     resStage <- .getStage(object.stage = object$stage,
                           object.conclusion = object$conclusion,
                           kMax = kMax,
@@ -107,24 +106,34 @@ update.delayedGSD <- function(object, data, n.decision = NULL, info.skipped.deci
         cat("Update for the ",type.k," analysis of stage ",k,". \n", sep = "")
     }
 
-    ## ** update mixed model
-    if(trace>0){cat(" - fit mixed model: ", sep = "")}
-    if(is.null(ddf)){
-        lmm <- analyzeData(data, getinfo = TRUE, trace = trace-1)
+    ## ** update object with information and estimate
+    if(inherits(delta,"lmmGSD")){
+        if(trace>0){cat(" - extract information from mixed model: ", sep = "")}
+        if(type.k %in% c("interim","final")){
+            object$lmm[[k]] <- delta
+        }else{
+            object$lmm[[k+1]] <- delta
+        }
+        Info.d <- delta$information["decision"]
+        if(type.k=="interim"){
+            Info.i <- delta$information["interim"]
+        }else{
+            Info.i <- NULL
+        }
+        delta <- delta$delta
+        if(trace>0){cat("done \n", sep = "")}
+    }
+    if(type.k=="decision"){
+        object$delta[k+1,] <- delta
     }else{
-        lmm <- analyzeData(data, ddf = ddf, getinfo = TRUE, trace = trace-1)
+        object$delta[k,] <- delta
     }
     if(type.k %in% c("interim","final")){
-        object$lmm[[k]] <- lmm
-    }else{
-        object$lmm[[k+1]] <- lmm
+        object$Info.i[k] <- as.double(Info.i)
     }
-    if(trace>0){cat("done \n", sep = "")}
-
-    ## ** update information
-    if(trace>0){cat(" - update information: ", sep = "")}
-    object <- updateInformation(object, lmm = lmm, n.decision = n.decision, k = k, type.k = type.k, update.stage = FALSE)
-    if(trace>0){cat("done \n", sep = "")}
+    if(type.k %in% c("interim","decision")){
+        object$Info.d[k] <- as.double(Info.d)
+    }
 
     ## ** update boundaries
     if(trace>0){cat(" - update boundaries: ", sep = "")}
@@ -134,11 +143,7 @@ update.delayedGSD <- function(object, data, n.decision = NULL, info.skipped.deci
     ## ** decision
     if(trace>0){cat(" - update decision: ", sep = "")}
     if(type.k != "interim" || is.na(object$conclusion["interim",k])){
-        if(!is.null(PositiveIsGood)){
-            object <- Decision(object, PositiveIsGood = PositiveIsGood, k = k, type.k = type.k, trace = trace-1)
-        }else{
             object <- Decision(object, k = k, type.k = type.k, trace = trace-1)
-        }
     }
     
     if(trace>0){cat("done \n", sep = "")}
@@ -217,6 +222,8 @@ update.delayedGSD <- function(object, data, n.decision = NULL, info.skipped.deci
     }
     
     ## ** export
+    object$stage$k <- k
+    object$stage$type <- type.k
     return(object)
 }
 

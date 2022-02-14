@@ -51,6 +51,7 @@ SelectData <- function(d,t){
         dd[whereNA,paste0("t",j)] <- NA
         dd[whereNA,paste0("X",j)] <- NA
     }
+    ## dd$missing <- any(dd[,paste0("missing",1:n.times)]==1)
 
     ## keep arguments
     attr(dd,"t") <- t

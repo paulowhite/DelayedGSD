@@ -1,11 +1,11 @@
-### SimuMain.R --- 
+### simumain.R --- 
 #----------------------------------------------------------------------
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: Jan 28 2022 (16:56) 
+## Last-Updated: feb  4 2022 (16:11) 
 ##           By: Brice Ozenne
-##     Update #: 440
+##     Update #: 442
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -182,7 +182,7 @@ for(j in allj){ ## j <- 1
     ## summary(dd)
                                         # }}}
    
-                                    # {{{ make data available at interim
+                                        # {{{ make data available at interim
                                         # Here we stop inclusion data collection for the interim analysis as soon as
                                         # half of the participants have completed (or had the opportunity to complete) the follow-up 
     thet <- d$t3[ceiling(n*PropForInterim)]
@@ -211,8 +211,6 @@ for(j in allj){ ## j <- 1
         out.interim[paste0("l.interim",iMeth)] <- iBoundary.interim[1,"Fbound"]  
         out.interim[paste0("stop.at.interim",iMeth)] <- unname(coef(currentGSD[[iMeth]], type = "decision")["stage 1"])=="stop" ## 1 is stop
     }
-    
-                                        # }}}
 
     dDecision <- d[which(d$t1 <= thet + theDelta.t*TimeFactor),]
     info.decision <- c(info.decision, analyzeData(dDecision)$getInformation["decision"])
@@ -249,97 +247,20 @@ for(j in allj){ ## j <- 1
             out.decision[paste0("reject.at.decision",iMeth)] <- NA
         }
     }
+                                        # }}}
+                                        # {{{ Analyze data at decision
 
 
-                                        # {{{ Decision at interim is to stop ("Efficacy" or "Futility"): move to decision analysis
-    if(DecisionInterimB1$decision!="Continue"){
-                                        # Make data available at Decision Analysis
-        
-                                        # Analyze data at at interim
-        ResDecision <- AnalyzeData(dDecision)   
-                                        # Decision at Decision Analysis
-        DecisionDecisionB1 <- Decision(ResDecision,  #results from AnalyzeData
-                                       PlannedB1,  #results from CalcBoundaries
-                                       k=1, #at which phase are we?
-                                       analysis="decision", #is it an interim or decision or final analysis
-                                       Ik=c(Info.interim,PlannedB1$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
-                                       Id=max(ResDecision$Info,Info.interim+0.01)/PlannedB1$Imax,  #expected or observed information RATIO at each decision analysis
-                                       PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
-                                       Trace=FALSE, # whether to print some messages
-                                       plot=FALSE)  #should the boundaries and results be plotted?
-        DecisionDecisionB2 <- Decision(ResDecision,  #results from AnalyzeData
-                                       PlannedB2,  #results from CalcBoundaries
-                                       k=1, #at which phase are we?
-                                       analysis="decision", #is it an interim or decision or final analysis
-                                       Ik=c(Info.interim,PlannedB2$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
-                                       Id=max(ResDecision$Info,Info.interim+0.01)/PlannedB2$Imax,  #expected or observed information RATIO at each decision analysis
-                                       PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
-                                       Trace=FALSE, # whether to print some messages
-                                       plot=FALSE)  #should the boundaries and results be plotted?
-                                        # to save
-        ConclusionTrial.B1 <- DecisionDecisionB1$decision
-        c.decision.B1 <- DecisionDecisionB1$details
-        ConclusionTrial.B2 <- DecisionDecisionB2$decision
-        c.decision.B2 <- DecisionDecisionB2$details
-        Z.decision <- ResDecision$estimate/ResDecision$se
-        est.decision <- ResDecision$estimate
-        se.decision <- ResDecision$se
-        Info.decision <- ResDecision$Info
-        PrCtInfo.decision  <-  ResDecision$Info/PlannedB1$Imax
-    }else{
-        c.decision.B1 <- NA
-        c.decision.B2 <- NA
-        Z.decision <- NA
-        est.decision <- NA
-        se.decision <- NA
-        Info.decision <- NA
-        PrCtInfo.decision  <-  NA
-    }
+    out.final <- c()
+    dFinal <- d
+    for(iMeth in 1:3){ ## iMeth <- 1
+        if(!out.interim[paste0("stop.at.interim",iMeth)]){
+
+            currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], data = dFinal, trace = FALSE)
+        }else{
+        }
                                         # }}}
 
-                                        # {{{ Decision is to continue: move to final analysis
-    if(DecisionInterimB1$decision=="Continue"){
-        ResFinal <- AnalyzeData(d)
-        DecisionFinalB1 <- Decision(ResFinal,  #results from AnalyzeData
-                                    PlannedB1,  #results from CalcBoundaries
-                                    k=2, #at which phase are we?
-                                    analysis="final", #is it an interim or decision or final analysis
-                                    Ik=c(Info.interim,ResFinal$Info),  #all I_k (information) from first interim to final analysis (observed where possible)
-                                    Id=NULL,  #expected or observed information at each decision analysis
-                                    PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
-                                    Trace=FALSE, # whether to print some messages
-                                    plot=FALSE)  #should the boundaries and results be plotted?
-        ConclusionTrial.B1 <- DecisionFinalB1$decision
-        critical.final.B1 <- DecisionFinalB1$details
-                                        #--
-        DecisionFinalB2 <- Decision(ResFinal,  #results from AnalyzeData
-                                    PlannedB2,  #results from CalcBoundaries
-                                    k=2, #at which phase are we?
-                                    analysis="final", #is it an interim or decision or final analysis
-                                    Ik=c(Info.interim,ResFinal$Info),  #all I_k (information) from first interim to final analysis (observed where possible)
-                                    Id=NULL,  #expected or observed information at each decision analysis
-                                    PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
-                                    Trace=FALSE, # whether to print some messages
-                                    plot=FALSE)  #should the boundaries and results be plotted?
-        ConclusionTrial.B2 <- DecisionFinalB2$decision
-        critical.final.B2 <- DecisionFinalB2$details
-                                        #--                
-        Z.final <- ResFinal$estimate/ResFinal$se
-        est.final <- ResFinal$estimate
-        se.final <- ResFinal$se
-        Info.final <- ResFinal$Info
-        PrCtInfo.final  <-  ResFinal$Info/PlannedB1$Imax
-    }else{
-        critical.final.B1 <- NA
-        critical.final.B2 <- NA
-        Z.final <- NA
-        est.final <- NA
-        se.final <- NA
-        Info.final <- NA
-        PrCtInfo.final  <- NA
-    }    
-    ## print(paste0("Conclusion=",ConclusionTrial.B1))    
-                                        # }}}
     stopComp <- Sys.time()
                                         # {{{ Save results
     out <- c(time.interim = thet,

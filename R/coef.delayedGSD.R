@@ -35,30 +35,27 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, k = NULL, t
     if(is.null(type.k)){
         type.k <- resStage$type.k
     }
-    InflationFactor <- object$InflationFactor
 
     test.planning <- (type.k=="planning") || identical(planned,"only")
     if(is.null(planned)){
         planned <- test.planning
     }
-    
+    Info.max <- object$planned$Info.max
+
     ## ** retrive quantities
     if(type=="effect"){
         outConfint <- stats::confint(object, method = method, k = k, type.k = type.k)
         out <- stats::setNames(outConfint$estimate,outConfint$method)
     }else if(type=="boundary"){
-        ls.info <- getInformation(object, planned = planned)
-        Info.max <- ls.info$Info.max
-        uk  <- ls.info$uk
-        lk  <- ls.info$lk
-        ck  <- ls.info$ck
-
         if(test.planning){
 
-            out <- data.frame(Stage = 1:kMax, Fbound = c(lk[-kMax],NA), Ebound = c(uk[-kMax],NA), Cbound = c(ck,uk[kMax]))
+            out <- data.frame(Stage = 1:kMax,
+                              Fbound = object$planned$lk,
+                              Ebound = object$planned$uk,
+                              Cbound = c(object$planned$ck,utils::tail(object$planned$uk,1)))
 
-        }else{    
-            statistic <- unname(ls.info$delta[,"statistic"])
+        }else{
+            statistic <- unname(object$delta$statistic)
             statistic.interim <- c(statistic[1:k], rep(NA,kMax-k))
             statistic.interim[kMax] <- NA ## at final analysis no interim only decision
             statistic.decision <- rep(NA,kMax)
@@ -70,60 +67,57 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, k = NULL, t
 
             ## remove critical boundaries when continuing at interim
             if(planned==FALSE){
-                ck[which(object$conclusion["interim",]=="continue")] <- NA
+                object$ck[which(object$conclusion["interim",]=="continue")] <- NA
             }        
                 
             ## assemble
-            out <- data.frame(Stage = 1:kMax, Fbound = c(lk[-kMax],NA), Ebound = c(uk[-kMax],NA), statistic.interim = statistic.interim,
-                              Cbound = c(ck, uk[kMax]), statistic.decision = statistic.decision)
+            out <- data.frame(Stage = 1:kMax, Fbound = object$lk, Ebound = object$uk, statistic.interim = statistic.interim,
+                              Cbound = c(object$ck, utils::tail(object$uk,1)), statistic.decision = statistic.decision)
             rownames(out) <- NULL                
                 
             }
 
-        }else if(type=="information"){
+    }else if(type=="information"){
 
-            ls.info <- getInformation(object, planned = planned)
-            Info.max <- ls.info$Info.max
-
-            if(test.planning){
-                Info.i <- c(object$planned$Info.i[1:(kMax-1)],NA) ## interim for each stage but the last (no interim before final)
-                Info.d <- c(object$planned$Info.d[1:(kMax-1)],object$planned$Info.i[kMax]) ## decision plus final
-                InfoR.i <- Info.i/object$Info.max
-                InfoR.d <- Info.d/object$Info.max
-                if(!is.null(object$n.obs)){
-                    n.obs <- object$n.obs*InfoR.d
-                }else{
-                    n.obs <- NULL
-                }
+        if(test.planning){
+            Info.i <- object$planned$Info.i ## interim and final
+            Info.d <- c(object$planned$Info.d,utils::tail(object$planned$Info.i,1)) ## decision and final
+            InfoR.i <- Info.i/Info.max
+            InfoR.d <- Info.d/Info.max
+            if(!is.null(object$n.obs)){
+                n.obs <- object$n.obs*InfoR.d
             }else{
-                Info.i <- c(ls.info$Info.i[1:(kMax-1)],NA) ## interim for each stage but the last (no interim before final)
-                Info.d <- c(ls.info$Info.d,ls.info$Info.i[kMax]) ## decision plus final
-                InfoR.i <- Info.i/object$Info.max
-                InfoR.d <- Info.d/object$Info.max
-                n.obs <- unlist(lapply(object$lmm, function(iLMM){
-                    if(!is.null(iLMM)){iLMM$n["decision"]}else{NA}
-                }))
-                index.lastNNA <- utils::tail(which(!is.na(n.obs)),1)
-                index.NA <- which(is.na(n.obs))
-                n.obs[index.NA] <- n.obs[index.lastNNA] * InfoR.d[index.NA]/InfoR.d[index.lastNNA]
+                n.obs <- NULL
             }
-            out <- data.frame(Stage = 1:kMax,
-                              Interim = Info.i,
-                              Interim.pc = InfoR.i,
-                              Decision = Info.d,
-                              Decision.pc = InfoR.d)
-            if(!is.null(n.obs)){
-                out  <- cbind(out, n = n.obs)
-            }
-            rownames(out) <- NULL
-
-        }else if(type == "decision"){
-            out <- stats::setNames(object$conclusion["interim",], paste0("stage ",1:kMax))
-            if(any(!is.na(object$conclusion["decision",]))){
-                toadd <- object$conclusion["decision",]
-                out[!is.na(toadd)] <- toadd[!is.na(toadd)]
-            }
+        }else{
+            Info.i <- object$Info.i ## interim and final
+            Info.d <- c(object$Info.d, utils::tail(object$Info.i,1)) ## decision and final
+            InfoR.i <- Info.i/Info.max
+            InfoR.d <- Info.d/Info.max
+            n.obs <- unlist(lapply(object$lmm, function(iLMM){
+                if(!is.null(iLMM)){as.double(iLMM$sample.size["decision"])}else{NA}
+            }))
+            index.lastNNA <- utils::tail(which(!is.na(n.obs)),1)
+            index.NA <- which(is.na(n.obs))
+            n.obs[index.NA] <- n.obs[index.lastNNA] * InfoR.d[index.NA]/InfoR.d[index.lastNNA]
         }
+        out <- data.frame(Stage = 1:kMax,
+                          Interim = Info.i,
+                          Interim.pc = InfoR.i,
+                          Decision = Info.d,
+                          Decision.pc = InfoR.d)
+        if(!is.null(n.obs)){
+            out  <- cbind(out, n = n.obs)
+        }
+        rownames(out) <- NULL
+        attr(out,"Info.max") <- Info.max
+    }else if(type == "decision"){
+        out <- stats::setNames(object$conclusion["interim",], paste0("stage ",1:kMax))
+        if(any(!is.na(object$conclusion["decision",]))){
+            toadd <- object$conclusion["decision",]
+            out[!is.na(toadd)] <- toadd[!is.na(toadd)]
+        }
+    }
 
     ## ** export
     return(out)

@@ -54,32 +54,31 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
 
     ## ** extract information from object
     if(type.k == "decision"){
-        iLMM <- object$lmm[[k+1]]
+        iDelta <- object$delta[k+1,]
     }else{
-        iLMM <- object$lmm[[k]]
+        iDelta <- object$delta[k,]
     }
-
     out <- data.frame(method = "ML",
                       stage = k,
                       type = type.k,
-                      coef = iLMM$name.coef,
-                      estimate = iLMM$estimate,
-                      se = iLMM$se,
-                      lower = iLMM$estimate + stats::qt(object$alpha/2, df = iLMM$df) * iLMM$se,
-                      upper = iLMM$estimate + stats::qt(1-object$alpha/2, df = iLMM$df) * iLMM$se,
-                      statistic = iLMM$statistic,
-                      df = iLMM$df,
-                      p.value = iLMM$p.value)
+                      coef = object$lmm[[1]]$name.coef,
+                      estimate = iDelta$estimate,
+                      se = iDelta$se,
+                      lower = iDelta$estimate + stats::qt(object$alpha/2, df = iDelta$df) * iDelta$se,
+                      upper = iDelta$estimate + stats::qt(1-object$alpha/2, df = iDelta$df) * iDelta$se,
+                      statistic = iDelta$statistic,
+                      df = iDelta$df,
+                      p.value = iDelta$p.value)
     if(!is.null(object$correction)){
         out <- rbind(out, data.frame(method = "corrected ML",
                                      stage = k,
                                      type = type.k,
-                                     coef = iLMM$name.coef,
+                                     coef = object$lmm[[1]]$name.coef,
                                      estimate = object$correction$estimate,
                                      se = NA,
                                      lower = object$correction$lower,
                                      upper = object$correction$upper,
-                                     statistic = iLMM$statistic,
+                                     statistic = iDelta$statistic,
                                      df = NA,
                                      p.value = object$correction$p.value)
                      )

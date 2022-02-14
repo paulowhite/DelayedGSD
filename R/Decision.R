@@ -75,17 +75,19 @@ Decision <- function(object,
 
     
     ## ** extract information, test statistic, and boundaries
-    ls.info <- getInformation(object, planned = TRUE)
-    Info.max <- ls.info$Info.max
-    Info.i <- ls.info$Info.i
-    Info.d <- ls.info$Info.d
-    uk <- ls.info$uk
-    lk <- ls.info$lk
-    ck <- ls.info$ck
-    
-    Z <- ls.info$delta[NROW(ls.info$delta),"statistic"]
+    Info.max <- object$planned$Info.max
 
-    if(!PositiveIsGood){
+    outInfo <- coef(object, type = "information", planned = FALSE)
+    outBound <- coef(object, type = "boundary", planned = FALSE)
+    Info.i <- outInfo[,"Interim"]
+    Info.d <- outInfo[,"Decision"]
+    uk <- outBound[,"Ebound"]
+    lk <- outBound[,"Fbound"]
+    ck <- outBound[,"Cbound"]
+
+    Z <- object$delta[k+(type.k=="decision"),"statistic"]
+
+    if(object$alternative=="less"){
         Z <- -Z
         if(trace){message("Negative effect is good: change sign of Z")}
     }

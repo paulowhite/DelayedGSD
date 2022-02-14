@@ -14,14 +14,14 @@
 
 ## * print.delayedGSD
 #' @export
-print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abreviated = TRUE, ...){
+print.delayedGSD <- function(x, planned = TRUE, digits = 5, space = " ", abreviated = TRUE, ...){
 
     ## ** extract information from object
     call <- x$call
     kMax <- x$kMax
     k <- x$stage$k
     type.k <- x$stage$type
-
+    
     test.planning <- (type.k=="planning") || identical(planned,"only")
 
     ## ** Welcome message
@@ -45,8 +45,8 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
 
     ## ** Boundaries
     df.printBound <- stats::coef(x, type = "boundary", planned = planned)
-    df.printBound$Fbound <- round(df.printBound$Fbound, digits)
-    df.printBound$Ebound <- round(df.printBound$Ebound, digits)
+    df.printBound$Fbound <- c(round(df.printBound$Fbound[-NROW(df.printBound)], digits),NA)
+    df.printBound$Ebound <- c(round(df.printBound$Ebound[-NROW(df.printBound)], digits),NA)
     df.printBound$Cbound <- round(df.printBound$Cbound, digits)
 
     if(test.planning){
@@ -57,11 +57,10 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
             colnames(df.printBound) <- c("Stage","Futility boundary","Efficacy boundary","Critical boundary")
         }
         df.printBound[is.na(df.printBound)] <- ""
-        df.printBound[["alpha-spent"]] <- x$planned$alphaSpent
-        df.printBound[["beta-spent"]] <- x$planned$betaSpent
-
+        df.printBound[["alpha-spent"]] <- round(x$planned$alphaSpent, digits)
+        df.printBound[["beta-spent"]] <- round(x$planned$betaSpent, digits)
         cat("\n * Planned boundaries: \n")
-        print(df.printBound, row.names = FALSE, digits = digits, quotes="")
+        print(df.printBound, row.names = FALSE, quotes="")
 
     }else{
         df.printBound$statistic.interim <- round(df.printBound$statistic.interim, digits)
@@ -111,12 +110,13 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
         }
         print(df.printBound3, row.names = FALSE, quote = FALSE)
     }
-  
     cat("\n")
 
     ## ** Information
     df.printInfo <- stats::coef(x, type = "information", planned = planned)
-    if(!is.null(digits)){
+    df.printInfo$Interim[length(df.printInfo$Interim)] <- NA
+    df.printInfo$Interim.pc[length(df.printInfo$Interim.pc)] <- NA
+    if(!is.null(digits)){        
         df.printInfo$Interim <- round(df.printInfo$Interim, digits)
         df.printInfo$Decision <- round(df.printInfo$Decision, digits)
         df.printInfo$Interim.pc <- round(df.printInfo$Interim.pc, digits)
@@ -169,7 +169,7 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
   
     ## ** Sample size
     if(test.planning){
-        InflationFactor <- x$InflationFactor
+        InflationFactor <- x$planned$InflationFactor
         cat(" * Inflation factor: ",InflationFactor," \n",sep="")
     }else{
         iLMM <- x$lmm[[k+(type.k=="decision")]]

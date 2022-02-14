@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: Dec 16 2021 (08:56) 
 ## Version: 
-## Last-Updated: Jan 28 2022 (16:00) 
+## Last-Updated: feb 14 2022 (15:00) 
 ##           By: Brice Ozenne
-##     Update #: 29
+##     Update #: 36
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -18,7 +18,7 @@
 library(DelayedGSD)
 
 ## * Design
-thear <- 10  ## accrual rate (pt per month)
+thear <- 5  ## accrual rate (pt per month)
 theDelta.t <- 0.7500001  ## time in months to process data
 
 ## planned boundaries
@@ -40,8 +40,8 @@ GSD.2t <- CalcBoundaries(kMax=2,  ## max number of analyses (including final)
                          cNotBelowFixedc=TRUE)
 
 GSD.2t
-coef(GSD.2t, type = "information")
 coef(GSD.2t, type = "boundary")
+coef(GSD.2t, type = "information")
 print(GSD.2t)
 plot(GSD.2t)
 
@@ -65,13 +65,13 @@ plot(GSD.4t)
 ## * Data
 ## ** simulation
 set.seed(1322)
-GD <- GenData(n=82*2,delta=1.3,ar=5)  #generate data with all data for in case trial completes
+GD <- GenData(n=82*2,delta=1.3,ar=thear)  #generate data with all data for in case trial completes
 
 ## ** time point at which to do the interim analysis
 thet.2t <- GD$d$t3[ceiling(nrow(GD$d)/2) + ceiling(thear*theDelta.t)] ## 2 interim
 ## mean(x$d$t3<=thet.2t)
 dataI.2t <- SelectData(GD$d,t=thet.2t)
-dataF.2t <- GD$d[which(GD$t1 <= thet + theDelta.t*TimeFactor),]
+dataF.2t <- GD$d[which(GD$d$t1 <= thet.2t + thear*theDelta.t),]
 
 thet.4t <- c(GD$d$t3[ceiling(nrow(GD$d)/4) + ceiling(thear*theDelta.t)],
              GD$d$t3[ceiling(nrow(GD$d)/2) + ceiling(thear*theDelta.t)], 
@@ -84,8 +84,12 @@ dataF.4t <- GD$d
 
 ## * First interim
 ## ** 2 interim
-GSDI.2t <- update(GSD.2t, data = dataI.2t)
-print(GSDI.2t, planned = FALSE)
+lmmI.2t <- analyzeData(dataI.2t, ddf = "nlme", data.decision = NROW(dataF.2t), getinfo = TRUE, trace = TRUE)
+## analyzeData(dataI.2t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+GSDI.2t <- update(GSD.2t, delta = lmmI.2t)
+
+coef(GSD.2t, type = "information", planned = TRUE)
+
 ## coef(GSDI.2t, type = "effect")
 ## coef(GSDI.2t, type = "information", planned = FALSE)
 ## coef(GSDI.2t, type = "information", planned = TRUE)
@@ -95,6 +99,10 @@ print(GSDI.2t, planned = FALSE)
 plot(GSDI.2t)
 
 GSDF.2t <- update(GSDI.2t, data = dataF.2t)
+
+## X.2 X.1_X.2 
+##   4       5 
+
 
 ## ** 4 interim (decreasing)
 GSDI1.4t <- update(GSD.4t, data = dataI1.4t)

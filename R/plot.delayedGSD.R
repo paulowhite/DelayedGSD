@@ -69,19 +69,23 @@ plot.delayedGSD <- function(x,
     type.k <- x$stage$type
     test.planning <- identical(planned,"only") || (type.k=="planning")
 
-    ls.info <- getInformation(x, planned = planned)
-    Info.i <- ls.info$Info.i
-    Info.d <- ls.info$Info.d
-    Info.max <- ls.info$Info.max
-    uk <- ls.info$uk
-    lk <- ls.info$lk
-    ck <- ls.info$ck
+    outInfo <- coef(x, type = "information", planned = planned)
+    Info.i <- outInfo$Interim
+    Info.d <- outInfo$Decision
+    Info.max <- attr(outInfo,"Info.max")
+    
+    outBound <- coef(x, type = "boundary", planned = planned)
+    uk <- outBound[,"Ebound"]
+    lk <- outBound[,"Fbound"]
+    ck <- outBound[,"Cbound"]
 
     if(!test.planning){
+        outDelta <- coef(x, type = "effect", planned = planned)
+
         delta <- switch(EXPR = type,
-                        "Z" = ls.info$delta[,"statistic"],
-                        "E" = ls.info$delta[,"estimate"],
-                        "P" = ls.info$delta[,"p.value"])
+                        "Z" = outDelta$statistic,
+                        "E" = outDelta$estimate,
+                        "P" = outDelta$p.value)
     }else{
         delta <- NULL
     }
@@ -121,10 +125,10 @@ plot.delayedGSD <- function(x,
     ## NOTE: subset by [!is.na(uk)] to handle the case where we end the study early, e.g. for efficacy
     ## in that case bounds after the decision analysis are set to NA and should be ignored
     xu <- Ival[!is.na(uk)]
-    xd <- Idval[!is.na(uk)]
+    xd <- Idval[!is.na(ck)]
     yu <- uk[!is.na(uk)]
-    yl <- lk[!is.na(uk)]   
-    yc <- c(ck,utils::tail(uk,1))[!is.na(uk)]
+    yl <- lk[!is.na(lk)]   
+    yc <- ck[!is.na(ck)]
     yh <- stats::qnorm(1-alpha)
     whereleg <- "bottomleft"
     ylab <- "Stopping boundary (Z-statistic)"
