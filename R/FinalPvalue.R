@@ -105,6 +105,23 @@
 #' ##   uniroot 21.37910 23.32777 24.45567 24.29751 25.16585 29.36898   100  a
 #' 
 #' }
+#' 
+#' 
+#' 
+#' myBound <- CalcBoundaries(kMax=3,
+#'               sided=1,
+#'               alpha=0.025,  
+#'               beta=0.1,  
+#'               InfoR.i=c(3.5,6.75,12)/12,
+#'               rho_alpha=1.345,
+#'               rho_beta=1.345,
+#'               method=1, ## has been changed from 2 to 1
+#'               cNotBelowFixedc=TRUE,
+#'               bindingFutility=FALSE,
+#'               delta=1,
+#'               InfoR.d=c(5.5,8.75)/12)
+#'               
+#' FinalPvalue(c(myBound$Info.d,myBound$Info.i[myBound$kMax]),myBound$Info.i[1:myBound$kMax],c(myBound$ck,myBound$uk[3]),myBound$lk,myBound$uk,myBound$kMax,estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max))             
 
 ## * FinalPvalue (code)
 #' @export
