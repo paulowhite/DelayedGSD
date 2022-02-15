@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 27 2022 (09:32) 
 ## Version: 
-## Last-Updated: jan 27 2022 (12:28) 
+## Last-Updated: Jan 28 2022 (16:00) 
 ##           By: Brice Ozenne
-##     Update #: 21
+##     Update #: 29
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -59,12 +59,14 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
     expect_equal(as.double(pval1 + pval2), 0.00625, tol = 1e-6)
  
     ## p-value using FinalPvalue
-    test.p <- FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate)
+    test.p <- FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate,
+                          futility2efficacy = TRUE, bindingFutility = TRUE)
     expect_equal(as.double(test.p), 0.00625)
     expect_equal(as.double(test.p), as.data.frame(ests)[2,"Final p-value"])
     
     ## confidence interval using FinalPvalue
-    test.ci <- FinalCI(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate)
+    test.ci <- FinalCI(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate,
+                       bindingFutility = TRUE)
     expect_equal(as.double(test.ci), c(0.53413706, 1.99336202), tol = 1e-6)
     as.data.frame(ests)[2,"Final CI (lower)"] ## 0.2413634
     as.data.frame(ests)[2,"Final CI (upper)"] ## 2.000625
@@ -108,7 +110,8 @@ test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
  expect_equal(round(as.double(pval1.Obrien + pval2.Obrien),4), 0.0014)
  
  ## p-value using FinalPvalue
- pval.Obrien <- FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = ck.Obrien, lk = lk.Obrien, uk = uk.Obrien, kMax = 4, estimate = estimate)
+ pval.Obrien <- FinalPvalue(Info.d = Info.var, Info.i = Info.var,
+                            ck = ck.Obrien, lk = lk.Obrien, uk = uk.Obrien, kMax = 4, estimate = estimate)
  expect_equal(as.double(pval.Obrien), 0.001362486, tol = 1e-6)
  
  ## confidence interval using FinalPvalue
@@ -144,5 +147,61 @@ test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
  estimate.Pocock <- FinalEstimate(Info.d = Info.var, Info.i = Info.var, ck = ck.Pocock, lk = lk.Pocock, uk = uk.Pocock, kMax = 4, estimate = estimate)
  expect_equal(round(as.double(estimate.Pocock),3), 0.419, tol = 1e-3)
 })
+
+## * Paul's binding test
+test_that("Check consistency between p-value and boundary",{
+
+    myBound <- CalcBoundaries(kMax=3,
+                              alpha=0.025, 
+                              beta=0.1, 
+                              InfoR.i=c(3.5,6.75,12)/12,
+                              rho_alpha=1.345,
+                              rho_beta=1.345,
+                              method=1, ## has been changed from 2 to 1
+                              cNotBelowFixedc=FALSE,
+                              bindingFutility=TRUE,
+                              delta=1,
+                              InfoR.d=c(5.5,8.75)/12)
+
+            
+    test <- FinalPvalue(Info.d = myBound$Info.d,
+                        Info.i = myBound$Info.i,
+                        ck = myBound$ck,
+                        lk = myBound$lk,
+                        uk = myBound$uk,
+                        kMax = myBound$kMax,
+                        estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+                        futility2efficacy = TRUE,
+                        bindingFutility = TRUE)
+
+    expect_equal(as.double(test), 0.025, tol = 1e-3)
+
+    myBound <- CalcBoundaries(kMax=3,
+                              alpha=0.025, 
+                              beta=0.1, 
+                              InfoR.i=c(3.5,6.75,12)/12,
+                              rho_alpha=1.345,
+                              rho_beta=1.345,
+                              method=1, 
+                              cNotBelowFixedc=FALSE,
+                              bindingFutility=FALSE,
+                              delta=1,
+                              InfoR.d=c(5.5,8.75)/12)
+
+            
+    test <- FinalPvalue(Info.d = myBound$Info.d,
+                        Info.i = myBound$Info.i,
+                        ck = myBound$ck,
+                        lk = myBound$lk,
+                        uk = myBound$uk,
+                        kMax = myBound$kMax,
+                        estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+                        futility2efficacy = TRUE,
+                        bindingFutility = FALSE)
+
+    expect_true(as.double(test) < 0.025)
+
+})
 ##----------------------------------------------------------------------
 ### test-pvalueCI.R ends here
+

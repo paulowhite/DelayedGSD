@@ -1,14 +1,16 @@
 ## * FinalPvalue (documentation)
 #' @title P-value at Decision
 #' @description  Compute the p-value at the end of the trial.
-#' @param Info.d Information at all decision analyses up to stage where study was stopped (should include the information at the final analysis if stopped at final analysis)
-#' @param Info.i Information at all interim analyses up to stage where study was stopped
-#' @param ck decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
-#' @param lk lower bounds up to stage where study was stopped
-#' @param uk upper bounds up to stage where study was stopped
+#' @param Info.d Information at all decision analyses up to stage where study was stopped (excepted the final analysis)
+#' @param Info.i Information at all interim analyses up to stage where study was stopped (should include the information at the final analysis if stopped at final analysis)
+#' @param ck decision boundaries for all decision analyses up to stage where study was stopped (excepted the final analysis)
+#' @param lk lower bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)
+#' @param uk upper bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)
 #' @param kMax maximum number of analyses
 #' @param delta true effect under which to calculate the probability (should always be 0 for p-value, only change for calculation of CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
+#' @param futility2efficacy [logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.
+#' @param bindingFutility [logical]  whether the futility stopping rule is binding.
 #'
 #' @examples
 #' library(mvtnorm)
@@ -132,35 +134,56 @@ FinalPvalue <- function(Info.d,
                         uk,  
                         kMax, 
                         delta=0,  
-                        estimate){
+                        estimate,
+                        futility2efficacy,
+                        bindingFutility){
     
     requireNamespace("mvtnorm")
   
-  ## message("the method assumes that positive effects are good")
-  k <- length(Info.d)
-  I_all <- as.vector(rbind(Info.i, Info.d))  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
-  index_tempo <- as.vector(rbind(rep(1,length(Info.i)), rep(2,length(Info.d))))
-  index_interim <- which(index_tempo==1) ## 1, 3, ...
-  index_decision <- which(index_tempo==2) ## 2, 4, ...
-  index_final <- index_decision[kMax] ## NA when the study is stopped before final
-
-  m <- length(I_all)
-  sigmaZm <- diag(1,m)
-  for(i in 1:m){
-    for(j in i:m){
-      sigmaZm[i,j] <- sqrt(I_all[i]/I_all[j])
-      sigmaZm[j,i] <- sqrt(I_all[i]/I_all[j])
+    ## message("the method assumes that positive effects are good")
+    k <- length(Info.i)
+    if(k==kMax){
+        I_all <- c(as.vector(rbind(Info.i[-kMax], Info.d)),Info.i[kMax])  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
+        index_tempo <- as.vector(rbind(rep(1,length(Info.i[-kMax])), rep(2,length(Info.d))))
+        index_interim <- which(index_tempo==1) ## 1, 3, ...
+        index_decision <- which(index_tempo==2) ## 2, 4, ...
+        index_final <- length(I_all)
+        critval <- c(ck,uk[kMax])
+    }else{
+        I_all <- as.vector(rbind(Info.i, Info.d))  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k|
+        index_tempo <- as.vector(rbind(rep(1,length(Info.i)), rep(2,length(Info.d))))
+        index_interim <- which(index_tempo==1) ## 1, 3, ...
+        index_decision <- which(index_tempo==2) ## 2, 4, ...
+        index_final <- NA
+        critval <- ck
     }
-  }
+
+    m <- length(I_all)
+    sigmaZm <- diag(1,m)
+    for(i in 1:m){
+        for(j in i:m){
+            sigmaZm[i,j] <- sqrt(I_all[i]/I_all[j])
+            sigmaZm[j,i] <- sqrt(I_all[i]/I_all[j])
+        }
+    }
   
-  theta <- delta * sqrt(I_all)
-  statistic <- estimate * sqrt(Info.d)
+    theta <- delta * sqrt(I_all)
+    if(k==kMax){
+        statistic <- estimate * sqrt(c(Info.d,Info.i[kMax]))
+        index_infoPB <- which(Info.d > Info.d[k-1])  #find decision information levels that are higher than final information levels.
+    }else{
+        statistic <- estimate * sqrt(Info.d)
+        index_infoPB <- which(Info.d > Info.d[k])  #find decision information levels that are higher than final information levels.
+    }
   
-  index_infoPB <- which(Info.d > Info.d[k])  #find decision information levels that are higher than final information levels.
-  
-  pval <- 0
-  if(statistic[k] >= ck[k]){  #In case efficacy is concluded, only efficacious results at earlier IA are more extreme
-      for(i in 1:k){ ## i <- 1
+
+    if(!bindingFutility){
+        lk[1:min(k,kMax-1)] <- -Inf
+    }
+    
+    pval <- 0
+    if(statistic[k] >= critval[k]){  #In case efficacy is concluded, only efficacious results at earlier IA are more extreme
+        for(i in 1:k){ ## i <- 1
 
           if(i==1){
               iLk <- NULL
@@ -170,47 +193,51 @@ FinalPvalue <- function(Info.d,
               iUk <- uk[1:(i-1)]
           }
 
-          if(i==k){
-              if(i==kMax){ ## is it the final analysis (interim 1:(k-1), final)
-                  iIndex <- c(index_interim, index_final)
-                  ## prob to continue until final analysis and obtain a higher result than the observed
-                  pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,statistic[i]),  
-                                                  upper = c(iUk,Inf),
-                                                  mean = theta[iIndex],
-                                                  sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-              }else{ ## or a decision analysis (interim 1:i, decision i)
-                  iIndex <- c(index_interim[1:i], index_decision[i])
+            if(i==k){
+                if(i==kMax){ ## is it the final analysis (interim 1:(k-1), final)
+                    iIndex <- c(index_interim, index_final)
+                    ## prob to continue until final analysis and obtain a higher result than the observed
+                    pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,statistic[i]),  
+                                                    upper = c(iUk,Inf),
+                                                    mean = theta[iIndex],
+                                                    sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                }else{ ## or a decision analysis (interim 1:i, decision i)
+                    iIndex <- c(index_interim[1:i], index_decision[i])
 
                   ## prob to stop for eff at analysis k and conclude more extreme result
                   pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],statistic[i]),  
                                                    upper = c(iUk,Inf,Inf),
                                                    mean = theta[iIndex],
                                                    sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-                  ## prob to stop for fut at analysis k and switch to eff with more extreme result
-                  pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic[i]),   
-                                                  upper = c(iUk,lk[i],Inf),
-                                                  mean = theta[iIndex],
-                                                  sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                    if(futility2efficacy){
+                      ## prob to stop for fut at analysis k and switch to eff with more extreme result
+                      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic[i]),   
+                                                      upper = c(iUk,lk[i],Inf),
+                                                      mean = theta[iIndex],
+                                                      sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                  }
               }
           } else if(i %in% index_infoPB){
               next #results for larger information levels are never more extreme than smaller information levels with results above c
           } else { ## or an interim analysis where we continued (interim 1:i, decision i)
               iIndex <- c(index_interim[1:i], index_decision[i])
 
-                  ## prob to stop for eff at analysis i and conclude eff
-                  pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],ck[i]),  
-                                                   upper = c(iUk,Inf,Inf),
-                                                   mean = theta[iIndex],
-                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+              ## prob to stop for eff at analysis i and conclude eff
+              pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],ck[i]),  
+                                               upper = c(iUk,Inf,Inf),
+                                               mean = theta[iIndex],
+                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+              if(futility2efficacy){
                   ## prob to stop for fut at analysis i and switch to eff
                   pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,ck[i]),   
                                                   upper = c(iUk,lk[i],Inf),
                                                   mean = theta[iIndex],
                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+              }
           }
-      }
-  } else {  #In case futility is concluded, calculate 1-obtaining a less extreme result, i.e. 1-prob of concluding futility at earlier IA
-      for(i in 1:k){
+        }
+    } else {  #In case futility is concluded, calculate 1-obtaining a less extreme result, i.e. 1-prob of concluding futility at earlier IA
+        for(i in 1:k){
 
           if(i==1){
               iLk <- NULL

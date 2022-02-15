@@ -2,7 +2,6 @@
 #' @description yy
 #' 
 #' @param d data set generated with GenData function.
-#' @param Delta.t time necessary to process the data.
 #' @param t time at which we want the available data.
 #' 
 #' @details xxx
@@ -19,18 +18,17 @@
 #' PlotProgress(x$d,at=4)
 #'
 #' #----- select when half of the subjects have one follow-up measuement---
-#' # which depends on accrual rate (ar) and time to process data (Delta.t)
+#' # which depends on accrual rate (ar) 
 #'
 #' x <- GenData(n=35)
-#' theDelta.t <- 0.500001
 #' thear <- 10
-#' thet <- x$d$t2[ceiling(nrow(x$d)/2) + ceiling(thear*theDelta.t)]
+#' thet <- x$d$t2[ceiling(nrow(x$d)/2) + ceiling(thear)]
 #' PlotProgress(x$d,at=thet)
 #' y <- SelectData(x$d,t=thet)
 #' y
 #'
 #' @export
-SelectData <- function(d,t,Delta.t=0.500001){
+SelectData <- function(d,t){
 
     ## find columns in the dataset d corresponding to the outcome and the time
     col.outcome <- grep("X",names(d), value = TRUE)
@@ -44,11 +42,11 @@ SelectData <- function(d,t,Delta.t=0.500001){
     d.augm <- cbind(d, test.na)
 
     ## subset according to time
-    dd <- d.augm[which(d.augm$t1 <= t - Delta.t),,drop=FALSE]
+    dd <- d.augm[which(d.augm$t1 <= t),,drop=FALSE]
 
     ## add missing value according to time as the baseline can be observed but some of the follow-up value may be not
     for(j in 2:n.times){
-        whereNA <- which(dd[,paste0("t",j)] > t - Delta.t)
+        whereNA <- which(dd[,paste0("t",j)] > t)
         dd[whereNA,col.missing[[j]]] <- -1
         dd[whereNA,paste0("t",j)] <- NA
         dd[whereNA,paste0("X",j)] <- NA
@@ -56,6 +54,5 @@ SelectData <- function(d,t,Delta.t=0.500001){
 
     ## keep arguments
     attr(dd,"t") <- t
-    attr(dd,"Delta.t") <- Delta.t
     return(dd)
 }

@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: Jan 28 2022 (16:56) 
+## Last-Updated: Jul 14 2021 (09:49) 
 ##           By: Brice Ozenne
-##     Update #: 440
+##     Update #: 404
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -16,35 +16,32 @@
 ### Code:
 
 library(rpact)
-library(DelayedGSD)
 
 rm(list=ls())
 
-     
-                                   # {{{ parameters
-## * parameters
+
+# {{{ parameters
 name <- "ScenarioName" # To save the results
-                                        #----
+#----
 NMC <- 10 # number of sequential simulations to run in parallel. Eg. with 250, then we can run 40 scripts in paralell to get N=10,000 runs in total.
-                                        #---
+#---
 myseed <- 140786598
-                                        #--- to plan the trial ----
+#--- to plan the trial ----
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
 informationRates <- c(0.5,1)  #planned  information rates
-rho_alpha <- 2  # rho parameter for alpha error spending function
-rho_beta <- 2  # rho parameter for beta error spending function
+gammaA <- 2  # rho parameter for alpha error spending function
+gammaB <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
 Id <- 0.55  #(expected) information rate at each decision analysis
-binding <- TRUE
-                                        #
-                                        #---- to generate data -----------
-                                        #
+#
+#---- to generate data -----------
+#
 block <- c(1,1,0,0) 
 allsd <- c(2.5,2.1,2.4) # sd, first from baseline measurement, then the two changes from baseline
 mean0 <- c(10,0,0) # mean placebo group (again, first is absolute value, then change from baseline)
-delta <- c(0,0.6,0.8) # treatment effect
+delta <- c(0,-0.6,-0.8) # treatment effect
 ar <- (0.86*2)*2 # orginial accrual rate from data from Corine is 0.86 per week, hence we multiply by 2 for by 14 days. As to low, we further multiply by 2
 cor011 <- -0.15 # ~ from data from Corine
 corij1 <- 0.68  # ~ from data from Corine
@@ -54,35 +51,19 @@ Miss12 <- 1/104 # miss V1 and but not V2
 Miss21 <- 6/104 # do not miss V1 and but miss V2
 Miss22 <- 92/104 # miss none
 PropForInterim <- 0.5 # Decide to have interim analysiz when PropForInterim % of all subjects have had the chance to have one follow-up measuement recorded in the data to be available for analysis.
-theDelta.t <- 1.50001 # time lag to process the data and make them ready to analyze after collecting them (unit is time between two follow-up visits)
-TimeFactor <- 14 ## number of days between two visits
-                                        #
-                                        #--- actually for both planing the trial  and generating data-----
-                                        #
-                                        #
+theDelta.t <- 0.50001 # time lag to process the data and make them ready to analyze after collecting them (unit is time between two follow-up visits)
+#
+#--- actually for both planing the trial  and generating data-----
+#
+#
 deltaPower <- abs(delta[3]) # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
 n <- ceiling(2*2*((allsd[3]/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
-                                        # inflate SS as required for interim
-
-## * Compute inflation factor and sample size
-plannedB <- vector(mode = "list", length = 3)
-for(iMeth in 1:3){
-    plannedB[[iMeth]] <- CalcBoundaries(kMax=kMax,  
-                                        alpha=alpha, 
-                                        beta=beta,  
-                                        InfoR.i=informationRates,  
-                                        InfoR.d=c(Id,1),  
-                                        rho_alpha=rho_alpha,  
-                                        rho_beta=rho_beta,  
-                                        method=iMeth,  
-                                        cNotBelowFixedc=FALSE,
-                                        bindingFutility=binding,
-                                        delta=tail(delta,1))
-}
-inflationFactor <- sapply(plannedB,"[[","InflationFactor")
-nGSD <- ceiling(n*inflationFactor)
-##  plot(plannedB[[1]])
-
+# inflate SS as required for interim
+R <- getDesignCharacteristics(getDesignGroupSequential(kMax=kMax, sided = 1, alpha = alpha, beta = beta,
+                                                       informationRates = informationRates,
+                                                       typeOfDesign="asKD",
+                                                       typeBetaSpending="bsKD",gammaA=gammaA,gammaB=gammaB))$inflationFactor
+n <- ceiling(n*R)
 #
 # --- just to check---
 ## n
@@ -92,7 +73,6 @@ nGSD <- ceiling(n*inflationFactor)
 #---
 # }}}
 
-
 # {{{ set path to load and save and othe machine specific variables
 # if I am on my own laptop
 if(system("whoami",intern=TRUE)=="paul"){  
@@ -100,10 +80,12 @@ if(system("whoami",intern=TRUE)=="paul"){
     pathToSave <- "~/research/SeqDesignDelayed/DelayedGSD/Simulations/output/"
     name <- paste0(name,"test")
     i <- 1
-}else if(system("whoami",intern=TRUE)=="bozenne"){  
+}else if(system("whoami",intern=TRUE)=="brice"){  
     pathToLoad <- "~/Documents/GitHub/DelayedGSD/R"
     i <- 1
-}else if(system("whoami",intern=TRUE)=="tfq625"){
+}
+# if I am on the biostat server
+if(system("whoami",intern=TRUE)=="tfq625"){
     pathToLoad <- "~/to-sync-server-biostat/TOCREATE"
     pathToSave <- "~/to-sync-server-biostat/TOCREATE"
     i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
@@ -134,13 +116,43 @@ allseeds <- sample(x=1:1e8,size=1e5,replace=FALSE) #x=1:(.Machine$integer.max) s
 
 # {{{ technical details to loop
 RES <- NULL # initialize results to save
-info.decision <- NULL ## info at all possible decisions (even when we continue at interim)
 allj <- ((i-1)*NMC + 1):(i*NMC) # indices of all iterations (replicates) for this job, accountng for the other jobs running in parallel
 # }}}
 
+# {{{ Compute planned bundries
+#
+#-- First case: method 1,  cutoff at decision can be c < 1.96
+#
+PlannedB1 <- CalcBoundaries(kMax=kMax,  #max number of analyses (including final)
+                            sided=1,  #one or two-sided
+                            alpha=alpha,  #type I error
+                            beta=beta,  #type II error
+                            informationRates=informationRates,  #planned or observed information rates
+                            gammaA=gammaA,  #rho parameter for alpha error spending function
+                            gammaB=gammaB,  #rho parameter for beta error spending function
+                            method=1,  #use method 1 or 2 from paper H&J
+                            cNotBelowFixedc=FALSE, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
+                            delta=deltaPower,  #effect that the study is powered for
+                            Id=Id)    #(expected) information ratio at each decision analysis
+#
+#-- Second case: method 1, cutoff at decision c >= 1.96
+#
+PlannedB2 <- CalcBoundaries(kMax=kMax,  #max number of analyses (including final)
+                            sided=1,  #one or two-sided
+                            alpha=alpha,  #type I error
+                            beta=beta,  #type II error
+                            informationRates=informationRates,  #planned or observed information rates
+                            gammaA=gammaA,  #rho parameter for alpha error spending function
+                            gammaB=gammaB,  #rho parameter for beta error spending function
+                            method=1,  #use method 1 or 2 from paper H&J
+                            cNotBelowFixedc=TRUE, # whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
+                            delta=deltaPower,  #effect that the study is powered for
+                            Id=Id)    #(expected) information ratio at each decision analysis
+#---
+
+# }}}
 
 for(j in allj){ ## j <- 1
-
     startComp <- Sys.time()
     # {{{ TRACE info (e.g. to check the Rout)
     print(paste0("j=",which(j==allj)," out of ",NMC, " (i.e. j=",j," in [",(i-1)*NMC + 1,";",i*NMC,"], as job id is i=",i,")"))
@@ -154,7 +166,7 @@ for(j in allj){ ## j <- 1
     rownames(MyMissProb) <- c("V1 missing","V1 not missing")
     # }}}
 
-                                        # {{{ generate data
+    # {{{ generate data
     set.seed(myseedi)
     res <- GenData(n=n, 
                    N.fw=2,
@@ -169,95 +181,81 @@ for(j in allj){ ## j <- 1
                    seed=myseedi,
                    MissProb=MyMissProb,
                    DigitsOutcome=2,
-                   TimeFactor=TimeFactor,
+                   TimeFactor=14,
                    DigitsTime=0
                    )
-    d <- res$d
-    ## head(d,n=20)
-                                        # }}}
-                                        # {{{ reformat data like those of Corine
+    d <-res$d
+    head(d,n=20)
+    # }}}
+    # {{{ reformat data like those of Corine
     ## Make data long format
     dd <- FormatAsCase(d)
-    ## head(dd)
+    head(dd)
     ## summary(dd)
-                                        # }}}
-   
-                                    # {{{ make data available at interim
-                                        # Here we stop inclusion data collection for the interim analysis as soon as
-                                        # half of the participants have completed (or had the opportunity to complete) the follow-up 
-    thet <- d$t3[ceiling(n*PropForInterim)]
-    di <- SelectData(d,t=thet)
+    # }}}
+    # {{{ make data available at interim
+    thet <- d$t2[ceiling(n*PropForInterim)] + theDelta.t
+    di <- SelectData(d,t=thet,Delta.t=theDelta.t)
     ddi <- FormatAsCase(di) # needed ????
     ## head(d[d$id==52,])
-                                        # }}}
+    # }}}
     ## {{{ analyze data at at interim
-    currentGSD <- vector(mode = "list", length = 3)
-    out.interim <- c()
-    for(iMeth in 1:3){ ## iMeth <- 1
-
-        currentGSD[[iMeth]] <- update(plannedB[[iMeth]], n.decision = sum(d$t1 <= thet + theDelta.t*TimeFactor), data = di, trace = FALSE)
-
-        iConfint.interim <- confint(currentGSD[[iMeth]])
-        iInfo.interim <- coef(currentGSD[[iMeth]], type = "information")
-        iBoundary.interim <- coef(currentGSD[[iMeth]], type = "boundary")
-
-        out.interim[paste0("est.interim",iMeth)] <- iConfint.interim[1,"estimate"]
-        out.interim[paste0("se.interim",iMeth)] <- iConfint.interim[1,"se"]
-        out.interim[paste0("Z.interim",iMeth)] <- iConfint.interim[1,"statistic"]
-        out.interim[paste0("Info.interim",iMeth)] <- iInfo.interim[1,"Interim"]
-        out.interim[paste0("InfoPC.interim",iMeth)] <- iInfo.interim[1,"Interim.pc"]
-        out.interim[paste0("PInfoD.interim",iMeth)] <- iInfo.interim[1,"Decision"]  
-        out.interim[paste0("u.interim",iMeth)] <- iBoundary.interim[1,"Ebound"]  
-        out.interim[paste0("l.interim",iMeth)] <- iBoundary.interim[1,"Fbound"]  
-        out.interim[paste0("stop.at.interim",iMeth)] <- unname(coef(currentGSD[[iMeth]], type = "decision")["stage 1"])=="stop" ## 1 is stop
-    }
+    ResInterim <- AnalyzeData(di) #  Log-restricted-likelihood: -189.561
+    ##ResInterim ## info at interim same as solve(vcov(ResInterim$fit)["Z1","Z1"])
+    ## info at the end of the study
+    ResInterim$info["final"] <- (n / NROW(di)) * as.double(ResInterim$getInformation["decision"])
+    ## ## alternative computation:
+    ## ## - not know who will be assigned to which treatment group (same at (n / NROW(di)))
+    ## getInformation(ResInterim, newdata = wide2long(d, rm.na = TRUE, id.na = setdiff(d$id,di$id), Z.id.na = TRUE), weighting = TRUE)
+    ## ## - knowing who will be assigned to which treatment group
+    ## getInformation(ResInterim, newdata = wide2long(d, rm.na = TRUE, id.na = setdiff(d$id,di$id), Z.id.na = FALSE), weighting = TRUE)
+    # save (potentially) important results
+    est.interim <- ResInterim$estimate
+    se.interim <- ResInterim$se
+    Info.interim <- ResInterim$Info ## same as ResInterim$getInformation["interim"]
+    Z.interim <- est.interim/se.interim
+    PrCtInfo.interim <- Info.interim/PlannedB1$Imax # Information rate at interim (denominator is targetted Imax)
+    ## dittes <- di[di$id <=52,] just for checking how missing data are handles for subjects with missing at both follow-up times
+    ## ResInterimtes <- AnalyzeData(dittes) # OK, log-likelihood is the same
+    # }}}
     
-                                        # }}}
-
-    dDecision <- d[which(d$t1 <= thet + theDelta.t*TimeFactor),]
-    info.decision <- c(info.decision, analyzeData(dDecision)$getInformation["decision"])
-    
-    out.decision <- c()
-    for(iMeth in 1:3){ ## iMeth <- 1
-        if(out.interim[paste0("stop.at.interim",iMeth)]){
-          
-            currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], data = dDecision, trace = FALSE)
-            ## plot(currentGSD[[iMeth]])
-
-            iConfint.decision <- confint(currentGSD[[iMeth]])
-            iInfo.decision <- coef(currentGSD[[iMeth]], type = "information")
-            iBoundary.decision <- coef(currentGSD[[iMeth]], type = "boundary")
-
-            out.decision[paste0("est.decision",iMeth)] <- iConfint.decision[1,"estimate"]
-            out.decision[paste0("Z.decision",iMeth)] <- iConfint.decision[1,"statistic"]
-            out.decision[paste0("lower.decision",iMeth)] <- iConfint.decision[1,"lower"]
-            out.decision[paste0("upper.decision",iMeth)] <- iConfint.decision[1,"upper"]
-            out.decision[paste0("Info.decision",iMeth)] <- iInfo.decision[1,"Interim"]
-            out.decision[paste0("InfoPC.decision",iMeth)] <- iInfo.decision[1,"Interim.pc"]
-            out.decision[paste0("c.decision",iMeth)] <- iBoundary.decision[1,"Cbound"]  
-            out.decision[paste0("reject.at.decision",iMeth)] <- unname(coef(currentGSD[[iMeth]], type = "decision")["stage 1"])=="efficacy" ## 1 is stop
-
-        }else{
-
-            out.decision[paste0("est.decision",iMeth)] <- NA
-            out.decision[paste0("Z.decision",iMeth)] <- NA
-            out.decision[paste0("lower.decision",iMeth)] <- NA
-            out.decision[paste0("upper.decision",iMeth)] <- NA
-            out.decision[paste0("Info.decision",iMeth)] <- NA
-            out.decision[paste0("InfoPC.decision",iMeth)] <- NA
-            out.decision[paste0("c.decision",iMeth)] <- NA
-            out.decision[paste0("reject.at.decision",iMeth)] <- NA
-        }
-    }
-
-
-                                        # {{{ Decision at interim is to stop ("Efficacy" or "Futility"): move to decision analysis
+    # {{{ Decision at Interim
+    DecisionInterimB1 <- Decision(ResInterim,  #results from AnalyzeData
+                                  PlannedB1,  #results from CalcBoundaries
+                                  k=1, #at which phase are we?
+                                  analysis="interim", #is it an interim or decision or final analysis
+                                  Ik=c(Info.interim,PlannedB1$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
+                                  Id=NULL,  #expected or observed information at each decision analysis
+                                  PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
+                                  Trace=FALSE, # whether to print some messages
+                                  plot=FALSE)  #should the boundaries and results be plotted?
+    # save (potentially) important results
+    u.interim.B1 <- DecisionInterimB1$details["u"]
+    l.interim.B1 <- DecisionInterimB1$details["l"]
+    dec.interim.B1 <- DecisionInterimB1$decision
+    #---
+    DecisionInterimB2 <- Decision(ResInterim,  #results from AnalyzeData
+                                  PlannedB2,  #results from CalcBoundaries
+                                  k=1, #at which phase are we?
+                                  analysis="interim", #is it an interim or decision or final analysis
+                                  Ik=c(Info.interim,PlannedB2$Imax),  #all I_k (information) from first interim to final analysis (observed where possible)
+                                  Id=NULL,  #expected or observed information at each decision analysis
+                                  PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
+                                  Trace=FALSE, # whether to print some messages
+                                  plot=FALSE)  #should the boundaries and results be plotted?
+    # save (potentially) important results
+    u.interim.B2 <- DecisionInterimB2$details["u"]
+    l.interim.B2 <- DecisionInterimB2$details["l"]
+    dec.interim.B2 <- DecisionInterimB2$decision   
+    # }}}
+   
+    # {{{ Decision at interim is to stop ("Efficacy" or "Futility"): move to decision analysis
     if(DecisionInterimB1$decision!="Continue"){
-                                        # Make data available at Decision Analysis
-        
-                                        # Analyze data at at interim
+        # Make data available at Decision Analysis
+        dDecision <- d[which(d$id %in% di$id),]
+        # Analyze data at at interim
         ResDecision <- AnalyzeData(dDecision)   
-                                        # Decision at Decision Analysis
+        # Decision at Decision Analysis
         DecisionDecisionB1 <- Decision(ResDecision,  #results from AnalyzeData
                                        PlannedB1,  #results from CalcBoundaries
                                        k=1, #at which phase are we?
@@ -276,7 +274,7 @@ for(j in allj){ ## j <- 1
                                        PositiveIsGood=FALSE, # whether positive effect is good (i.e. positive trial)
                                        Trace=FALSE, # whether to print some messages
                                        plot=FALSE)  #should the boundaries and results be plotted?
-                                        # to save
+        # to save
         ConclusionTrial.B1 <- DecisionDecisionB1$decision
         c.decision.B1 <- DecisionDecisionB1$details
         ConclusionTrial.B2 <- DecisionDecisionB2$decision
@@ -295,9 +293,9 @@ for(j in allj){ ## j <- 1
         Info.decision <- NA
         PrCtInfo.decision  <-  NA
     }
-                                        # }}}
+    # }}}
 
-                                        # {{{ Decision is to continue: move to final analysis
+    # {{{ Decision is to continue: move to final analysis
     if(DecisionInterimB1$decision=="Continue"){
         ResFinal <- AnalyzeData(d)
         DecisionFinalB1 <- Decision(ResFinal,  #results from AnalyzeData
@@ -311,7 +309,7 @@ for(j in allj){ ## j <- 1
                                     plot=FALSE)  #should the boundaries and results be plotted?
         ConclusionTrial.B1 <- DecisionFinalB1$decision
         critical.final.B1 <- DecisionFinalB1$details
-                                        #--
+        #--
         DecisionFinalB2 <- Decision(ResFinal,  #results from AnalyzeData
                                     PlannedB2,  #results from CalcBoundaries
                                     k=2, #at which phase are we?
@@ -323,7 +321,7 @@ for(j in allj){ ## j <- 1
                                     plot=FALSE)  #should the boundaries and results be plotted?
         ConclusionTrial.B2 <- DecisionFinalB2$decision
         critical.final.B2 <- DecisionFinalB2$details
-                                        #--                
+        #--                
         Z.final <- ResFinal$estimate/ResFinal$se
         est.final <- ResFinal$estimate
         se.final <- ResFinal$se
@@ -339,63 +337,49 @@ for(j in allj){ ## j <- 1
         PrCtInfo.final  <- NA
     }    
     ## print(paste0("Conclusion=",ConclusionTrial.B1))    
-                                        # }}}
+    # }}}
     stopComp <- Sys.time()
-                                        # {{{ Save results
-    out <- c(time.interim = thet,
-             nX1.interim = sum(!is.na(di$X1)),
-             nX2.interim = sum(!is.na(di$X2)),
-             nX3.interim = sum(!is.na(di$X3)),
-                                        #---        
-             ConclusionTrial.B1=ConclusionTrial.B1,
+    # {{{ Save results
+    out <- c(ConclusionTrial.B1=ConclusionTrial.B1,
              ConclusionTrial.B2=ConclusionTrial.B2,
              seed=myseedi,             
-                                        #---
-             est.interim1 = est.interim1,
-             se.interim1 = se.interim1,
-             Info.interim1 = Info.interim1,
-             PInfoD.interim1 = PInfoD.interim1,
-             Z.interim1 = Z.interim1,
-             PrCtInfo.interim1 = PrCtInfo.interim1,
-             u.interim.B1 = u.interim.B1,
-             l.interim.B1 = l.interim.B1,
-             decision.interim.B1 = decision.interim.B1,
+             #---
              u.interim.B1 = u.interim.B1,
              l.interim.B1 = l.interim.B1,
              dec.interim.B1 = dec.interim.B1,
              c.decision.B1 = c.decision.B1,
              critical.final.B1 = critical.final.B1,
-                                        #--
+             #--
              u.interim.B2 = u.interim.B2,
              l.interim.B2 = l.interim.B2,
              dec.interim.B2 = dec.interim.B2,
              c.decision.B2 = c.decision.B2,
              critical.final.B2 = critical.final.B2,
-                                        #--
+             #--
              Z.interim = Z.interim,
              est.interim = est.interim,
              se.interim = se.interim,
              Info.interim = Info.interim,
              PrCtInfo.interim = PrCtInfo.interim,
-                                        #--            
+             #--            
              Z.decision = Z.decision,
              est.decision = est.decision,
              se.decision = se.decision,
              Info.decision = Info.decision,
              PrCtInfo.decision = PrCtInfo.decision,
-                                        #--            
+             #--            
              Z.final = Z.final,
              est.final = est.final,
              se.final = se.final,
              Info.final = Info.final,
              PrCtInfo.final = PrCtInfo.final,
-                                        #----
+             #----
              ## computation time
              CompTime=round(difftime(stopComp,startComp,units="secs"),3)
              )
     ## names(out) <- myColNames
     RES <- rbind(RES,out)
-                                        # }}}
+    # }}}
 }
 rownames(RES) <- NULL
 save(RES,file=paste0(pathToSave,name,"-",i,".rda"))

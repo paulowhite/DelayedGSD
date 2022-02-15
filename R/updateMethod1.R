@@ -53,14 +53,15 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
   thetheta <- delta*sqrt(Info.i)
   ## }}} 
   ## ** case k=1
-  if(k==1){
+    if(k==1){
+        
     ## {{{ case k=1
     if(type.k=="interim"){
       alphaSpent[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
       betaSpent[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
       
       uk[1] <- qnorm(p=1-alphaSpent[1],mean=0,sd=1)         # compute under the null (Ho)
-      lk[1] <- qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
+      lk[1] <- qnorm(p=betaSpent[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
     }
     
       ck <- calc_ck(uk=uk[1],
@@ -111,7 +112,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                                                upper = c(uk[1:(k-1)],x),
                                                mean=thetheta[1:k],
                                                sigma= sigmaZk[1:k,1:k],
-                                               abseps = abseps) - IncBeta[k]},
+                                               abseps = abseps) - betaSpentInc[k]},
                            lower = lk[k-1], 
                            upper = uk[k], 
                            tol = abseps)$root

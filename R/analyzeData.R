@@ -34,7 +34,7 @@ analyzeData <- function(d, ddf = "nlme", getinfo = TRUE, trace = TRUE){
 
     ## ** fit gls model
     ctrl <- nlme::glsControl(opt='optim')
-    
+
     m <- nlme::gls(X ~ baseline*visit + Z*visit,
                    data = long,
                    correlation = nlme::corSymm(form=~visit.num|id), 

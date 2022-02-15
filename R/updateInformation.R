@@ -4,12 +4,13 @@
 #' @param object Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
 #' @param lmm Linear mixed model as a \code{lmmGSD} object, typically output from \code{\link{analyzeData}}.
 #' @param k [integer] Index of the analysis.
+#' @param n.decision [integer] expected number of patients at decision analysis.
 #' @param type.k [character] Type of analysis: \code{"interim"} (after continuing recruitment),
 #' \code{"decision"} (after stopping recruitment for efficacy or futility),
 #' or \code{"final"} (after reaching the last stage of the trial).
 #' @param update.stage [logical] should the arguments \code{k} and \code{type.k} be used to update to stage of the trial?
 #' 
-updateInformation <- function(object, lmm, k, type.k, update.stage = TRUE){
+updateInformation <- function(object, lmm, n.decision, k, type.k, update.stage = TRUE){
 
     kMax <- object$kMax
     
@@ -19,7 +20,12 @@ updateInformation <- function(object, lmm, k, type.k, update.stage = TRUE){
     }
     if(type.k %in% c("interim","decision")){
         ## update decision (even when doing interim) to ensure monotone information
-        object$Info.d[k] <- as.double(lmm$getInformation["decision"])
+        if(is.null(n.decision)){
+            object$Info.d[k] <- as.double(lmm$getInformation["decision"])
+        }else{
+            
+            object$Info.d[k] <- (n.decision/lmm$n["total"])*as.double(lmm$getInformation["decision"])
+        }
     }
 
     ## ## ** update information at future stages

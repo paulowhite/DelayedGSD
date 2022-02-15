@@ -63,7 +63,7 @@ Decision <- function(object,
     ## ** identify stage of the trial
     kMax <- object$kMax
     
-    if(trace){
+    if(trace>0){
         if(type.k == "final"){
             cat("Decision to be taken at the final analysis  (stage ",k,") \n",sep="")
         }else if(type.k == "decision"){
@@ -112,9 +112,9 @@ Decision <- function(object,
     if(type.k=="decision"){
                                         
         if(Z > ck[k]){
-            object$conclusion["decision",k] <- "Efficacy"
+            object$conclusion["decision",k] <- "efficacy"
         } else {
-            object$conclusion["decision",k] <- "Futility"
+            object$conclusion["decision",k] <- "futility"
         }
 
     }
@@ -123,9 +123,9 @@ Decision <- function(object,
     if(type.k == "final"){
 
         if(Z > uk[k]){
-            object$conclusion["decision",k] <- "Efficacy"
+            object$conclusion["decision",k] <- "efficacy"
         } else {
-            object$conclusion["decision",k] <- "Futility"
+            object$conclusion["decision",k] <- "futility"
         }
 
     }

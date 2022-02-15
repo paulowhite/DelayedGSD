@@ -48,7 +48,7 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
     df.printBound$Fbound <- round(df.printBound$Fbound, digits)
     df.printBound$Ebound <- round(df.printBound$Ebound, digits)
     df.printBound$Cbound <- round(df.printBound$Cbound, digits)
-    
+
     if(test.planning){
 
         if(abreviated){
@@ -66,19 +66,16 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
     }else{
         df.printBound$statistic.interim <- round(df.printBound$statistic.interim, digits)
         df.printBound$statistic.decision <- round(df.printBound$statistic.decision, digits)
-        df.printBound[["alpha-spent"]] <- x$alphaSpent
-        df.printBound[["beta-spent"]] <- x$betaSpent
-        if(planning==FALSE){
+        if(planned==FALSE){
             df.printBound[["alpha-spent"]] <- NA
             df.printBound[["beta-spent"]] <- NA
-            df.printBound[["alpha-spent"]][1:x$stage$k] <- x$alphaSpent[1:x$stage$k]
-            df.printBound[["beta-spent"]][1:x$stage$k] <- x$betaSpent[1:x$stage$k]
+            df.printBound[["alpha-spent"]][1:x$stage$k] <- round(x$alphaSpent[1:x$stage$k], digits+2)
+            df.printBound[["beta-spent"]][1:x$stage$k] <- round(x$betaSpent[1:x$stage$k], digits+2)
         }else{
-            df.printBound[["alpha-spent"]] <- x$alphaSpent
-            df.printBound[["beta-spent"]] <- x$betaSpent
+            df.printBound[["alpha-spent"]] <- round(x$alphaSpent, digits+2)
+            df.printBound[["beta-spent"]] <- round(x$betaSpent, digits+2)
         }
         df.printBound[is.na(df.printBound)] <- ""
-    
         conclusion.interim.print <- .reformatInterimTxt(x$conclusion, kMax = kMax, abreviated = abreviated)
         conclusion.decision.print <- .reformatDecisionTxt(x$conclusion, kMax = kMax, abreviated = abreviated)
 
@@ -90,11 +87,12 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
                                      "Critical boundary" = df.printBound$Cbound,
                                      "Statistic" = df.printBound$statistic.decision,
                                      "Action" = conclusion.decision.print,
+                                     "alpha" = df.printBound[["alpha-spent"]],
+                                     "beta" = df.printBound[["beta-spent"]],
                                      check.names = FALSE)
 
         if(abreviated){
-            names(df.printBound2) <- c("Stage", "F-bound", "E-bound", "Stat", "", "C-bound", "Stat", "")
-            names(df.printBound2)[8] <- ""
+            names(df.printBound2) <- c("Stage", "F-bound", "E-bound", "Stat", "", "C-bound", "Stat", "","alpha","beta")
         }
 
         ## display
@@ -105,9 +103,11 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
         if(abreviated){
             names(df.printBound3)[3] <- "Interim"
             names(df.printBound3)[6] <- "Decision"
+            names(df.printBound3)[9] <- "Spent"
         }else{
             names(df.printBound3)[3] <- "Interim analysis"
             names(df.printBound3)[6] <- "Decision analysis"
+            names(df.printBound3)[9] <- "Error spent"
         }
         print(df.printBound3, row.names = FALSE, quote = FALSE)
     }
@@ -131,7 +131,7 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
         if(planned){
             cat(" * Observed and planned information: \n",sep="")
         }else{
-            cat(" * Observed information: \n",sep="")
+            cat(" * Observed and predicted information: \n",sep="")
         }
     }
     df.printInfo[is.na(df.printInfo)] <- ""
@@ -237,14 +237,14 @@ print.delayedGSD <- function(x, planned = FALSE, digits = 3, space = " ", abrevi
     out <- sapply(1:kMax,function(iK){
         if(is.na(conclusion["decision",iK])){
             return("")
-        }else if(conclusion["decision",iK]=="Efficacy"){
+        }else if(conclusion["decision",iK]=="efficacy"){
             if(abreviated){
                 return("E")
             }else{
                 return("conclude efficacy")
             }
             return(out)
-        }else if(conclusion["decision",iK]=="Futility"){
+        }else if(conclusion["decision",iK]=="futility"){
             if(abreviated){
                 return("F")
             }else{

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: Dec 16 2021 (08:56) 
 ## Version: 
-## Last-Updated: jan 21 2022 (18:07) 
+## Last-Updated: Jan 28 2022 (16:00) 
 ##           By: Brice Ozenne
-##     Update #: 26
+##     Update #: 29
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -29,7 +29,6 @@ theDelta <- 1.5
 ## * Boundaries
 ## ** 2 interim
 GSD.2t <- CalcBoundaries(kMax=2,  ## max number of analyses (including final)
-                         sided=1,  ## one or two-sided
                          alpha=theAlpha,  ## type I error
                          beta=theBeta,  ## type II error
                          InfoR.i=c(0.5,1),  ## planned or observed information rates
@@ -48,7 +47,6 @@ plot(GSD.2t)
 
 ## ** 4 interim
 GSD.4t <- CalcBoundaries(kMax=4,  ## max number of analyses (including final)
-                         sided=1,  ## one or two-sided
                          alpha=theAlpha,  ## type I error
                          beta=theBeta,  ## type II error
                          InfoR.i=c(0.25,0.5,0.75,1),  ## planned or observed information rates
@@ -72,22 +70,22 @@ GD <- GenData(n=82*2,delta=1.3,ar=5)  #generate data with all data for in case t
 ## ** time point at which to do the interim analysis
 thet.2t <- GD$d$t3[ceiling(nrow(GD$d)/2) + ceiling(thear*theDelta.t)] ## 2 interim
 ## mean(x$d$t3<=thet.2t)
-dataI.2t <- SelectData(GD$d,t=thet.2t,Delta.t=theDelta.t*2)
-dataF.2t <- GD$d[GD$d$id %in% dataI.2t$id,]
+dataI.2t <- SelectData(GD$d,t=thet.2t)
+dataF.2t <- GD$d[which(GD$t1 <= thet + theDelta.t*TimeFactor),]
 
 thet.4t <- c(GD$d$t3[ceiling(nrow(GD$d)/4) + ceiling(thear*theDelta.t)],
              GD$d$t3[ceiling(nrow(GD$d)/2) + ceiling(thear*theDelta.t)], 
              GD$d$t3[ceiling(3*nrow(GD$d)/4) + ceiling(thear*theDelta.t)]) ## 4 interim,''
 ## c(mean(GD$d$t3<=thet.4t[1]),mean(GD$d$t3<=thet.4t[2]),mean(GD$d$t3<=thet.4t[3]))
-dataI1.4t <- SelectData(GD$d,t=thet.4t[1],Delta.t=theDelta.t*2)
-dataI2.4t <- SelectData(GD$d,t=thet.4t[2],Delta.t=theDelta.t*2)
-dataI3.4t <- SelectData(GD$d,t=thet.4t[3],Delta.t=theDelta.t*2)
+dataI1.4t <- SelectData(GD$d,t=thet.4t[1])
+dataI2.4t <- SelectData(GD$d,t=thet.4t[2])
+dataI3.4t <- SelectData(GD$d,t=thet.4t[3])
 dataF.4t <- GD$d
 
 ## * First interim
 ## ** 2 interim
 GSDI.2t <- update(GSD.2t, data = dataI.2t)
-print(GSDI.2t)
+print(GSDI.2t, planned = FALSE)
 ## coef(GSDI.2t, type = "effect")
 ## coef(GSDI.2t, type = "information", planned = FALSE)
 ## coef(GSDI.2t, type = "information", planned = TRUE)

@@ -51,8 +51,9 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
   
   # compute the mean of the multivariate normal distribution under the alternative H1
   thetheta <- delta*sqrt(Info.i)
-  ## }}} 
-  ## ** case k=1
+    ## }}}
+
+    ## ** case k=1
   if(k==1){
     ## {{{ case k=1
     #information matrix for first interim and decision analysis
@@ -73,7 +74,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                 upper = c(Inf,Inf),
                 mean=c(0,0),
                 sigma= sigmaZk2,
-                abseps = abseps) - IncAlpha[1]
+                abseps = abseps) - alphaSpent[1]
       }
       
       uk[1] <- uniroot(find.uk,lower=-10,upper=10)$root  #dirty solution to use -10 and 10 for bounds
@@ -96,7 +97,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       }
       lk[1] <- uniroot(find.lk,lower=uk[1]-10,upper=uk[1])$root  #dirty solution to use -10 for lower bound
       ck <- cMin
-    } else if(k=="decision"){
+    } else if(type.k=="decision"){
       if(ImaxAnticipated){
         alphaSpent[1] <- alpha  #spend all remaining alpha if study was stopped due to anticipation of Imax reached
       }
@@ -107,10 +108,10 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                                         abseps = abseps) - alphaSpent[1]},
                     lower = lk[1],
                     upper = uk[1],
-                    tol = obj$abseps)$root
+                    tol = abseps)$root
       ck <- max(cMin,c_new)
     }
-    
+
   }else{
     
     alphaSpentInc <- diff(c(0,alphaSpent))
@@ -165,7 +166,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                   upper = c(uk[1:(k-1)],x,Inf),
                   mean=c(thetheta[1:k],delta*sqrt(Info.d[k])),
                   sigma= sigmaZk2,
-                  abseps = abseps) - IncBeta[k]
+                  abseps = abseps) - betaSpentInc[k]
       }
       lk[k] <- uniroot(find.lkk,lower=uk[k]-10,upper=uk[k])$root
       ck[k] <- cMin

@@ -8,6 +8,8 @@
 #' @param uk upper bounds up to stage where study was stopped
 #' @param kMax maximum number of analyses
 #' @param estimate naive estimate (e.g. using  ML or REML).
+#' @param futility2efficacy [logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.
+#' @param bindingFutility [logical]  whether the futility stopping rule is binding.
 
 ## * FinalEstimate (code)
 #' @export
@@ -17,7 +19,9 @@ FinalEstimate <- function(Info.d,
                           lk,  
                           uk,  
                           kMax, 
-                          estimate){ 
+                          estimate,
+                          futility2efficacy,
+                          bindingFutility){ 
   
   f <- function(delta){
     (FinalPvalue(Info.d=Info.d,
@@ -27,7 +31,9 @@ FinalEstimate <- function(Info.d,
                 uk=uk,
                 kMax=kMax,
                 estimate=estimate,
-                delta=delta) - 0.5)^2
+                delta=delta,
+                futility2efficacy=futility2efficacy,
+                bindingFutility=bindingFutility) - 0.5)^2
   }
   
   res <- stats::optimise(f,lower=estimate-2*sqrt(1/Info.d[length(Info.d)]),upper=estimate+2*sqrt(1/Info.d[length(Info.d)]))
