@@ -107,6 +107,31 @@
 #' ##   uniroot 21.37910 23.32777 24.45567 24.29751 25.16585 29.36898   100  a
 #' 
 #' }
+#' 
+#' 
+#' ##Example to show that the p-value will be 0.025 if the final test statistic is exactly on the boundary (requires cNotBelowFixedc=F and in case of non-binding futility that the info at decision is same as at interim)
+#' myBound <- CalcBoundaries(kMax=3,
+#'                           sided=1,
+#'                           alpha=0.025,  
+#'                           beta=0.2,  
+#'                           InfoR.i=c(1/3,2/3,1),
+#'                           rho_alpha=2,
+#'                           rho_beta=2,
+#'                           method=1,       #works both for method=1 and method=2
+#'                           cNotBelowFixedc=FALSE,
+#'                           bindingFutility=FALSE,
+#'                           delta=1,
+#'                           InfoR.d=c(1/3,2/3))
+#' 
+#' FinalPvalue(myBound$Info.d,
+#'             myBound$Info.i,
+#'             myBound$ck,
+#'             myBound$lk,
+#'             myBound$uk,
+#'             myBound$kMax,
+#'             estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+#'             bindingFutility=F,
+#'             futility2efficacy=T) 
 
 ## * FinalPvalue (code)
 #' @export
@@ -118,7 +143,7 @@ FinalPvalue <- function(Info.d,
                         kMax, 
                         delta=0,  
                         estimate,
-                        futility2efficacy,
+                        futility2efficacy,  #TO DO: would prefer to replace this with method, would be more user friendly, as it should alsways be FALSE for methods 1 and 2 and TRUE for method 3
                         bindingFutility){
     
     requireNamespace("mvtnorm")
@@ -160,6 +185,8 @@ FinalPvalue <- function(Info.d,
     }
   
 
+    lk_orig <- lk  #need to store original bounds, even in non-binding case to account for probability of switching from futility to efficacy at decision analysis k
+    
     if(!bindingFutility){
         lk[1:min(k,kMax-1)] <- -Inf
     }
@@ -195,7 +222,7 @@ FinalPvalue <- function(Info.d,
                     if(futility2efficacy){
                       ## prob to stop for fut at analysis k and switch to eff with more extreme result
                       pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic[i]),   
-                                                      upper = c(iUk,lk[i],Inf),
+                                                      upper = c(iUk,lk_orig[i],Inf),
                                                       mean = theta[iIndex],
                                                       sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
                   }
@@ -213,7 +240,7 @@ FinalPvalue <- function(Info.d,
               if(futility2efficacy){
                   ## prob to stop for fut at analysis i and switch to eff
                   pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,ck[i]),   
-                                                  upper = c(iUk,lk[i],Inf),
+                                                  upper = c(iUk,lk_orig[i],Inf),
                                                   mean = theta[iIndex],
                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
               }
@@ -245,7 +272,7 @@ FinalPvalue <- function(Info.d,
                                                   mean = theta[iIndex],
                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
                   pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis k and conclude less extreme result
-                                                  upper = c(iUk,lk[i],statistic[i]),
+                                                  upper = c(iUk,lk_orig[i],statistic[i]),
                                                   mean = theta[iIndex],
                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
               }
@@ -260,7 +287,7 @@ FinalPvalue <- function(Info.d,
                                               mean = theta[iIndex],
                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
               pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis i and conclude fut
-                                              upper = c(iUk,lk[i],ck[i]),
+                                              upper = c(iUk,lk_orig[i],ck[i]),
                                               mean = theta[iIndex],
                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
           }
