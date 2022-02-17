@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 27 2022 (09:32) 
 ## Version: 
-## Last-Updated: Jan 28 2022 (16:00) 
+## Last-Updated: feb 17 2022 (16:50) 
 ##           By: Brice Ozenne
-##     Update #: 29
+##     Update #: 34
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -17,12 +17,15 @@
 
 library(testthat)
 library(rpact)
+library(DelayedGSD)
+library(mvtnorm)
 set.seed(10)
 
 context("Computing p-value/CIs/MUestimate after stopping. \n")
 
 ## * rpact
 test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case",{
+
     kMax <- 3 
     design <- rpact::getDesignGroupSequential(kMax=kMax, sided = 1, alpha = 0.025, beta = 0.2,
                                               informationRates = c(0.5,0.75,1),
@@ -80,6 +83,7 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
 ## * Wassmer 2016 (Group sequential and confirmatory adaptive designs in clinical trials, section 4.1, page 87-88)
 
 test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
+
  vec.stage <- 1:2 ##  1 1 2 2
  vec.std <- c(1,1)
  vec.z <- c(1,3)
@@ -150,8 +154,9 @@ test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
 
 ## * Paul's binding test
 test_that("Check consistency between p-value and boundary",{
-    #Method 1
-    #for binding futility rule
+
+    ## Method 1
+    ## for binding futility rule
     myBound <- CalcBoundaries(kMax=3,
                               alpha=0.025, 
                               beta=0.1, 
@@ -165,13 +170,13 @@ test_that("Check consistency between p-value and boundary",{
                               InfoR.d=c(5.5,8.75)/12)
 
             
-    test <- FinalPvalue(Info.d = myBound$Info.d,
-                        Info.i = myBound$Info.i,
-                        ck = myBound$ck,
-                        lk = myBound$lk,
-                        uk = myBound$uk,
+    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
+                        Info.i = myBound$planned$Info.i,
+                        ck = myBound$planned$ck,
+                        lk = myBound$planned$lk,
+                        uk = myBound$planned$uk,
                         kMax = myBound$kMax,
-                        estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
                         futility2efficacy = TRUE,
                         bindingFutility = TRUE)
 
@@ -191,40 +196,40 @@ test_that("Check consistency between p-value and boundary",{
                               InfoR.d=c(5.5,8.75)/12)
 
             
-    test <- FinalPvalue(Info.d = myBound$Info.d,
-                        Info.i = myBound$Info.i,
-                        ck = myBound$ck,
-                        lk = myBound$lk,
-                        uk = myBound$uk,
+    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
+                        Info.i = myBound$planned$Info.i,
+                        ck = myBound$planned$ck,
+                        lk = myBound$planned$lk,
+                        uk = myBound$planned$uk,
                         kMax = myBound$kMax,
-                        estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
                         futility2efficacy = TRUE,
                         bindingFutility = FALSE)
 
     expect_equal(as.double(test), 0.025, tol = 1e-3)
     
-    #Method 2
-    #for binding futility rule
-    myBound <- CalcBoundaries(kMax=3,
-                              alpha=0.025, 
-                              beta=0.1, 
-                              InfoR.i=c(3.5,6.75,12)/12,
-                              rho_alpha=1.345,
-                              rho_beta=1.345,
-                              method=2, ## has been changed from 2 to 1
-                              cNotBelowFixedc=FALSE,
-                              bindingFutility=TRUE,
-                              delta=1,
-                              InfoR.d=c(5.5,8.75)/12)
+    ## Method 2
+    ## for binding futility rule
+    myBound <- suppressWarnings(CalcBoundaries(kMax=3,
+                                               alpha=0.025, 
+                                               beta=0.1, 
+                                               InfoR.i=c(3.5,6.75,12)/12,
+                                               rho_alpha=1.345,
+                                               rho_beta=1.345,
+                                               method=2, ## has been changed from 2 to 1
+                                               cNotBelowFixedc=FALSE,
+                                               bindingFutility=TRUE,
+                                               delta=1,
+                                               InfoR.d=c(5.5,8.75)/12))
     
     
-    test <- FinalPvalue(Info.d = myBound$Info.d,
-                        Info.i = myBound$Info.i,
-                        ck = myBound$ck,
-                        lk = myBound$lk,
-                        uk = myBound$uk,
+    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
+                        Info.i = myBound$planned$Info.i,
+                        ck = myBound$planned$ck,
+                        lk = myBound$planned$lk,
+                        uk = myBound$planned$uk,
                         kMax = myBound$kMax,
-                        estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
                         futility2efficacy = TRUE,
                         bindingFutility = TRUE)
     
@@ -244,20 +249,20 @@ test_that("Check consistency between p-value and boundary",{
                               InfoR.d=c(5.5,8.75)/12)
     
     
-    test <- FinalPvalue(Info.d = myBound$Info.d,
-                        Info.i = myBound$Info.i,
-                        ck = myBound$ck,
-                        lk = myBound$lk,
-                        uk = myBound$uk,
+    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
+                        Info.i = myBound$planned$Info.i,
+                        ck = myBound$planned$ck,
+                        lk = myBound$planned$lk,
+                        uk = myBound$planned$uk,
                         kMax = myBound$kMax,
-                        estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
                         futility2efficacy = TRUE,
                         bindingFutility = FALSE)
     
     expect_equal(as.double(test), 0.025, tol = 1e-3)
     
-    #Method 3
-    #for binding futility rule
+    ## Method 3
+    ## for binding futility rule
     myBound <- CalcBoundaries(kMax=3,
                               alpha=0.025, 
                               beta=0.1, 
@@ -271,19 +276,19 @@ test_that("Check consistency between p-value and boundary",{
                               InfoR.d=c(5.5,8.75)/12)
     
     
-    test <- FinalPvalue(Info.d = myBound$Info.d,
-                        Info.i = myBound$Info.i,
-                        ck = myBound$ck,
-                        lk = myBound$lk,
-                        uk = myBound$uk,
+    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
+                        Info.i = myBound$planned$Info.i,
+                        ck = myBound$planned$ck,
+                        lk = myBound$planned$lk,
+                        uk = myBound$planned$uk,
                         kMax = myBound$kMax,
-                        estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
                         futility2efficacy = FALSE,
                         bindingFutility = TRUE)
     
     expect_equal(as.double(test), 0.025, tol = 1e-3)
     
-    #for non-binding futility rule
+    ## for non-binding futility rule
     myBound <- CalcBoundaries(kMax=3,
                               alpha=0.025, 
                               beta=0.1, 
@@ -297,13 +302,13 @@ test_that("Check consistency between p-value and boundary",{
                               InfoR.d=c(5.5,8.75)/12)
     
     
-    test <- FinalPvalue(Info.d = myBound$Info.d,
-                        Info.i = myBound$Info.i,
-                        ck = myBound$ck,
-                        lk = myBound$lk,
-                        uk = myBound$uk,
+    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
+                        Info.i = myBound$planned$Info.i,
+                        ck = myBound$planned$ck,
+                        lk = myBound$planned$lk,
+                        uk = myBound$planned$uk,
                         kMax = myBound$kMax,
-                        estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
                         futility2efficacy = FALSE,
                         bindingFutility = FALSE)
     

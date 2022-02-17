@@ -6,9 +6,9 @@
 \usage{
 \method{update}{delayedGSD}(
   object,
-  data,
-  PositiveIsGood = NULL,
-  ddf = NULL,
+  delta,
+  Info.i,
+  Info.d,
   k = NULL,
   type.k = NULL,
   p.value = TRUE,
@@ -21,11 +21,11 @@
 \arguments{
 \item{object}{object of class \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.}
 
-\item{data}{[data.frame] dataset used to fit the linear mixed model.}
+\item{delta}{[data.frame or lmmGSD] estimated effect (\code{"estimate"}), standard error (\code{"se"}), test statistic (\code{"statistic"}), degrees of freedom (\code{"df"}), and p-value (\code{"p.value"}) all unadjusted for GSD. Alternatively output of \code{analyzeData}.}
 
-\item{PositiveIsGood}{[logical] whether a positive effect is considered beneficial.}
+\item{Info.i}{[numeric] information at the current stage when interim or final. Not used when argument \code{beta} is a lmmGSD object.}
 
-\item{ddf}{[character] method used to compute the degrees of freedom of the test statistics. Argument passed to \code{\link{analyzeData}}.}
+\item{Info.d}{[numeric] information at the current stage when decision or at the coming decision when interim leading to early stop. Not used when argument \code{beta} is a lmmGSD object.}
 
 \item{k}{[integer] index of the analysis.}
 
@@ -58,12 +58,11 @@ theN <- 82
 
 
 myBound0 <- CalcBoundaries(kMax=theK,
-                          sided=1,
                      alpha=theAlpha,
                      beta=theBeta,
                      InfoR.i=c(0.5,1),
-                     gammaA=2,
-                     gammaB=2,
+                     rho_alpha=2,
+                     rho_beta=2,
                      method=1,
                      delta=theDelta,
                      InfoR.d=0.55)
@@ -79,8 +78,8 @@ tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do
 
 
 #### Analyse data at the first interim ####
-theInterimData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)
-
+theInterimData <- SelectData(theData$d, t = tau.i)
+myLmm <- analyzeData(theInterimData)
 myInterim1 <- update(myBound0, data = theInterimData) ## k = 1, analysis = "interim"
 print(myInterim1)
 print(myInterim1, planned = FALSE)

@@ -9,7 +9,8 @@
   y,
   type = "Z",
   Itype = "rate",
-  planned = TRUE,
+  planned = NULL,
+  predicted = TRUE,
   main = NULL,
   xlim = NULL,
   ylim = NULL,
@@ -34,6 +35,8 @@
 
 \item{planned}{[logical] should the planned boundaries be displayed along with the boundaries that have been computed based on the data.
 Can also be \code{"only"} to only display planned boundaries.}
+
+\item{predicted}{[logical] Should the predicted information/boundaries at decision based on interim data be output (when relevant).}
 
 \item{main}{to specify a plot title}
 

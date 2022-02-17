@@ -10,11 +10,12 @@ FinalCI(
   ck,
   lk,
   uk,
-  sided = 1,
   kMax,
   alpha = 0.05,
   estimate,
-  optimizer = "optimise"
+  optimizer = "optimise",
+  futility2efficacy,
+  bindingFutility
 )
 }
 \arguments{
@@ -28,8 +29,6 @@ FinalCI(
 
 \item{uk}{upper bounds up to stage where study was stopped}
 
-\item{sided}{whether the test is 1 or 2-sided}
-
 \item{kMax}{maximum number of analyses}
 
 \item{alpha}{confidence level (to get a 100*(1-alpha)\% CI)}
@@ -37,6 +36,10 @@ FinalCI(
 \item{estimate}{naive estimate (e.g. using  ML or REML).}
 
 \item{optimizer}{the observed treatment estimate at decision}
+
+\item{futility2efficacy}{[logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.}
+
+\item{bindingFutility}{[logical]  whether the futility stopping rule is binding.}
 }
 \description{
 calculate confidence intervals at the end of the study

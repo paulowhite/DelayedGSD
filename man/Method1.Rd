@@ -2,45 +2,77 @@
 % Please edit documentation in R/Method1.R
 \name{Method1}
 \alias{Method1}
-\title{calculate critval c using method 1}
+\title{Calculate boundaries for a group sequential design using Method 1}
 \usage{
 Method1(
-  uk,
-  lk,
-  Info.i,
-  Info.d,
-  Info.max = NULL,
-  sided = 1,
-  cMin = -Inf,
-  ImaxAnticipated = FALSE,
-  rho = 2,
+  rho_alpha = 2,
+  rho_beta = 2,
   alpha = 0.025,
-  bindingFutility = TRUE
+  beta = 0.2,
+  Kmax,
+  Info.max = NULL,
+  InfoR.i = NULL,
+  InfoR.d = NULL,
+  delta = 0,
+  abseps = 1e-06,
+  alternative = "greater",
+  binding = TRUE,
+  Trace = FALSE,
+  nWhileMax = 30,
+  toldiff = 1e-05,
+  tolcoef = 1e-04,
+  mycoefMax = 1.2,
+  mycoefL = 1,
+  myseed = 2902,
+  cMin = -Inf
 )
 }
 \arguments{
-\item{uk}{upper bounds for all analyses up to and including current stage k}
+\item{rho_alpha}{rho parameter of the rho-family spending functions (Kim-DeMets) for alpha}
 
-\item{lk}{lower bounds for all analyses up to and including current stage k}
+\item{rho_beta}{rho parameter of the rho-family spending functions (Kim-DeMets) for beta}
 
-\item{Info.i}{Information for all analyses up to and including current stage k}
+\item{alpha}{type I error}
 
-\item{Info.d}{Observed information at decision analysis k}
+\item{beta}{type II error}
 
-\item{Info.max}{Maximum information}
+\item{Info.max}{maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.}
 
-\item{sided}{one or two sided}
+\item{InfoR.i}{Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax}
+
+\item{InfoR.d}{Expected or observed information rates at all potential decision analyses 1:(Kmax-1)}
+
+\item{delta}{expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))}
+
+\item{abseps}{tolerance for precision when finding roots or computing integrals}
+
+\item{alternative}{a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
+H0 \eqn{\theta=0} vs H1 \eqn{theta<0} (\code{"less"}) or theta > 0 (\code{"greater"}).
+Note that in Jennison and Turnbull's book chapter (2013) they consider greater.}
+
+\item{binding}{whether we assume binding futility boundaries}
+
+\item{Trace}{Used only if Info.max=NULL. Whether to print informations to follow the progression of the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax).}
+
+\item{nWhileMax}{Used only if Info.max=NULL. Maximum number of steps in the (root finding) algorithm to compute Info.max (from  alpha, beta, delta and Kmax)}
+
+\item{toldiff}{Used only if Info.max=NULL. Maximum tolerated difference between lower and upper bounds at anaylis Kmax (which souhld be zero), in the root finding algorithm, to find the value of Info.max}
+
+\item{tolcoef}{Used only if Info.max=NULL. Maximum tolerated difference before stopping the search (in the root finding algorithm), between two successive values for the multiplier coeficient 'coef' such that Info.max=coef*If  (some values for coef are given in Table 7.6 page 164 Jennison's book. The value of "If" (which stands for Information for Fixed design) corresponds to the information we need if Kmax=1)}
+
+\item{mycoefMax}{Used only if Info.max=NULL. Upper limit of the interval of values in which we search for the multiplier coeficient 'coef' such that Info.max=coef*If (in the root finding algorithm).}
+
+\item{mycoefL}{Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)}
+
+\item{myseed}{seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)}
 
 \item{cMin}{minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)}
 
-\item{ImaxAnticipated}{set to TRUE if c should be calculated according to Eq 15 in HJ because study was stopped early due to Imax reached}
-
-\item{rho}{value of rho used for type I error spending function}
-
-\item{alpha}{one-sided alpha level to be used for the study}
-
-\item{bindingFutility}{whether the futility stopping rule is binding}
+\item{kMax}{max number of analyses (including final)}
 }
 \description{
-calculate critval c using method 1
+Calculate boundaries for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach.
+}
+\examples{
+## see test-boundary.R                    
 }

@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Jan  7 2022 (13:47) 
 ## Version: 
-## Last-Updated: feb 14 2022 (15:03) 
+## Last-Updated: feb 17 2022 (16:49) 
 ##           By: Brice Ozenne
-##     Update #: 55
+##     Update #: 59
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,6 +15,7 @@
 ## 
 ### Code:
 
+## * Method 3 (documentation)
 #' @title Calculate boundaries for a group sequential design
 #' @description Calculate boundaries for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach. The function gives the boundaries for a non-binding futility rule using Method 2 as proposed by Hampson and Jennison.
 #' 
@@ -44,10 +45,8 @@
 #'  
 #'
 #' @examples
-#'
-#' Example to check that code matches
-#' 
-#' to reproduce bounds from CJ DSBS course slide 106
+#' ## Example to check that code matches
+#' ## to reproduce bounds from CJ DSBS course slide 106
 #'               
 #' bCJ2 <- Method3(rho_alpha=1.345,
 #'            rho_beta=1.345,
@@ -60,10 +59,11 @@
 #'            InfoR.d=c(5.5,8.75)/12,
 #'            delta=1,  
 #'            abseps = 1e-06, 
-#'            alternative=greater",
-#'            )
+#'            alternative="greater")
 
 
+## * Method 3 (code)
+#' @export
 Method3 <- function(rho_alpha=2,
                     rho_beta=2,
                     alpha=0.025,

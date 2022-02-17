@@ -6,25 +6,23 @@
 \usage{
 CalcBoundaries(
   kMax = 2,
-  sided = 1,
   alpha = 0.025,
   beta = 0.2,
   InfoR.i = c(0.5, 1),
-  gammaA = 2,
-  gammaB = 2,
+  rho_alpha = 2,
+  rho_beta = 2,
   method = 1,
   cNotBelowFixedc = FALSE,
   delta = 1.5,
   InfoR.d = 0.55,
   bindingFutility = TRUE,
+  alternative = "greater",
   n = NULL,
-  trace = TRUE
+  trace = FALSE
 )
 }
 \arguments{
 \item{kMax}{max number of analyses (including final)}
-
-\item{sided}{one or two-sided}
 
 \item{alpha}{type I error}
 
@@ -32,9 +30,9 @@ CalcBoundaries(
 
 \item{InfoR.i}{planned or observed information rates at interim analysis, including the final analysis.}
 
-\item{gammaA}{rho parameter for alpha error spending function}
+\item{rho_alpha}{rho parameter for alpha error spending function}
 
-\item{gammaB}{rho parameter for beta error spending function}
+\item{rho_beta}{rho parameter for beta error spending function}
 
 \item{method}{use method 1 or 2 from paper H&J}
 
@@ -44,7 +42,11 @@ CalcBoundaries(
 
 \item{InfoR.d}{(expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.}
 
-\item{bindingFutility}{whether the futility stopping rule is binding}
+\item{bindingFutility}{[logical]  whether the futility stopping rule is binding.}
+
+\item{alternative}{a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
+H0 \eqn{\theta=0} vs H1 \eqn{theta<0} (\code{"less"}) or theta > 0 (\code{"greater"}).
+Note that in Jennison and Turnbull's book chapter (2013) they consider greater.}
 
 \item{n}{planned sample size in each group. Optional argument.}
 
@@ -55,13 +57,12 @@ Calculate boundaries (interim and decision) for a group sequential design with d
 }
 \examples{
 myBound <- CalcBoundaries(kMax=2,
-              sided=1,
               alpha=0.025,  
               beta=0.2,  
               InfoR.i=c(0.5,1),
-              gammaA=2,
-              gammaB=2,
-              method=1,
+              rho_alpha=2,
+              rho_beta=2,
+              method=2,
               cNotBelowFixedc=TRUE,
               delta=1.5,
               InfoR.d=0.55)
@@ -70,12 +71,11 @@ plot(myBound)
 
 ## to reproduce bounds from CJ DSBS course slide 106
 myBound <- CalcBoundaries(kMax=3,
-              sided=1,
               alpha=0.025,  
               beta=0.1,  
               InfoR.i=c(3.5,6.75,12)/12,
-              gammaA=1.345,
-              gammaB=1.345,
+              rho_alpha=1.345,
+              rho_beta=1.345,
               method=1, ## has been changed from 2 to 1
               cNotBelowFixedc=TRUE,
               bindingFutility=FALSE,

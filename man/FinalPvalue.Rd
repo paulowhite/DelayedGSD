@@ -4,26 +4,39 @@
 \alias{FinalPvalue}
 \title{P-value at Decision}
 \usage{
-FinalPvalue(Info.d, Info.i, ck, lk, uk, sided = 1, kMax, delta = 0, estimate)
+FinalPvalue(
+  Info.d,
+  Info.i,
+  ck,
+  lk,
+  uk,
+  kMax,
+  delta = 0,
+  estimate,
+  futility2efficacy,
+  bindingFutility
+)
 }
 \arguments{
-\item{Info.d}{Information at all decision analyses up to stage where study was stopped (should include the information at the final analysis if stopped at final analysis)}
+\item{Info.d}{Information at all decision analyses up to stage where study was stopped (excepted the final analysis)}
 
-\item{Info.i}{Information at all interim analyses up to stage where study was stopped}
+\item{Info.i}{Information at all interim analyses up to stage where study was stopped (should include the information at the final analysis if stopped at final analysis)}
 
-\item{ck}{decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)}
+\item{ck}{decision boundaries for all decision analyses up to stage where study was stopped (excepted the final analysis)}
 
-\item{lk}{lower bounds up to stage where study was stopped}
+\item{lk}{lower bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)}
 
-\item{uk}{upper bounds up to stage where study was stopped}
-
-\item{sided}{whether the test is 1 or 2-sided}
+\item{uk}{upper bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)}
 
 \item{kMax}{maximum number of analyses}
 
 \item{delta}{true effect under which to calculate the probability (should always be 0 for p-value, only change for calculation of CI)}
 
 \item{estimate}{naive estimate (e.g. using  ML or REML).}
+
+\item{futility2efficacy}{[logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.}
+
+\item{bindingFutility}{[logical]  whether the futility stopping rule is binding.}
 }
 \description{
 Compute the p-value at the end of the trial.
@@ -123,4 +136,29 @@ FinalCI(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityB
 ##   uniroot 21.37910 23.32777 24.45567 24.29751 25.16585 29.36898   100  a
 
 }
+
+
+##Example to show that the p-value will be 0.025 if the final test statistic is exactly on the boundary (requires cNotBelowFixedc=F and in case of non-binding futility that the info at decision is same as at interim)
+myBound <- CalcBoundaries(kMax=3,
+                          sided=1,
+                          alpha=0.025,  
+                          beta=0.2,  
+                          InfoR.i=c(1/3,2/3,1),
+                          rho_alpha=2,
+                          rho_beta=2,
+                          method=1,       #works both for method=1 and method=2
+                          cNotBelowFixedc=FALSE,
+                          bindingFutility=FALSE,
+                          delta=1,
+                          InfoR.d=c(1/3,2/3))
+
+FinalPvalue(myBound$Info.d,
+            myBound$Info.i,
+            myBound$ck,
+            myBound$lk,
+            myBound$uk,
+            myBound$kMax,
+            estimate = myBound$uk[myBound$kMax]/sqrt(myBound$Info.max),
+            bindingFutility=F,
+            futility2efficacy=T) 
 }

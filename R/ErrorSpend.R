@@ -4,7 +4,8 @@
 #' @param rho parameter for the spending function
 #' @param beta_or_alpha total alpha or beta to be spent
 #' @param Info.max Maximum information needed at end of trial
-#' 
+#'
+#' @export
 ErrorSpend <- function(I,
                        rho,
                        beta_or_alpha,

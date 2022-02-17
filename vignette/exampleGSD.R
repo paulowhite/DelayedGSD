@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: Dec 16 2021 (08:56) 
 ## Version: 
-## Last-Updated: feb 17 2022 (15:12) 
+## Last-Updated: feb 17 2022 (16:30) 
 ##           By: Brice Ozenne
-##     Update #: 46
+##     Update #: 47
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -191,7 +191,7 @@ confint(GSDI2.4t, k = "all")
 lmmD2.4t <- analyzeData(dataD2.4t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
 GSDD2.4t <- update(GSDI2.4t, delta = lmmD2.4t)
 
-
+plot(GSDD2.4t)
 
 ##----------------------------------------------------------------------
 ### exampleGSD.R ends here

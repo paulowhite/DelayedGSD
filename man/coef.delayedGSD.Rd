@@ -8,6 +8,7 @@
   object,
   type = "effect",
   planned = NULL,
+  predicted = TRUE,
   k = NULL,
   type.k = NULL,
   method = NULL,
@@ -20,9 +21,9 @@
 \item{type}{[character] Shoudl the estimate effect (\code{"effect"}), boundaries (\code{"boundaries"}), information  (\code{"information"}), or decision  (\code{"deicsion"})
 be output. The estimate is only displayed for the current stage while the other are displayed for all stages.}
 
-\item{planned}{[character] Should only the boundary/information used to plan the trial be output (\code{"only"}),
-or only the estimated information (\code{FALSE}),
-or the estimated information when available and otherwise the information used to plan the trial.}
+\item{planned}{[logical] Should the planned or estimated boundaries/information be output.}
+
+\item{predicted}{[logical] Should the predicted information/boundaries at decision based on interim data be output (when relevant).}
 
 \item{k}{[integer] stage relative to which the estimates should be output.}
 

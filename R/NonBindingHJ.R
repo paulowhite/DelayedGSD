@@ -4,7 +4,7 @@
 
 #' @title Calculate boundaries for a group sequential design
 #' @description Calculate boundaries for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach. The function gives the boundaries for a non-binding futility rule using Method 2 as proposed by Hampson and Jennison.
-#' 
+#' @noRd
 #' 
 #' 
 #' @param rho_alpha rho parameter of the rho-family spending functions (Kim-DeMets) for alpha
@@ -47,8 +47,6 @@
 #'            direction="smaller",
 #'            sided=1
 #'            )
-
-require(mvtnorm)
 
 
 #-------------

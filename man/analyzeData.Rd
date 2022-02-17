@@ -4,15 +4,24 @@
 \alias{analyzeData}
 \title{Fit a Linear Mixed Model}
 \usage{
-analyzeData(d, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+analyzeData(
+  data,
+  ddf = "nlme",
+  getinfo = TRUE,
+  data.decision = NULL,
+  trace = TRUE
+)
 }
 \arguments{
-\item{d}{dataset}
+\item{data}{[data.frame] dataset for the current analysis.}
 
 \item{ddf}{[character] method used to compute the degrees of freedom of the Wald statistic.
 Can be \code{"satterthwaite"} or \code{"nlme"}.}
 
 \item{getinfo}{[logical] should the information be computed at interim and decision? Otherwise no information is computed.}
+
+\item{data.decision}{[integer or data.frame] data or total number of patients for the future decision analysis (only relevant at interim).
+Used to compute the predicted total information at decision where only current (or future) drop-out value are excluded but future observations are kept.}
 
 \item{trace}{[logical] should the execution of the function be traced?}
 }

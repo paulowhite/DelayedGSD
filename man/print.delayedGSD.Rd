@@ -4,22 +4,12 @@
 \alias{print.delayedGSD}
 \title{Status of a Group Sequential Design with Delayed Endpoints}
 \usage{
-\method{print}{delayedGSD}(x, planned = FALSE, digits = 3, space = " ", abreviated = TRUE, ...)
+\method{print}{delayedGSD}(x, ...)
 }
 \arguments{
 \item{x}{object of class \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.}
 
-\item{planned}{[logical] should the planned boundaries be displayed along with the boundaries that have been computed based on the data.
-Can also be \code{"only"} to only display planned boundaries.}
-
-\item{digits}{[interger,>0] integer indicating the number of decimal places to be used.}
-
-\item{space}{[character] column separator.}
-
-\item{abreviated}{[logical] abreviate some column names and action that should be taken
-(e.g. C for continue, C-Info for continue due to decreasing information, S-F for stop for futility, and S-Imax for stop because maximum information has been reached).}
-
-\item{...}{not used, for compatibility with the generic method.}
+\item{...}{arguments passed to the summary function.}
 }
 \description{
 Display boundaries and estimated treatment effect up the current stage.

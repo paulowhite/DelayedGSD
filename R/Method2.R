@@ -75,6 +75,7 @@
 
 
 ## * Method2 (code)
+#' @export
 Method2 <- function(rho_alpha=2,
                     rho_beta=2, 
                     alpha=0.025,

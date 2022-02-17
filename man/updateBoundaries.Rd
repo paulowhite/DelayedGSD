@@ -6,17 +6,20 @@
 \usage{
 updateBoundaries(
   object,
-  lmm = NULL,
+  Info.i,
+  Info.d,
   k,
   type.k,
-  update.stage = TRUE,
-  trace = TRUE
+  update.stage,
+  trace = FALSE
 )
 }
 \arguments{
 \item{object}{Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.}
 
-\item{lmm}{Optional argument used to update the information. Object of type \code{lmmGSD}, typically output from \code{\link{analyzeData}}.}
+\item{Info.i}{[numeric vector of size k] Optional argument used to update the information at interim or final (only past or current information).}
+
+\item{Info.d}{[numeric vector of size k] Optional argument used to update the information at decision (observed or predicted information).}
 
 \item{k}{[integer] Index of the analysis.}
 
@@ -41,12 +44,11 @@ theK <- 2
 theN <- 82
 
 myBound0 <- CalcBoundaries(kMax=theK,
-                          sided=1,
                      alpha=theAlpha,
                      beta=theBeta,
                      InfoR.i=c(0.5,1),
-                     gammaA=2,
-                     gammaB=2,
+                     rho_alpha=2,
+                     rho_beta=2,
                      method=1,
                      delta=theDelta,
                      InfoR.d=0.55)
@@ -62,10 +64,10 @@ tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do
 
 
 #### Analyse data at the first interim ####
-theInterimData <- SelectData(theData$d, t = tau.i, Delta.t = theDelay)
+theInterimData <- SelectData(theData$d, t = tau.i)
 
 myLMM <- analyzeData(theInterimData)
-myBound1 <- updateBoundaries(myBound0, lmm = myLMM, k = 1, type.k = "interim")
+myBound1 <- update(myBound0, delta = myLMM)
 print(myBound1)
 print(myBound1, planned = FALSE)
 print(myBound1, planned = "only")
@@ -78,6 +80,7 @@ plot(myBound1)
 theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
 
 myLMM <- analyzeData(theFinalData)
-myBound2 <- updateBoundaries(myBound1, lmm = myLMM, k = 2, type.k = "final")
+myBound2 <- updateBoundaries(myBound1, lmm = myLMM, k = 2,
+                            type.k = "final", update.stage = TRUE)
 plot(myBound2)
 }

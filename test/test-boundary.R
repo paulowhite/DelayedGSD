@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan  7 2022 (14:48) 
 ## Version: 
-## Last-Updated: jan 27 2022 (12:38) 
+## Last-Updated: feb 17 2022 (16:45) 
 ##           By: Brice Ozenne
-##     Update #: 23
+##     Update #: 28
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -16,9 +16,12 @@
 ### Code:
 
 library(testthat)
+library(gsDesign)
 set.seed(10)
 
 context("Computing bounderies. \n")
+
+NonBindingHJ <- DelayedGSD:::NonBindingHJ
 
 ## * slide 106 from CJ_DSBS-v5.pdf
 test_that("Boundary calculation with non-binding futility following Jennison method",{
@@ -67,6 +70,7 @@ test_that("Boundary calculation with non-binding futility following Jennison met
 
 ## * gsDesign
 test_that("Compare boundaries to gsDesign",{
+
     ## binding futility bounds (1 interim)
     b1 <- gsDesign(k=2,alpha=0.025,beta=0.2,test.type=3,timing=c(0.6,1),sfu=sfPower,sfl=sfPower,sfupar=2,sflpar=2)
     b12 <- Method1(Kmax=2,delta=1.5,alpha=0.025,beta=0.2,InfoR.i=c(0.6,1),InfoR.d=0.65,binding=TRUE)
@@ -95,7 +99,6 @@ test_that("Check boundaries against previous version",{
 
     ## binding futility bound
     test1 <- CalcBoundaries(kMax=3,
-                            sided=1,
                             alpha=0.025,  
                             beta=0.1,  
                             InfoR.i=c(3.5,6.75,12)/12,
@@ -107,21 +110,19 @@ test_that("Check boundaries against previous version",{
                             delta=1,
                             InfoR.d=c(5.5,8.75)/12)
 
-    test2 <- CalcBoundaries(kMax=3,
-                            sided=1,
-                            alpha=0.025,  
-                            beta=0.1,  
-                            InfoR.i=c(3.5,6.75,12)/12,
-                            rho_alpha=1.345,
-                            rho_beta=1.345,
-                            method=2, 
-                            cNotBelowFixedc=FALSE,
-                            bindingFutility=TRUE,
-                            delta=1,
-                            InfoR.d=c(5.5,8.75)/12)
+    test2 <- suppressWarnings(CalcBoundaries(kMax=3,
+                                             alpha=0.025,  
+                                             beta=0.1,  
+                                             InfoR.i=c(3.5,6.75,12)/12,
+                                             rho_alpha=1.345,
+                                             rho_beta=1.345,
+                                             method=2, 
+                                             cNotBelowFixedc=FALSE,
+                                             bindingFutility=TRUE,
+                                             delta=1,
+                                             InfoR.d=c(5.5,8.75)/12))
 
     test3 <- CalcBoundaries(kMax=3,
-                            sided=1,
                             alpha=0.025,  
                             beta=0.1,  
                             InfoR.i=c(3.5,6.75,12)/12,
@@ -133,22 +134,21 @@ test_that("Check boundaries against previous version",{
                             delta=1,
                             InfoR.d=c(5.5,8.75)/12)
 
-    expect_equal(test1$lk, c(-0.22161265, 0.77399593, 2.05756181), tol = 1e-6)
-    expect_equal(test1$uk, c(2.59231338, 2.39170973, 2.05757005), tol = 1e-6)
-    expect_equal(test1$ck, c(1.4057564, 1.72220096), tol = 1e-6)
+    expect_equal(test1$planned$lk, c(-0.22161265, 0.77399593, 2.05756181), tol = 1e-6)
+    expect_equal(test1$planned$uk, c(2.59231338, 2.39170973, 2.05757005), tol = 1e-6)
+    expect_equal(test1$planned$ck, c(1.4057564, 1.72220096), tol = 1e-6)
 
-    expect_equal(test2$lk, c(-0.21343134, 0.7978885, 2.05491285), tol = 1e-6)
-    expect_equal(test2$uk, c(2.59231338, 2.39169096, 2.05495019), tol = 1e-6)
-    expect_equal(test2$ck, c(1.41033082, 1.73451626), tol = 1e-6)
+    expect_equal(test2$planned$lk, c(-0.21343134, 0.7978885, 2.05491285), tol = 1e-6)
+    expect_equal(test2$planned$uk, c(2.59231338, 2.39169096, 2.05495019), tol = 1e-6)
+    expect_equal(test2$planned$ck, c(1.41033082, 1.73451626), tol = 1e-6)
 
-    expect_equal(test3$lk, c(-0.42681035, 0.63924557, 2.03653658), tol = 1e-6)
-    expect_equal(test3$uk, c(2.43747723, 2.24378001, 2.03661657), tol = 1e-6)
-    expect_equal(test3$ck, c(1.95996398, 1.95996398), tol = 1e-6)
+    expect_equal(test3$planned$lk, c(-0.42681035, 0.63924557, 2.03653658), tol = 1e-6)
+    expect_equal(test3$planned$uk, c(2.43747723, 2.24378001, 2.03661657), tol = 1e-6)
+    expect_equal(test3$planned$ck, c(1.95996398, 1.95996398), tol = 1e-6)
 
 
     ## non-binding futility bound and ck>=1.96
     test1 <- CalcBoundaries(kMax=3,
-                            sided=1,
                             alpha=0.025,  
                             beta=0.1,  
                             InfoR.i=c(3.5,6.75,12)/12,
@@ -161,7 +161,6 @@ test_that("Check boundaries against previous version",{
                             InfoR.d=c(5.5,8.75)/12)
 
     test2 <- CalcBoundaries(kMax=3,
-                            sided=1,
                             alpha=0.025,  
                             beta=0.1,  
                             InfoR.i=c(3.5,6.75,12)/12,
@@ -174,7 +173,6 @@ test_that("Check boundaries against previous version",{
                             InfoR.d=c(5.5,8.75)/12)
 
     test3 <- CalcBoundaries(kMax=3,
-                            sided=1,
                             alpha=0.025,  
                             beta=0.1,  
                             InfoR.i=c(3.5,6.75,12)/12,
@@ -186,17 +184,17 @@ test_that("Check boundaries against previous version",{
                             delta=1,
                             InfoR.d=c(5.5,8.75)/12)
 
-    expect_equal(test1$lk, c(-0.199562, 0.80465825, 2.10213671), tol = 1e-6)
-    expect_equal(test1$uk, c(2.59231338, 2.39218946, 2.10213671), tol = 1e-6)
-    expect_equal(test1$ck, c(1.95996398, 1.95996398), tol = 1e-6)
+    expect_equal(test1$planned$lk, c(-0.199562, 0.80465825, 2.10213671), tol = 1e-6)
+    expect_equal(test1$planned$uk, c(2.59231338, 2.39218946, 2.10213671), tol = 1e-6)
+    expect_equal(test1$planned$ck, c(1.95996398, 1.95996398), tol = 1e-6)
 
-    expect_equal(test2$lk, c(-0.28880108, 0.76708909, 2.10207027), tol = 1e-6)
-    expect_equal(test2$uk, c(2.59231338, 2.39218947, 2.10214493), tol = 1e-6)
-    expect_equal(test2$ck, c(1.95996398, 1.95996398), tol = 1e-6)
+    expect_equal(test2$planned$lk, c(-0.28880108, 0.76708909, 2.10207027), tol = 1e-6)
+    expect_equal(test2$planned$uk, c(2.59231338, 2.39218947, 2.10214493), tol = 1e-6)
+    expect_equal(test2$planned$ck, c(1.95996398, 1.95996398), tol = 1e-6)
 
-    expect_equal(test3$lk, c(-0.40887808, 0.66365936, 2.06850912), tol = 1e-6)
-    expect_equal(test3$uk, c(2.43747723, 2.24415768, 2.0685517), tol = 1e-6)
-    expect_equal(test3$ck, c(1.95996398, 1.95996398), tol = 1e-6)
+    expect_equal(test3$planned$lk, c(-0.40887808, 0.66365936, 2.06850912), tol = 1e-6)
+    expect_equal(test3$planned$uk, c(2.43747723, 2.24415768, 2.0685517), tol = 1e-6)
+    expect_equal(test3$planned$ck, c(1.95996398, 1.95996398), tol = 1e-6)
 })
 
 ##----------------------------------------------------------------------

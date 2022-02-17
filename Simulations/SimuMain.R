@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: feb 17 2022 (16:26) 
+## Last-Updated: feb 17 2022 (16:54) 
 ##           By: Brice Ozenne
-##     Update #: 450
+##     Update #: 451
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -193,13 +193,13 @@ for(j in allj){ ## j <- 5
     ## head(d[d$id==52,])
                                         # }}}
     ## {{{ analyze data at at interim
-    lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+    lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thet + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
 
     currentGSD <- vector(mode = "list", length = 3)
     out.interim <- c()
     for(iMeth in 1:3){ ## iMeth <- 1
 
-        currentGSD[[iMeth]] <- update(plannedB[[iMeth]], delta = lmmI, data.decision = sum(d$t1 <= thet + theDelta.t*TimeFactor), trace = FALSE)
+        currentGSD[[iMeth]] <- update(plannedB[[iMeth]], delta = lmmI, trace = FALSE)
 
         iConfint.interim <- confint(currentGSD[[iMeth]])
         iInfo.interim <- coef(currentGSD[[iMeth]], type = "information")

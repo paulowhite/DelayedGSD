@@ -6,7 +6,6 @@
 \alias{getInformation.ttest}
 \alias{getInformation.gls}
 \alias{getInformation.lmmGSD}
-\alias{getInformation.delayedGSD}
 \title{Extract information relative to a parameter.}
 \usage{
 getInformation(object, ...)
@@ -25,9 +24,7 @@ getInformation(object, ...)
   ...
 )
 
-\method{getInformation}{lmmGSD}(object, newdata = NULL, variance = NULL, weighting = FALSE, ...)
-
-\method{getInformation}{delayedGSD}(object, planned = TRUE, ...)
+\method{getInformation}{lmmGSD}(object, newdata = NULL, variance = NULL, timevar = NULL, ...)
 }
 \arguments{
 \item{object}{a \code{ttest} object or a \code{gls} object.}
@@ -47,10 +44,6 @@ or for the full dataset  (\code{"prediction"}, including missing values).}
 \item{newdata, data}{[data.frame] The dataset relative to which the information should be computed. See details section.}
 
 \item{weighting}{[logical] Should weight be used to handle missing values in the covariates.}
-
-\item{planned}{[character] Should only the information used to plan the trial be output (\code{"only"}),
-or only the estimated information (\code{FALSE}),
-or the estimated information when available and otherwise the information used to plan the trial.}
 }
 \description{
 Extract information relative to a parameter.

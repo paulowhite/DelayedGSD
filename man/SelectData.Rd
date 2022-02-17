@@ -4,14 +4,12 @@
 \alias{SelectData}
 \title{Select available longitudnal data for analysis at a specific follow-up time.}
 \usage{
-SelectData(d, t, Delta.t = 0.500001)
+SelectData(d, t)
 }
 \arguments{
 \item{d}{data set generated with GenData function.}
 
 \item{t}{time at which we want the available data.}
-
-\item{Delta.t}{time necessary to process the data.}
 }
 \value{
 input dataset  with less rows and NA where appropriate.
@@ -32,12 +30,11 @@ tail(y)
 PlotProgress(x$d,at=4)
 
 #----- select when half of the subjects have one follow-up measuement---
-# which depends on accrual rate (ar) and time to process data (Delta.t)
+# which depends on accrual rate (ar) 
 
 x <- GenData(n=35)
-theDelta.t <- 0.500001
 thear <- 10
-thet <- x$d$t2[ceiling(nrow(x$d)/2) + ceiling(thear*theDelta.t)]
+thet <- x$d$t2[ceiling(nrow(x$d)/2) + ceiling(thear)]
 PlotProgress(x$d,at=thet)
 y <- SelectData(x$d,t=thet)
 y
