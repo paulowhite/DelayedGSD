@@ -29,60 +29,89 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
     if(length(dots)){
         stop("Argument(s) \'",paste(names(dots), collapse = "\' \'"),"\' not used. ")
     }
+    if(identical(k,"all")){
+        if(object$stage$type=="decision"){
+            delta <- object$delta[1:(object$stage$k+1),,drop=FALSE]
+            stage <- c(1:object$stage$k,object$stage$k)
+            type <- c(rep("interim",object$stage$k), "decision")
+        }else{
+            delta <- object$delta[1:object$stage$k,,drop=FALSE]
+            stage <- 1:object$stage$k
+            if(object$stage$type=="interim"){
+                type <- rep("interim",object$stage$k)
+            }else if(object$stage$type=="final"){
+                type <- c(rep("interim",object$stage$k-1), "final")
+            }
+        }
+        out <- data.frame(method = "ML",
+                          stage = stage,
+                          type = type,
+                          coef = object$lmm[[1]]$name.coef,
+                          estimate = delta$estimate,
+                          se = delta$se,
+                          lower = delta$estimate + stats::qt(object$alpha/2, df = delta$df) * delta$se,
+                          upper = delta$estimate + stats::qt(1-object$alpha/2, df = delta$df) * delta$se,
+                          statistic = delta$statistic,
+                          df = delta$df,
+                          p.value = delta$p.value)
 
-    kMax <- object$kMax
-    resStage <- .getStage(object.stage = object$stage,
-                          object.conclusion = object$conclusion,
-                          kMax = kMax,
-                          k = k,
-                          type.k = type.k,
-                          nextStage = FALSE)
-
-    if(is.null(k)){
-        k <- resStage$k
-    }
-    if(is.null(type.k)){
-        type.k <- resStage$type.k
-    }
-
-    if(!is.null(method)){
-        method <- match.arg(method, c("ML","corrected ML"), several.ok = TRUE)
-        ## if("corrected ML" %in% method &&  type.k == "interim"){
-        ##     stop("Argument \'method\' cannot be \"corrected ML\" at interim. \n")
-        ## }
-    }
-
-    ## ** extract information from object
-    if(type.k == "decision"){
-        iDelta <- object$delta[k+1,]
+        return(out)
     }else{
-        iDelta <- object$delta[k,]
-    }
-    out <- data.frame(method = "ML",
-                      stage = k,
-                      type = type.k,
-                      coef = object$lmm[[1]]$name.coef,
-                      estimate = iDelta$estimate,
-                      se = iDelta$se,
-                      lower = iDelta$estimate + stats::qt(object$alpha/2, df = iDelta$df) * iDelta$se,
-                      upper = iDelta$estimate + stats::qt(1-object$alpha/2, df = iDelta$df) * iDelta$se,
-                      statistic = iDelta$statistic,
-                      df = iDelta$df,
-                      p.value = iDelta$p.value)
-    if(!is.null(object$correction)){
-        out <- rbind(out, data.frame(method = "corrected ML",
-                                     stage = k,
-                                     type = type.k,
-                                     coef = object$lmm[[1]]$name.coef,
-                                     estimate = object$correction$estimate,
-                                     se = NA,
-                                     lower = object$correction$lower,
-                                     upper = object$correction$upper,
-                                     statistic = iDelta$statistic,
-                                     df = NA,
-                                     p.value = object$correction$p.value)
-                     )
+    
+        kMax <- object$kMax
+        resStage <- .getStage(object.stage = object$stage,
+                              object.conclusion = object$conclusion,
+                              kMax = kMax,
+                              k = k,
+                              type.k = type.k,
+                              nextStage = FALSE)
 
+        if(is.null(k)){
+            k <- resStage$k
+        }
+        if(is.null(type.k)){
+            type.k <- resStage$type.k
+        }
+    
+        if(!is.null(method)){
+            method <- match.arg(method, c("ML","corrected ML"), several.ok = TRUE)
+            ## if("corrected ML" %in% method &&  type.k == "interim"){
+            ##     stop("Argument \'method\' cannot be \"corrected ML\" at interim. \n")
+            ## }
+        }
+
+        ## ** extract information from object
+        if(type.k == "decision"){
+            iDelta <- object$delta[k+1,]
+        }else{
+            iDelta <- object$delta[k,]
+        }
+        out <- data.frame(method = "ML",
+                          stage = k,
+                          type = type.k,
+                          coef = object$lmm[[1]]$name.coef,
+                          estimate = iDelta$estimate,
+                          se = iDelta$se,
+                          lower = iDelta$estimate + stats::qt(object$alpha/2, df = iDelta$df) * iDelta$se,
+                          upper = iDelta$estimate + stats::qt(1-object$alpha/2, df = iDelta$df) * iDelta$se,
+                          statistic = iDelta$statistic,
+                          df = iDelta$df,
+                          p.value = iDelta$p.value)
+        if(!is.null(object$correction)){
+            out <- rbind(out, data.frame(method = "corrected ML",
+                                         stage = k,
+                                         type = type.k,
+                                         coef = object$lmm[[1]]$name.coef,
+                                         estimate = object$correction$estimate,
+                                         se = NA,
+                                         lower = object$correction$lower,
+                                         upper = object$correction$upper,
+                                         statistic = iDelta$statistic,
+                                         df = NA,
+                                         p.value = object$correction$p.value)
+                         )
+
+        }
     }
 
     ## ** export

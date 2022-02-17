@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: Dec 16 2021 (08:56) 
 ## Version: 
-## Last-Updated: feb 14 2022 (15:02) 
+## Last-Updated: feb 17 2022 (15:12) 
 ##           By: Brice Ozenne
-##     Update #: 37
+##     Update #: 46
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -42,7 +42,7 @@ GSD.2t <- CalcBoundaries(kMax=2,  ## max number of analyses (including final)
 GSD.2t
 coef(GSD.2t, type = "boundary")
 coef(GSD.2t, type = "information")
-print(GSD.2t)
+summary(GSD.2t)
 plot(GSD.2t)
 
 ## ** 4 interim
@@ -59,7 +59,7 @@ GSD.4t <- CalcBoundaries(kMax=4,  ## max number of analyses (including final)
 GSD.4t
 coef(GSD.4t, type = "information")
 coef(GSD.4t, type = "boundary")
-print(GSD.4t)
+summary(GSD.4t)
 plot(GSD.4t)
 
 ## * Data
@@ -71,96 +71,125 @@ GD <- GenData(n=82*2,delta=1.3,ar=thear)  #generate data with all data for in ca
 thet.2t <- GD$d$t3[ceiling(nrow(GD$d)/2) + ceiling(thear*theDelta.t)] ## 2 interim
 ## mean(x$d$t3<=thet.2t)
 dataI.2t <- SelectData(GD$d,t=thet.2t)
-dataF.2t <- GD$d[which(GD$d$t1 <= thet.2t + thear*theDelta.t),]
+dataD.2t <- GD$d[which(GD$d$t1 <= thet.2t + thear*theDelta.t),]
+dataF.2t <- GD$d
 
 thet.4t <- c(GD$d$t3[ceiling(nrow(GD$d)/4) + ceiling(thear*theDelta.t)],
              GD$d$t3[ceiling(nrow(GD$d)/2) + ceiling(thear*theDelta.t)], 
              GD$d$t3[ceiling(3*nrow(GD$d)/4) + ceiling(thear*theDelta.t)]) ## 4 interim,''
 ## c(mean(GD$d$t3<=thet.4t[1]),mean(GD$d$t3<=thet.4t[2]),mean(GD$d$t3<=thet.4t[3]))
 dataI1.4t <- SelectData(GD$d,t=thet.4t[1])
+dataD1.4t <- GD$d[which(GD$d$t1 <= thet.4t[1] + thear*theDelta.t),]
 dataI2.4t <- SelectData(GD$d,t=thet.4t[2])
+dataD2.4t <- GD$d[which(GD$d$t1 <= thet.4t[2] + thear*theDelta.t),]
 dataI3.4t <- SelectData(GD$d,t=thet.4t[3])
+dataD3.4t <- GD$d[which(GD$d$t1 <= thet.4t[3] + thear*theDelta.t),]
 dataF.4t <- GD$d
 
-## * First interim
+## * First stage
 ## ** 2 interim
-lmmI.2t <- analyzeData(dataI.2t, ddf = "nlme", data.decision = NROW(dataF.2t), getinfo = TRUE, trace = TRUE)
-## analyzeData(dataI.2t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+## interim
+lmmI.2t <- analyzeData(dataI.2t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
 GSDI.2t <- update(GSD.2t, delta = lmmI.2t)
 
-coef(GSD.2t, type = "information", planned = TRUE)
+GSDI.2t
+confint(GSDI.2t)
+coef(GSDI.2t, type = "effect")
+coef(GSDI.2t, type = "information", planned = FALSE)
+coef(GSDI.2t, type = "information", planned = FALSE, predicted = FALSE)
+coef(GSDI.2t, type = "boundary", planned = FALSE)
+coef(GSDI.2t, type = "boundary", planned = FALSE, predicted = FALSE)
+coef(GSDI.2t, type = "decision")
 
-## coef(GSDI.2t, type = "effect")
-## coef(GSDI.2t, type = "information", planned = FALSE)
-## coef(GSDI.2t, type = "information", planned = TRUE)
-## coef(GSDI.2t, type = "information", planned = "only")
-## coef(GSDI.2t, type = "boundary", planned = FALSE)
-## coef(GSDI.2t, type = "boundary", planned = TRUE)
-plot(GSDI.2t)
+summary(GSDI.2t)
+summary(GSDI.2t, planned = "only")
+summary(GSDI.2t, planned = TRUE)
+summary(GSDI.2t, planned = FALSE)
+summary(GSDI.2t, planned = FALSE, predicted = FALSE)
 
-GSDF.2t <- update(GSDI.2t, data = dataF.2t)
+plot(GSDI.2t, planned = FALSE)
+plot(GSDI.2t, planned = TRUE)
+plot(GSDI.2t, planned = "only")
 
-## X.2 X.1_X.2 
-##   4       5 
+## anticipate decision
+analyzeData(dataI.2t, ddf = "nlme", data.decision = NROW(dataD.2t), getinfo = TRUE, trace = TRUE)
+update(GSD.2t, delta = analyzeData(dataI.2t, ddf = "nlme", data.decision = NROW(dataD.2t), getinfo = TRUE, trace = TRUE))
 
+## decision
+lmmD.2t <- analyzeData(dataD.2t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+GSDD.2t <- update(GSDI.2t, delta = lmmD.2t)
 
-## ** 4 interim (decreasing)
-GSDI1.4t <- update(GSD.4t, data = dataI1.4t)
-GSDI1.4t$conclusion
-GSDI1.4t$alphaSpent
-GSDI1.4t$planned$alphaSpent
+GSDD.2t
+summary(GSDD.2t)
+coef(GSDD.2t, type = "information", planned = TRUE)
+coef(GSDD.2t, type = "information", planned = FALSE)
+confint(GSDD.2t, k = "all")
 
-GSDI2.4t <- update(GSDI1.4t, data = dataI1.4t[-(1:10),])
-GSDI2.4t$alphaSpent
-GSDI2.4t$planned$alphaSpent
+plot(GSDD.2t, planned = FALSE)
+plot(GSDD.2t, planned = TRUE)
 
-GSDI2.4t$conclusion
-GSDI2.4t$delta
-plot(GSDI2.4t)
-
-GSDI3.4t <- update(GSDI2.4t, data = dataI3.4t)
-
-GSDI3D.4t <- update(GSDI3.4t, data = dataI3.4t[-(1:20),])
-
-
-
-GSDI3.4t$alphaSpent
-GSDI3.4t$planned$alphaSpent
 
 ## ** 4 interim
-GSDI1.4t <- update(GSD.4t, data = dataI1.4t)
-print(GSDI1.4t)
-print(GSDI1.4t, planned = TRUE)
-## coef(GSDI1.4t, type = "effect")
-## coef(GSDI1.4t, type = "information", planned = FALSE)
-## coef(GSDI1.4t, type = "information", planned = TRUE)
-## coef(GSDI1.4t, type = "information", planned = "only")
-## coef(GSDI1.4t, type = "boundary", planned = FALSE)
-## coef(GSDI1.4t, type = "boundary", planned = TRUE)
-plot(GSDI1.4t)
+lmmI1.4t <- analyzeData(dataI1.4t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+GSDI1.4t <- update(GSD.4t, delta = lmmI1.4t)
+
+confint(GSDI1.4t)
+coef(GSDI1.4t, type = "effect")
+coef(GSDI1.4t, type = "information", planned = FALSE)
+coef(GSDI1.4t, type = "information", planned = FALSE, predicted = FALSE)
+coef(GSDI1.4t, type = "boundary", planned = FALSE)
+coef(GSDI1.4t, type = "boundary", planned = FALSE, predicted = FALSE)
+coef(GSDI1.4t, type = "decision")
+
+GSDI1.4t
+summary(GSDI1.4t, planned = "only")
+summary(GSDI1.4t, planned = TRUE)
+summary(GSDI1.4t, planned = FALSE)
+summary(GSDI1.4t, planned = FALSE, predicted = FALSE)
+
+plot(GSDI1.4t, planned = FALSE)
+plot(GSDI1.4t, planned = TRUE)
+plot(GSDI1.4t, planned = "only")
+
+confint(GSDI1.4t, k = "all")
+
+## add information at decision
+lmmD1.4t <- analyzeData(dataD1.4t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+GSDD1.4t <- update(GSDI1.4t, delta = lmmD1.4t, k = 1, type.k = "decision")
+
+## ** 4 interim (decreasing)
+lmmI1.4t.dec <- analyzeData(dataI1.4t[-(1:10),], ddf = "nlme", getinfo = TRUE, trace = TRUE)
+GSDI1.4t.dec <- update(GSD.4t, delta = lmmI1.4t.dec)
+
+plot(GSDI1.4t.dec, planned = TRUE)
 
 ## * Second interim
-GSDI2.4t <- update(GSDI1.4t, data = dataI2.4t)
-print(GSDI2.4t)
-## coef(GSDI2.4t, type = "effect")
-## coef(GSDI2.4t, type = "information", planned = FALSE)
-## coef(GSDI2.4t, type = "information", planned = TRUE)
-## coef(GSDI2.4t, type = "information", planned = "only")
-## coef(GSDI2.4t, type = "boundary", planned = FALSE)
-## coef(GSDI2.4t, type = "boundary", planned = TRUE)
-## coef(GSDI2.4t, type = "decision")
-plot(GSDI2.4t)
+lmmI2.4t <- analyzeData(dataI2.4t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+GSDI2.4t <- update(GSDI1.4t, delta = lmmI2.4t)
 
-## * Third interim
-## ISSUE: predicted boundary at decision is NA because too large information!
-GSDI3.4t <- update(GSDI2.4t, data = dataI3.4t)
-## coef(GSDI3.4t, type = "effect")
-## coef(GSDI3.4t, type = "information")
-## coef(GSDI3.4t, type = "boundary")
-print(GSDI3.4t) 
-plot(GSDI3.4t, planned = "only")
-plot(GSDI3.4t, planned = TRUE)
-plot(GSDI3.4t, planned = FALSE)
+confint(GSDI2.4t)
+coef(GSDI2.4t, type = "effect")
+coef(GSDI2.4t, type = "information", planned = FALSE)
+coef(GSDI2.4t, type = "information", planned = FALSE, predicted = FALSE)
+coef(GSDI2.4t, type = "boundary", planned = FALSE)
+coef(GSDI2.4t, type = "boundary", planned = FALSE, predicted = FALSE)
+coef(GSDI2.4t, type = "decision")
+
+GSDI2.4t
+summary(GSDI2.4t, planned = "only")
+summary(GSDI2.4t, planned = TRUE)
+summary(GSDI2.4t, planned = FALSE)
+summary(GSDI2.4t, planned = FALSE, predicted = FALSE)
+
+plot(GSDI2.4t, planned = FALSE)
+plot(GSDI2.4t, planned = TRUE)
+plot(GSDI2.4t, planned = "only")
+
+confint(GSDI2.4t, k = "all")
+
+## decision
+lmmD2.4t <- analyzeData(dataD2.4t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+GSDD2.4t <- update(GSDI2.4t, delta = lmmD2.4t)
 
 
 

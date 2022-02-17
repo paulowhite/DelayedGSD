@@ -87,6 +87,11 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     if(object.type.k %in% "final"){
         stop("No more boundary to update when the final analysis has been performed. \n")
     }
+    dots <- list(...)
+    if(length(dots)>0){
+        stop("Unknown argument(s) \'",paste(names(dots),collapse="\' \'"),"\'. \n")
+    }
+
     
     resStage <- .getStage(object.stage = object$stage,
                           object.conclusion = object$conclusion,
@@ -94,8 +99,10 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                           k = k,
                           type.k = type.k,
                           nextStage = TRUE)
+
     k <- resStage$k
-    type.k <- resStage$type
+    type.k <- resStage$type.k
+    type.update <- resStage$type.update
 
     if(trace>0){
         if(object.type.k=="planning"){
@@ -103,10 +110,26 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         }else{
             cat("Group Sequential Trial at the ",object.type.k," analysis of stage ",object.k,". \n", sep = "")
         }
-        cat("Update for the ",type.k," analysis of stage ",k,". \n", sep = "")
+        if(type.update=="normal"){
+            cat("Update for the ",type.k," analysis of stage ",k,". \n", sep = "")
+        }else if(type.update=="information"){
+            cat("Update information and bound relative to the (skipped) decision analysis of stage ",k,". \n", sep = "")
+        }
+    }
+    
+    ## ** update object with information and estimate
+    ## skipped
+    if(type.update=="information"){
+        if(inherits(delta,"lmmGSD")){
+            object$Info.d[k] <- as.double(delta$information["decision"])
+        }else{
+            object$Info.d[k] <- as.double(Info.d)
+        }
+        object <- updateBoundaries(object, k = k, type.k = type.k, trace = trace-1, update.stage = FALSE)
+        return(object)
     }
 
-    ## ** update object with information and estimate
+    ## normal
     if(inherits(delta,"lmmGSD")){
         if(trace>0){cat(" - extract information from mixed model: ", sep = "")}
         if(type.k %in% c("interim","final")){
@@ -114,11 +137,11 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         }else{
             object$lmm[[k+1]] <- delta
         }
-        Info.d <- delta$information["decision"]
-        if(type.k=="interim"){
+        if(type.k %in% c("interim","final")){
             Info.i <- delta$information["interim"]
-        }else{
-            Info.i <- NULL
+        }
+        if(type.k %in% c("interim","decision")){
+            Info.d <- delta$information["decision"]
         }
         delta <- delta$delta
         if(trace>0){cat("done \n", sep = "")}
@@ -134,8 +157,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     if(type.k %in% c("interim","decision")){
         object$Info.d[k] <- as.double(Info.d)
     }
-
     ## ** update boundaries
+    ## also update k and type.k
     if(trace>0){cat(" - update boundaries: ", sep = "")}
     object <- updateBoundaries(object, k = k, type.k = type.k, trace = trace-1, update.stage = TRUE)
     if(trace>0){cat("done \n", sep = "")}
@@ -151,35 +174,25 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     ## ** estimate
     if(type.k %in% c("decision","final")){
         if(trace>0){cat(" - correct estimate: ", sep = "")}
-
-        delta <- getInformation(object)$delta
+        delta <- stats::confint(object)
+        Info.i <- object$Info.i
+        Info.d <- object$Info.d
+        ck <- object$ck
+        lk <- object$lk
+        uk <- object$uk
 
         object$correction <- data.frame(estimate=NA,
                                         lower=NA,
                                         upper=NA,
                                         p.value=NA)
 
-        ## *** get the information at all skipped decision analyses
-        if(p.value || ci || estimate){
-            Info.d <- rep(NA,min(k,object$kMax-1))
-            if(type.k=="decision"){
-                Info.d[k] <- object$Info.d[k]
-            }
-            if(k>1){
-                if(length(info.skipped.decision)!=k-1){
-                    stop("Argument \'info.skipped.decision\' must have length ",length(setdiff(1:(k-1),kMax))," i.e. contain the information at all skipped decision analyzes. \n")
-                }
-                Info.d[setdiff(1:(k-1),kMax)] <- info.skipped.decision
-            }
-        }
-        
         ## *** p.value
         if(p.value){
-            object$correction$p.value <- FinalPvalue(Info.d = Info.d,  
-                                                     Info.i = object$Info.i[1:k],
-                                                     ck = object$ck,   
-                                                     lk = object$lk,  
-                                                     uk = object$uk,  
+            object$correction$p.value <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
+                                                     Info.i = Info.i[1:k],
+                                                     ck = ck[1:min(k,kMax-1)],   
+                                                     lk = lk[1:k],  
+                                                     uk = uk[1:k],  
                                                      kMax = kMax, 
                                                      delta = 0,  
                                                      estimate = delta[NROW(delta),"estimate"],
@@ -189,11 +202,11 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         
         ## *** CI
         if(ci){
-            resCI <- FinalCI(Info.d = Info.d,  
-                             Info.i = object$Info.i[1:k],  
-                             ck = object$ck,   
-                             lk = object$lk,  
-                             uk = object$uk,  
+            resCI <- FinalCI(Info.d = Info.d[1:min(k,kMax-1)],  
+                             Info.i = Info.i[1:k],
+                             ck = ck[1:min(k,kMax-1)],   
+                             lk = lk[1:k],  
+                             uk = uk[1:k],  
                              kMax = kMax, 
                              alpha = object$alpha,  
                              estimate = delta[NROW(delta),"estimate"],
@@ -207,11 +220,11 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         
         ## *** Estimate
         if(estimate){
-            object$correction$estimate <- FinalEstimate(Info.d = Info.d,  
-                                                        Info.i = object$Info.i[1:k],  
-                                                        ck = object$ck,   
-                                                        lk = object$lk,  
-                                                        uk = object$uk,  
+            object$correction$estimate <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
+                                                        Info.i = Info.i[1:k],
+                                                        ck = ck[1:min(k,kMax-1)],   
+                                                        lk = lk[1:k],  
+                                                        uk = uk[1:k],  
                                                         kMax = kMax, 
                                                         estimate = delta[NROW(delta),"estimate"],
                                                         futility2efficacy = object$method!=3,
@@ -222,8 +235,6 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     }
     
     ## ** export
-    object$stage$k <- k
-    object$stage$type <- type.k
     return(object)
 }
 
@@ -234,6 +245,11 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     ## ** extract information
     object.k <- object.stage$k
     object.type.k <- object.stage$type
+    if(nextStage){
+        type.update <- "normal"
+    }else{
+        type.update <- NULL
+    }
 
     ## ** basic checks
     if(!is.null(type.k)){
@@ -287,7 +303,9 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
 
             if(object.conclusionInterim=="continue"){ ## at interim where we conclude to continue
                 if(!is.null(k)){
-                    if(k!=(object.k+1)){
+                    if((k==object.k) && (type.k == "decision")){
+                        type.update <- "information"
+                    }else if(k!=(object.k+1)){
                         stop("Argument \'k\' should be ",object.k+1," after continuing recruitment following the interim of stage ",object.k,". \n")
                     }
                 }else{
@@ -303,7 +321,9 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                     }
                 }else{ ## k < kMax
                     if(!is.null(type.k)){
-                        if(type.k!="interim"){
+                        if((k==object.k) && (type.k == "decision")){
+                            ## ok
+                        }else if(type.k!="interim"){
                             stop("Argument \'type.k\' should be \"interim\" after continuing recruitment following the interim of stage ",object.k,". \n")
                         }
                     }else{
@@ -394,8 +414,9 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         }
 
     }
-    
+
     ## ** export
     return(list(k=k,
-                type.k = type.k))
+                type.k = type.k,
+                type.update = type.update))
 }

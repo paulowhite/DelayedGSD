@@ -70,6 +70,21 @@ CalcBoundaries <- function(kMax=2,
     ## ** normalize user input
     call <- match.call() ## keep track of how the user run the function
     alternative <- match.arg(alternative, c("less","greater"))
+
+    if(length(InfoR.d)!=kMax-1){
+        if(length(InfoR.d)==kMax && InfoR.d[kMax] == 1){
+            InfoR.d <- InfoR.d[-kMax]
+        }else{
+            stop("Argument \'InfoR.d\' should have length kMax-1=",kMax-1,". \n")
+        }
+    }
+    if(length(InfoR.i)!=kMax){
+        if(length(InfoR.i)==(kMax-1)){
+            InfoR.i <- c(InfoR.i,1)
+        }else{
+            stop("Argument \'InfoR.i\' should have length kMax=",kMax,". \n")
+        }
+    }
   
     if(sum(InfoR.d < InfoR.i[-length(InfoR.i)])>0){
         stop("Information at decision analysis should not be smaller than information at interim analysis")

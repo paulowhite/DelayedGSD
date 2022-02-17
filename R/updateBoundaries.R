@@ -60,12 +60,13 @@
 #' theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
 #' 
 #' myLMM <- analyzeData(theFinalData)
-#' myBound2 <- updateBoundaries(myBound1, lmm = myLMM, k = 2, type.k = "final")
+#' myBound2 <- updateBoundaries(myBound1, lmm = myLMM, k = 2,
+#'                             type.k = "final", update.stage = TRUE)
 #' plot(myBound2)
 
 ## * updateBoundaries (code)
 #' @export
-updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage = TRUE, trace = FALSE){
+updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, trace = FALSE){
 
     kMax <- object$kMax
     Info.max <- object$planned$Info.max

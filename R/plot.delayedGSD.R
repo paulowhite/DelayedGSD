@@ -10,6 +10,7 @@
 #' @param ylim range of the y axis
 #' @param planned [logical] should the planned boundaries be displayed along with the boundaries that have been computed based on the data.
 #' Can also be \code{"only"} to only display planned boundaries.
+#' @param predicted [logical] Should the predicted information/boundaries at decision based on interim data be output (when relevant).
 #' @param legend should a caption be added?
 #' @param legend.ncol number of column in the caption
 #' @param legend.cex character expansion factor for the text in the legend.
@@ -33,7 +34,8 @@ plot.delayedGSD <- function(x,
                             y,
                             type="Z",   
                             Itype="rate",
-                            planned=TRUE,
+                            planned=NULL,
+                            predicted=TRUE,
                             main = NULL,   
                             xlim = NULL, 
                             ylim = NULL, 
@@ -60,38 +62,48 @@ plot.delayedGSD <- function(x,
     
                                         # {{{ Preliminaries
 
-    specdec <- function(x,k){ format(round(x,k),nsmall=k)}
-
-    ## extract from object
     alpha <- x$alpha
     kMax <- x$kMax
     k <- x$stage$k
     type.k <- x$stage$type
-    test.planning <- identical(planned,"only") || (type.k=="planning")
 
-    outInfo <- coef(x, type = "information", planned = planned)
-    Info.i <- outInfo$Interim
-    Info.d <- outInfo$Decision
-    Info.max <- attr(outInfo,"Info.max")
-    
-    outBound <- coef(x, type = "boundary", planned = planned)
-    uk <- outBound[,"Ebound"]
-    lk <- outBound[,"Fbound"]
-    ck <- outBound[,"Cbound"]
-
-    if(!test.planning){
-        outDelta <- coef(x, type = "effect", planned = planned)
-
+    specdec <- function(x,k){ format(round(x,k),nsmall=k)}
+    if(is.null(planned)){
+        planned <- unlist(list(TRUE,"only")[(type.k=="planning")+1])
+    }else if(planned %in% c(TRUE,FALSE) == FALSE && planned != "only"){
+        stop("Argument \'planned\' should be TRUE, FALSE, or \"only\". \n")
+    }
+    ## extract from object
+    if(identical(planned,"only")){
+        outInfo <- coef(x, type = "information", planned = TRUE)
+        outBound <- coef(x, type = "boundary", planned = TRUE)
+        delta <- NULL
+    }else{
+        outInfo <- coef(x, type = "information", planned = FALSE, predicted = predicted)
+        outBound <- coef(x, type = "boundary", planned = FALSE, predicted = predicted)
+        outDelta <- stats::confint(x, k = "all")
         delta <- switch(EXPR = type,
                         "Z" = outDelta$statistic,
                         "E" = outDelta$estimate,
                         "P" = outDelta$p.value)
-    }else{
-        delta <- NULL
+        if(planned){
+            outInfo2 <- coef(x, type = "information", planned = TRUE)
+            outInfo[is.na(outInfo)] <- outInfo2[is.na(outInfo)]
+            outBound2 <- coef(x, type = "boundary", planned = TRUE)
+            outBound[is.na(outBound)] <- outBound2[is.na(outBound)]
+        }
     }
+
+    Info.i <- outInfo$Interim
+    Info.d <- outInfo$Decision
+    Info.max <- attr(outInfo,"Info.max")
+   
+    uk <- outBound[,"Ebound"]
+    lk <- outBound[,"Fbound"]
+    ck <- outBound[,"Cbound"]
     
     if(is.null(main)){
-        if(test.planning){
+        if(identical(planned,"only")){
             main <- "Planning"
         }else if(type.k=="final"){
             main <- paste0("Final analysis (stage ",k,")")
@@ -130,7 +142,7 @@ plot.delayedGSD <- function(x,
     yl <- lk[!is.na(lk)]   
     yc <- ck[!is.na(ck)]
     yh <- stats::qnorm(1-alpha)
-    whereleg <- "bottomleft"
+    whereleg <- "bottomright"
     ylab <- "Stopping boundary (Z-statistic)"
  
     if(type=="P"){
@@ -157,9 +169,9 @@ plot.delayedGSD <- function(x,
     }
     if(is.null(xlim)){
         if(Itype=="rate"){
-            xlim <- c(0,1)
+            xlim <- c(0,1.1)
         }else{
-            xlim <- c(0,max(xu,na.rm=TRUE))
+            xlim <- c(0,1.1*max(xu,na.rm=TRUE))
         }
     }
                                         # }}}
@@ -170,20 +182,32 @@ plot.delayedGSD <- function(x,
     graphics::points(xu,yl,col="red",pch=21,bg="red",cex=1.2)
     graphics::points(xu,yu,col="green3",pch=21,bg="green3",cex=1.2)
     graphics::points(xd,yc,col="black",pch=19,cex=1.5)
+
     if(!is.null(delta)){
         xdelta <- xu[1:k]
         if(type.k=="decision"){
             xdelta <- c(xdelta,xd[k])
         }
+
         ## lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
         graphics::points(xdelta,delta,col="purple",pch=22,bg="purple",cex=1.2)
-        graphics::text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple")
+        graphics::text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple", pos = 4)
         
     }
                                         #---
-    graphics::text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=1)
-    graphics::text(x=xu,y=yl,labels=specdec(yl,k=mydigits),col="red",pos=1)
-    graphics::text(x=xu,y=yu,labels=specdec(yu,k=mydigits),col="green3",pos=3)    
+    graphics::text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=2)
+    if(planned == "only"){
+        pos.l <- 1
+        pos.u <- 3
+    }else if(length(yl)==kMax){
+        pos.l <- c(rep(2,k),rep(1,kMax-k))
+        pos.u <- c(rep(2,k),rep(3,kMax-k))
+    }else{
+        pos.l <- 2
+        pos.u <- 2
+    }
+    graphics::text(x=xu,y=yl,labels=specdec(yl,k=mydigits),col="red",pos=pos.l)
+    graphics::text(x=xu,y=yu,labels=specdec(yu,k=mydigits),col="green3",pos=pos.u)    
                                         #---   
     graphics::abline(h=yh,lty=2,col="grey")
     graphics::text(x=0,y=yh,labels=specdec(yh,k=mydigits),col="grey",pos=1)        

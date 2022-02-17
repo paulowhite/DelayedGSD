@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb  8 2022 (10:09) 
+## Last-Updated: feb 15 2022 (11:52) 
 ##           By: Brice Ozenne
-##     Update #: 1089
+##     Update #: 1095
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,9 +21,6 @@
 #' @name getInformation
 #'
 #' @param object a \code{ttest} object or a \code{gls} object.
-#' @param planned [character] Should only the information used to plan the trial be output (\code{"only"}),
-#' or only the estimated information (\code{FALSE}),
-#' or the estimated information when available and otherwise the information used to plan the trial.
 #' @param name.coef [character] For which coefficient the information should be computed (only relevant for gls models).
 #' @param type [character] Should the information be estimated only for the observed data (\code{"estimation"}, excluding missing values)
 #' or for the full dataset  (\code{"prediction"}, including missing values).
@@ -235,9 +232,6 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
         stop("Only handles \"corSymm\" and \"corCompSymm\" correlation structures \n.")
     }
 
-    if(!is.null(newdata) && details){
-        stop("Cannot compute information for a new data when argument \'details\' is TRUE \n")
-    }
     if(!is.null(variance) && details){
         stop("Cannot compute information for user-defined covariance values when argument \'details\' is TRUE \n")
     }

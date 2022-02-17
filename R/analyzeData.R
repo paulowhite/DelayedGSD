@@ -31,6 +31,9 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
     ## ** normalize arguments
     ddf <- match.arg(ddf, choices = c("nlme","satterthwaite"))
     long <- wide2long(data, rm.na = TRUE) ## remove missing value but not pipeline value from the data.set
+    if(!is.null(data.decision) && inherits(data.decision, what = "data.frame")){
+        data.decision <- wide2long(data.decision, rm.na = TRUE) ## remove missing value
+    }
     ## head(long[order(long$id),],n=10)
     ## summary(long)
 
@@ -83,7 +86,7 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
 
     ## ** Estimate the information
     if(getinfo){
-        if(is.null(data.decision) || inherits(data.frame, what = "data.frame")){
+        if(is.null(data.decision) || inherits(data.decision, what = "data.frame")){
             ## current information and information at decision
             out <- c(out,getInformation(m, name.coef = "Z1", data = long, newdata = data.decision, details = TRUE))
             if(!is.null(data.decision)){
@@ -94,7 +97,7 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
         }else if(inherits(data.decision,"numeric") || inherits(data.decision,"integer")){ 
             out <- c(out,getInformation(m, name.coef = "Z1", data = long, newdata = NULL, details = TRUE))
             if(data.decision < out$sample.size["total"]){
-                stop("Argument \'n.decision\' should be larger than the number of patients (=",out.info$sample.size["total"],") in the dataset. \n")
+                stop("Argument \'data.decision\' should be larger than the number of patients (=",out.info$sample.size["total"],") in the dataset. \n")
             }
             out$information["decision"] <- (data.decision/out$sample.size["total"])*as.double(out$information["decision"])
             out$sample.size["decision"] <- data.decision
