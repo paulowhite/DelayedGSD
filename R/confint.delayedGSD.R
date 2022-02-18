@@ -6,7 +6,7 @@
 #' @param object object of class \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
 #' @param parm not used, for compatibility with the generic method.
 #' @param level not used, for compatibility with the generic method.
-#' @param method [character] type of estimate to output: can be \code{"ML"} or  \code{"corrected ML"}, the latter accounting for the group sequential design.
+#' @param method [character] type of estimate to output: can be \code{"ML"} or  \code{"MUE"}, the latter accounting for the group sequential design (median unbiased estimates).
 #' @param k [integer] stage relative to which the estimates should be output.
 #' @param type.k [character] type  of stage relative to which the estimates should be output: \code{"interim"}, \code{"decision"}, or \code{"final"}.
 #' @param ... not used, for compatibility with the generic method.
@@ -74,9 +74,12 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
         }
     
         if(!is.null(method)){
-            method <- match.arg(method, c("ML","corrected ML"), several.ok = TRUE)
-            ## if("corrected ML" %in% method &&  type.k == "interim"){
-            ##     stop("Argument \'method\' cannot be \"corrected ML\" at interim. \n")
+            method <- toupper(method)
+            if(any(method %in% c("ML","MUE") == FALSE)){
+                stop("Incorrect argument \'method\': should take value \"ML\" and/or \"MUE\". \n")
+            }
+            ## if("MUE" %in% method &&  type.k == "interim"){
+            ##     stop("Argument \'method\' cannot be \"MUE\" at interim. \n")
             ## }
         }
 
@@ -86,10 +89,15 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
         }else{
             iDelta <- object$delta[k,]
         }
+        if(any(sapply(object$lmm, length)>0)){
+            name.coef <- unlist(sapply(object$lmm,"[[","name.coef"))[1]
+        }else{
+            name.coef <- NA
+        }
         out <- data.frame(method = "ML",
                           stage = k,
                           type = type.k,
-                          coef = object$lmm[[1]]$name.coef,
+                          coef = name.coef,
                           estimate = iDelta$estimate,
                           se = iDelta$se,
                           lower = iDelta$estimate + stats::qt(object$alpha/2, df = iDelta$df) * iDelta$se,
@@ -97,18 +105,18 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
                           statistic = iDelta$statistic,
                           df = iDelta$df,
                           p.value = iDelta$p.value)
-        if(!is.null(object$correction)){
-            out <- rbind(out, data.frame(method = "corrected ML",
+        if(!is.null(object$delta.MUE)){
+            out <- rbind(out, data.frame(method = "MUE",
                                          stage = k,
                                          type = type.k,
                                          coef = object$lmm[[1]]$name.coef,
-                                         estimate = object$correction$estimate,
+                                         estimate = object$delta.MUE$estimate,
                                          se = NA,
-                                         lower = object$correction$lower,
-                                         upper = object$correction$upper,
+                                         lower = object$delta.MUE$lower,
+                                         upper = object$delta.MUE$upper,
                                          statistic = iDelta$statistic,
                                          df = NA,
-                                         p.value = object$correction$p.value)
+                                         p.value = object$delta.MUE$p.value)
                          )
 
         }

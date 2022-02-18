@@ -18,6 +18,8 @@
 #' @param sep.arrow [numeric vector of length 2] space between the critical point and the arrow (below and above)
 #' @param size.arrow [numeric, >0] width of the arrow.
 #' @param lwd.arrow [numeric, >0] thickness of the arrow.
+#' @param cex.bound [numeric, >0] size of the dots for the boundaries.
+#' @param cex.estimate [numeric vector of size 2] size of the dots for the estimated statistic/p-value/effect and its label.
 #' @param ... not used. For compatibility with the generic method.
 #'
 #' @examples
@@ -46,6 +48,8 @@ plot.delayedGSD <- function(x,
                             sep.arrow=c(0.2,0.1),
                             size.arrow=0.1,
                             lwd.arrow=1,
+                            cex.bound=1.2,
+                            cex.estimate=1.2,
                             ...){
 
                                         # {{{ Check user input
@@ -163,8 +167,8 @@ plot.delayedGSD <- function(x,
     if(is.null(ylim)){
         ylim <- switch(EXPR = type,
                        "P" = c(0,1),
-                       "E" = c(min(c(yl,delta),na.rm=TRUE)-0.5,max(c(yu,delta),na.rm=TRUE)+0.5),
-                       "Z" = c(min(c(-1,yl,delta),na.rm=TRUE),max(c(3,yl,delta),na.rm=TRUE))
+                       "E" = c(min(c(yl[!is.infinite(yl)],delta),na.rm=TRUE)-0.5,max(c(yu[!is.infinite(yu)],delta),na.rm=TRUE)+0.5),
+                       "Z" = c(min(c(-1,yl[!is.infinite(yl)],delta),na.rm=TRUE),max(c(3,yu[!is.infinite(yu)],delta),na.rm=TRUE))
                        )
     }
     if(is.null(xlim)){
@@ -179,9 +183,9 @@ plot.delayedGSD <- function(x,
     graphics::plot(xu,yu,type="l",lty=2,lwd=2,ylim=ylim,col="green3",xlab=xlb,ylab=ylab,axes=FALSE,
                    xlim=xlim,main=main)
     graphics::lines(xu,yl,col="red",lwd=2,lty=2)
-    graphics::points(xu,yl,col="red",pch=21,bg="red",cex=1.2)
-    graphics::points(xu,yu,col="green3",pch=21,bg="green3",cex=1.2)
-    graphics::points(xd,yc,col="black",pch=19,cex=1.5)
+    graphics::points(xu,yl,col="red",pch=21,bg="red",cex=cex.bound)
+    graphics::points(xu,yu,col="green3",pch=21,bg="green3",cex=cex.bound)
+    graphics::points(xd,yc,col="black",pch=19,cex=cex.bound)
 
     if(!is.null(delta)){
         xdelta <- xu[1:k]
@@ -190,7 +194,14 @@ plot.delayedGSD <- function(x,
         }
 
         ## lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
-        graphics::points(xdelta,delta,col="purple",pch=22,bg="purple",cex=1.2)
+        graphics::points(xdelta,delta,col="purple",pch=22,bg="purple",cex=cex.estimate[1])
+        if(length(cex.estimate)>1){
+            if(type.k=="decision"){
+                graphics::text(x=xdelta,y=delta,labels=c(1:k,"D"),col="white", cex = cex.estimate[2])
+            }else{
+                graphics::text(x=xdelta,y=delta,labels=1:k,col="white", cex = cex.estimate[2])
+            }
+        }
         graphics::text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple", pos = 4)
         
     }

@@ -86,6 +86,7 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
 
     ## ** Estimate the information
     if(getinfo){
+        out$data.decision <- data.decision
         if(is.null(data.decision) || inherits(data.decision, what = "data.frame")){
             ## current information and information at decision
             out <- c(out,getInformation(m, name.coef = "Z1", data = long, newdata = data.decision, details = TRUE))
@@ -94,7 +95,7 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
             }
             ## details: extract information at interim (complete case) interim(full information)
             ## to get information at decision (i.e. including rows for which the covariates are missing) upweight the rows with observed values.
-        }else if(inherits(data.decision,"numeric") || inherits(data.decision,"integer")){ 
+        }else if(inherits(data.decision,"numeric") || inherits(data.decision,"integer")){
             out <- c(out,getInformation(m, name.coef = "Z1", data = long, newdata = NULL, details = TRUE))
             if(data.decision < out$sample.size["total"]){
                 stop("Argument \'data.decision\' should be larger than the number of patients (=",out.info$sample.size["total"],") in the dataset. \n")
@@ -113,7 +114,7 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
         }
     }
 
-    ## ** Exportpp
+    ## ** Export
     class(out) <- "lmmGSD"
     return(out)
 }

@@ -17,7 +17,7 @@ CalcBoundaries(
   InfoR.d = 0.55,
   bindingFutility = TRUE,
   alternative = "greater",
-  n = NULL,
+  n = NA,
   trace = FALSE
 )
 }

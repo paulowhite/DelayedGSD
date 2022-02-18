@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: feb 17 2022 (16:54) 
+## Last-Updated: feb 18 2022 (11:47) 
 ##           By: Brice Ozenne
-##     Update #: 451
+##     Update #: 478
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,12 +15,8 @@
 ## 
 ### Code:
 
-library(rpact)
-library(DelayedGSD)
-
 rm(list=ls())
 
-     
                                    # {{{ parameters
 ## * parameters
 name <- "ScenarioName" # To save the results
@@ -64,6 +60,36 @@ deltaPower <- abs(delta[3]) # effect (NOT Z-scale/unit, but outcome scale/unit!)
 n <- ceiling(2*2*((allsd[3]/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
                                         # inflate SS as required for interim
 
+# {{{ set path to load and save and othe machine specific variables
+## * path
+if(system("whoami",intern=TRUE)=="paul"){  
+    pathToLoad <- "~/research/SeqDesignDelayed/DelayedGSD/R/"
+    pathToSave <- "~/research/SeqDesignDelayed/DelayedGSD/Simulations/output/"
+    name <- paste0(name,"test")
+    i <- 1
+}else if(system("whoami",intern=TRUE) %in% c("bozenne","unicph\\hpl802")){  
+    pathToLoad <- "~/Documents/GitHub/DelayedGSD/R"
+    i <- 1
+}else if(system("whoami",intern=TRUE)=="tfq625"){
+    pathToLoad <- "~/to-sync-server-biostat/TOCREATE"
+    pathToSave <- "~/to-sync-server-biostat/TOCREATE"
+    i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+}
+# }}}
+
+
+## * libraries and functions
+library(DelayedGSD)
+## sourceDir <- function(path, trace = TRUE, ...) {
+##     for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
+##         if(trace) cat(nm,":")
+##         source(file.path(path, nm), ...)
+##         if(trace) cat("\n")
+##     }
+## }
+## sourceDir(pathToLoad)
+    
+
 ## * Compute inflation factor and sample size
 plannedB <- vector(mode = "list", length = 3)
 for(iMeth in 1:3){ ## iMeth <- 1
@@ -78,7 +104,7 @@ for(iMeth in 1:3){ ## iMeth <- 1
                                         cNotBelowFixedc=FALSE,
                                         bindingFutility=binding,
                                         delta=tail(delta,1))
-    ## summary(plannedB[[iMeth]])
+    ## summary(plannedB[[1]])
     ## coef(plannedB[[iMeth]], type = "information")
 }
 inflationFactor <- sapply(plannedB,function(iP){iP$planned$InflationFactor})
@@ -95,33 +121,6 @@ nGSD <- ceiling(n*inflationFactor)
 # }}}
 
 
-# {{{ set path to load and save and othe machine specific variables
-# if I am on my own laptop
-if(system("whoami",intern=TRUE)=="paul"){  
-    pathToLoad <- "~/research/SeqDesignDelayed/DelayedGSD/R/"
-    pathToSave <- "~/research/SeqDesignDelayed/DelayedGSD/Simulations/output/"
-    name <- paste0(name,"test")
-    i <- 1
-}else if(system("whoami",intern=TRUE) %in% c("bozenne","unicph\\hpl802")){  
-    pathToLoad <- "~/Documents/GitHub/DelayedGSD/R"
-    i <- 1
-}else if(system("whoami",intern=TRUE)=="tfq625"){
-    pathToLoad <- "~/to-sync-server-biostat/TOCREATE"
-    pathToSave <- "~/to-sync-server-biostat/TOCREATE"
-    i <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-}
-# }}}
-
-# {{{ Source helper functions
-sourceDir <- function(path, trace = TRUE, ...) {
-    for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
-        if(trace) cat(nm,":")
-        source(file.path(path, nm), ...)
-        if(trace) cat("\n")
-    }
-}
-sourceDir(pathToLoad)
-# }}}
 
 # {{{ Set seeds for parallel computing and reproducibility
 ## RNGkind(sample.kind = "Rounding")  # to reproduce old simulation results !!!!!!!!!!! (the default random number generator has been updated with in R version 3.6)
@@ -136,12 +135,11 @@ allseeds <- sample(x=1:1e8,size=1e5,replace=FALSE) #x=1:(.Machine$integer.max) s
 
 # {{{ technical details to loop
 RES <- NULL # initialize results to save
-info.decision <- NULL ## info at all possible decisions (even when we continue at interim)
 allj <- ((i-1)*NMC + 1):(i*NMC) # indices of all iterations (replicates) for this job, accountng for the other jobs running in parallel
 # }}}
 
 
-for(j in allj){ ## j <- 5
+for(j in allj){ ## j <- 5 ## 5
 
     startComp <- Sys.time()
     # {{{ TRACE info (e.g. to check the Rout)
@@ -157,6 +155,7 @@ for(j in allj){ ## j <- 5
     # }}}
 
                                         # {{{ generate data
+    ## ** simulate
     set.seed(myseedi)
     res <- GenData(n=n, 
                    N.fw=2,
@@ -179,7 +178,7 @@ for(j in allj){ ## j <- 5
                                         # }}}
                                         # {{{ reformat data like those of Corine
     ## Make data long format
-    dd <- FormatAsCase(d)
+    ## dd <- FormatAsCase(d)
     ## head(dd)
     ## summary(dd)
                                         # }}}
@@ -189,14 +188,16 @@ for(j in allj){ ## j <- 5
                                         # half of the participants have completed (or had the opportunity to complete) the follow-up 
     thet <- d$t3[ceiling(n*PropForInterim)]
     di <- SelectData(d,t=thet)
-    ddi <- FormatAsCase(di) # needed ????
+    ## ddi <- FormatAsCase(di) # needed ????
     ## head(d[d$id==52,])
                                         # }}}
     ## {{{ analyze data at at interim
+    ## ** interim
     lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thet + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
+    ## lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
 
     currentGSD <- vector(mode = "list", length = 3)
-    out.interim <- c()
+    out.interim <- vector(mode = "list", length = 3)
     for(iMeth in 1:3){ ## iMeth <- 1
 
         currentGSD[[iMeth]] <- update(plannedB[[iMeth]], delta = lmmI, trace = FALSE)
@@ -204,130 +205,153 @@ for(j in allj){ ## j <- 5
         iConfint.interim <- confint(currentGSD[[iMeth]])
         iInfo.interim <- coef(currentGSD[[iMeth]], type = "information")
         iBoundary.interim <- coef(currentGSD[[iMeth]], type = "boundary")
+        iDecision.interim <- coef(currentGSD[[iMeth]], type = "decision")
 
-        out.interim[paste0("est.interim",iMeth)] <- iConfint.interim[1,"estimate"]
-        out.interim[paste0("se.interim",iMeth)] <- iConfint.interim[1,"se"]
-        out.interim[paste0("Z.interim",iMeth)] <- iConfint.interim[1,"statistic"]
-        out.interim[paste0("Info.interim",iMeth)] <- iInfo.interim[1,"Interim"]
-        out.interim[paste0("InfoPC.interim",iMeth)] <- iInfo.interim[1,"Interim.pc"]
-        out.interim[paste0("PInfoD.interim",iMeth)] <- iInfo.interim[1,"Decision"]  
-        out.interim[paste0("u.interim",iMeth)] <- iBoundary.interim[1,"Ebound"]  
-        out.interim[paste0("l.interim",iMeth)] <- iBoundary.interim[1,"Fbound"]  
-        out.interim[paste0("stop.at.interim",iMeth)] <- unname(coef(currentGSD[[iMeth]], type = "decision")["decision","stage 1"])=="stop" ## 1 is stop
+        out.interim[[iMeth]] <-  data.frame(statistic = iConfint.interim[1,"statistic"],
+                                            estimate_ML = iConfint.interim[1,"estimate"],
+                                            se_ML = iConfint.interim[1,"se"],
+                                            info = iInfo.interim[1,"Interim"],
+                                            infoPC = iInfo.interim[1,"Interim.pc"],
+                                            info.pred = iInfo.interim[1,"Decision"],
+                                            infoPC.pred = iInfo.interim[1,"Decision.pc"],
+                                            uk = iBoundary.interim[1,"Ebound"],
+                                            lk = iBoundary.interim[1,"Fbound"],
+                                            decision = iDecision.interim["decision","stage 1"],
+                                            reason = iDecision.interim["reason.interim","stage 1"])
     }
  ## currentGSD[[1]]
 
+    ## ** decision
     dDecision <- d[which(d$t1 <= thet + theDelta.t*TimeFactor),]
     lmmD <- analyzeData(dDecision, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     
-    out.decision <- c()
+    out.decision <- vector(mode = "list", length = 3)
     for(iMeth in 1:3){ ## iMeth <- 1
           
-        if(out.interim[paste0("stop.at.interim",iMeth)]){
+        if(out.interim[[iMeth]]$decision == "stop"){
             currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, trace = FALSE)
             ## plot(currentGSD[[iMeth]])
 
-            iConfint.decision <- confint(currentGSD[[iMeth]], method = c("ML","corrected ML"))
+            iConfint.decision <- confint(currentGSD[[iMeth]], method = c("ML","MUE"))
             iInfo.decision <- coef(currentGSD[[iMeth]], type = "information")
             iBoundary.decision <- coef(currentGSD[[iMeth]], type = "boundary")
+            iDecision.decision  <- coef(currentGSD[[iMeth]], type = "decision")
 
-            out.decision[paste0("Z.decision_ML",iMeth)] <- iConfint.decision[1,"statistic"]
-            out.decision[paste0("p.decision_ML",iMeth)] <- iConfint.decision[iConfint.decision$method == "ML","p.value"]
-            out.decision[paste0("lower.decision_ML",iMeth)] <- iConfint.decision[iConfint.decision$method == "ML","lower"]
-            out.decision[paste0("upper.decision_ML",iMeth)] <- iConfint.decision[iConfint.decision$method == "ML","upper"]
-            out.decision[paste0("est.decision_ML",iMeth)] <- iConfint.decision[iConfint.decision$method == "ML","estimate"]
-            out.decision[paste0("p.decision_cML",iMeth)] <- iConfint.decision[iConfint.decision$method == "corrected ML","p.value"]
-            out.decision[paste0("lower.decision_cML",iMeth)] <- iConfint.decision[iConfint.decision$method == "corrected ML","lower"]
-            out.decision[paste0("upper.decision_cML",iMeth)] <- iConfint.decision[iConfint.decision$method == "corrected ML","upper"]
-            out.decision[paste0("est.decision_cML",iMeth)] <- iConfint.decision[iConfint.decision$method == "corrected ML","estimate"]
-            out.decision[paste0("Info.decision",iMeth)] <- iInfo.decision[1,"Interim"]
-            out.decision[paste0("InfoPC.decision",iMeth)] <- iInfo.decision[1,"Interim.pc"]
-            out.decision[paste0("c.decision",iMeth)] <- iBoundary.decision[1,"Cbound"]  
-            out.decision[paste0("reject.at.decision",iMeth)] <- unname(coef(currentGSD[[iMeth]], type = "decision")["decision","stage 2"]=="efficacy") ## 1 is stop
+            out.decision[[iMeth]] <- data.frame(statistic = iConfint.decision[1,"statistic"],
+                                                p.value_ML = iConfint.decision[iConfint.decision$method == "ML","p.value"],
+                                                lower_ML = iConfint.decision[iConfint.decision$method == "ML","lower"],
+                                                upper_ML = iConfint.decision[iConfint.decision$method == "ML","upper"],
+                                                estimate_ML = iConfint.decision[iConfint.decision$method == "ML","estimate"],
+                                                p.value_MUE = iConfint.decision[iConfint.decision$method == "MUE","p.value"],
+                                                lower_MUE = iConfint.decision[iConfint.decision$method == "MUE","lower"],
+                                                upper_MUE = iConfint.decision[iConfint.decision$method == "MUE","upper"],
+                                                estimate_MUE = iConfint.decision[iConfint.decision$method == "MUE","estimate"],
+                                                info = iInfo.decision[1,"Interim"],
+                                                infoPC = iInfo.decision[1,"Interim.pc"],
+                                                ck = iBoundary.decision[1,"Cbound"],
+                                                decision = unname(iDecision.decision["decision","stage 2"])
+                                                )
 
         }else{
             ## update information
             currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, k = 1, type.k = "decision", trace = FALSE)
 
-            out.decision[paste0("Z.decision_ML",iMeth)] <- NA
-            out.decision[paste0("p.decision_ML",iMeth)] <- NA
-            out.decision[paste0("lower.decision_ML",iMeth)] <- NA
-            out.decision[paste0("upper.decision_ML",iMeth)] <- NA
-            out.decision[paste0("est.decision_ML",iMeth)] <- NA
-            out.decision[paste0("p.decision_cML",iMeth)] <- NA
-            out.decision[paste0("lower.decision_cML",iMeth)] <- NA
-            out.decision[paste0("upper.decision_cML",iMeth)] <- NA
-            out.decision[paste0("est.decision_cML",iMeth)] <- NA
-            out.decision[paste0("Info.decision",iMeth)] <- NA
-            out.decision[paste0("InfoPC.decision",iMeth)] <- NA
-            out.decision[paste0("c.decision",iMeth)] <- NA
-            out.decision[paste0("reject.at.decision",iMeth)] <- NA
+            iInfo.decision <- coef(currentGSD[[iMeth]], type = "information")
+            iBoundary.decision <- coef(currentGSD[[iMeth]], type = "boundary")
+
+            out.decision[[iMeth]] <- data.frame(statistic = NA,
+                                                p.value_ML = NA,
+                                                lower_ML = NA,
+                                                upper_ML = NA,
+                                                estimate_ML = NA,
+                                                p.value_MUE = NA,
+                                                lower_MUE = NA,
+                                                upper_MUE = NA,
+                                                estimate_MUE = NA,
+                                                info = iInfo.decision[1,"Decision"],
+                                                infoPC = iInfo.decision[1,"Decision.pc"],
+                                                ck = iBoundary.decision[1,"Cbound"],
+                                                decision = NA)
         }
     }
                                         # }}}
                                         # {{{ Analyze data at decision
 
-
+    ## ** finale
     dFinal <- d
     lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
 
     out.final <- c()
     for(iMeth in 1:3){ ## iMeth <- 1
-        if(out.interim[paste0("stop.at.interim",iMeth)]){
+        if(out.interim[[iMeth]]$decision == "stop"){
 
-            out.final[paste0("Z.final_ML",iMeth)] <- NA
-            out.final[paste0("p.final_ML",iMeth)] <- NA
-            out.final[paste0("lower.final_ML",iMeth)] <- NA
-            out.final[paste0("upper.final_ML",iMeth)] <- NA
-            out.final[paste0("est.final_ML",iMeth)] <- NA
-            out.final[paste0("p.final_cML",iMeth)] <- NA
-            out.final[paste0("lower.final_cML",iMeth)] <- NA
-            out.final[paste0("upper.final_cML",iMeth)] <- NA
-            out.final[paste0("est.final_cML",iMeth)] <- NA
-            out.final[paste0("Info.final",iMeth)] <- NA
-            out.final[paste0("InfoPC.final",iMeth)] <- NA
-            out.final[paste0("c.final",iMeth)] <- NA
-            out.final[paste0("reject.at.final",iMeth)] <- NA
+            out.final[[iMeth]] <- data.frame(statistic = NA,
+                                             p.value_ML = NA,
+                                             lower_ML = NA,
+                                             upper_ML = NA,
+                                             estimate_ML = NA,
+                                             p.value_MUE = NA,
+                                             lower_MUE = NA,
+                                             upper_MUE = NA,
+                                             estimate_MUE = NA,
+                                             info = NA,
+                                             infoPC = NA,
+                                             ck = NA,
+                                             decision = NA)
 
         }else{
             currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmF, trace = FALSE)
             ## plot(test)
             ## summary(test)
-            iConfint.final <- confint(currentGSD[[iMeth]], method = c("ML","corrected ML"))
+            iConfint.final <- confint(currentGSD[[iMeth]], method = c("ML","MUE"))
             iInfo.final <- coef(currentGSD[[iMeth]], type = "information")
             iBoundary.final <- coef(currentGSD[[iMeth]], type = "boundary")
+            iDecision.final  <- coef(currentGSD[[iMeth]], type = "decision")
 
-            out.final[paste0("Z.final_ML",iMeth)] <- iConfint.final[1,"statistic"]
-            out.final[paste0("p.final_ML",iMeth)] <- iConfint.final[iConfint.final$method == "ML","p.value"]
-            out.final[paste0("lower.final_ML",iMeth)] <- iConfint.final[iConfint.final$method == "ML","lower"]
-            out.final[paste0("upper.final_ML",iMeth)] <- iConfint.final[iConfint.final$method == "ML","upper"]
-            out.final[paste0("est.final_ML",iMeth)] <- iConfint.final[iConfint.final$method == "ML","estimate"]
-            out.final[paste0("p.final_cML",iMeth)] <- iConfint.final[iConfint.final$method == "corrected ML","p.value"]
-            out.final[paste0("lower.final_cML",iMeth)] <- iConfint.final[iConfint.final$method == "corrected ML","lower"]
-            out.final[paste0("upper.final_cML",iMeth)] <- iConfint.final[iConfint.final$method == "corrected ML","upper"]
-            out.final[paste0("est.final_cML",iMeth)] <- iConfint.final[iConfint.final$method == "corrected ML","estimate"]
-            out.final[paste0("Info.final",iMeth)] <- iInfo.final[1,"Interim"]
-            out.final[paste0("InfoPC.final",iMeth)] <- iInfo.final[1,"Interim.pc"]
-            out.final[paste0("c.final",iMeth)] <- iBoundary.final[1,"Cbound"]  
-            out.final[paste0("reject.at.final",iMeth)] <- unname(coef(currentGSD[[iMeth]], type = "decision")["decision","stage 2"]=="efficacy") ## 1 is stop
+            out.final[[iMeth]] <- data.frame(statistic = iConfint.final[1,"statistic"],
+                                             p.value_ML = iConfint.final[iConfint.final$method == "ML","p.value"],
+                                             lower_ML = iConfint.final[iConfint.final$method == "ML","lower"],
+                                             upper_ML = iConfint.final[iConfint.final$method == "ML","upper"],
+                                             estimate_ML = iConfint.final[iConfint.final$method == "ML","estimate"],
+                                             p.value_MUE = iConfint.final[iConfint.final$method == "MUE","p.value"],
+                                             lower_MUE = iConfint.final[iConfint.final$method == "MUE","lower"],
+                                             upper_MUE = iConfint.final[iConfint.final$method == "MUE","upper"],
+                                             estimate_MUE = iConfint.final[iConfint.final$method == "MUE","estimate"],
+                                             info = iInfo.final[1,"Interim"],
+                                             infoPC = iInfo.final[1,"Interim.pc"],
+                                             ck = iBoundary.final[1,"Cbound"],
+                                             decision = unname(coef(currentGSD[[iMeth]], type = "decision")["decision","stage 2"])
+                                             )
         }
     }
                                         # }}}
 
     stopComp <- Sys.time()
                                         # {{{ Save results
-    out <- c(time.interim = thet,
-             seed=myseedi,             
-             nX1.interim = sum(!is.na(di$X1)),
-             nX2.interim = sum(!is.na(di$X2)),
-             nX3.interim = sum(!is.na(di$X3)),
-             ## results
-             out.interim,
-             out.decision,
-             out.final,
-             ## computation time
-             CompTime=round(difftime(stopComp,startComp,units="secs"),3)
-             )
+
+    outMerge <- do.call(rbind,lapply(1:3, function(iMeth){
+        iNames <- unique(c(names(out.interim[[iMeth]]),names(out.decision[[iMeth]]),names(out.final[[iMeth]])))
+        iMerge <- data.frame(matrix(NA, ncol = length(iNames)+3, nrow = 3, dimnames = list(NULL, c("method", "stage", "type", iNames))))
+        iMerge[1,c("method","stage","type",names(out.interim[[iMeth]]))] <- data.frame(method = iMeth, stage = 1, type = "interim", out.interim[[iMeth]]) 
+        iMerge[2,c("method","stage","type",names(out.decision[[iMeth]]))] <- data.frame(method = iMeth, stage = 1, type = "decision", out.decision[[iMeth]]) 
+        iMerge[3,c("method","stage","type",names(out.final[[iMeth]]))] <- data.frame(method = iMeth, stage = 2, type = "final", out.final[[iMeth]])
+        return(iMerge)
+    }))
+
+    ## outMerge[outMerge$method==3,]
+
+    out <- cbind(
+        ## results
+        outMerge,
+        ## simulation details
+        time.interim = thet,
+        seed=myseedi,             
+        nX1.interim = sum(!is.na(di$X1)),
+        nX2.interim = sum(!is.na(di$X2)),
+        nX3.interim = sum(!is.na(di$X3)),
+        ## computation time
+        computation.time=as.double(round(difftime(stopComp,startComp,units="secs"),3))
+    )
     ## names(out) <- myColNames
     RES <- rbind(RES,out)
                                         # }}}

@@ -10,7 +10,7 @@
 #' @param delta true effect under which to calculate the probability (should always be 0 for p-value, only change for calculation of CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
 #' @param futility2efficacy [logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.
-#' @param bindingFutility [logical]  whether the futility stopping rule is binding.
+#' @param bindingFutility [logical] whether the futility stopping rule is binding.
 #'
 #' @examples
 #' library(mvtnorm)

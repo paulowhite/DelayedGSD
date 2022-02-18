@@ -21,7 +21,7 @@
 
 \item{level}{not used, for compatibility with the generic method.}
 
-\item{method}{[character] type of estimate to output: can be \code{"ML"} or  \code{"corrected ML"}, the latter accounting for the group sequential design.}
+\item{method}{[character] type of estimate to output: can be \code{"ML"} or  \code{"MUE"}, the latter accounting for the group sequential design (median unbiased estimates).}
 
 \item{k}{[integer] stage relative to which the estimates should be output.}
 

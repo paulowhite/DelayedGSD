@@ -36,7 +36,7 @@ FinalPvalue(
 
 \item{futility2efficacy}{[logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.}
 
-\item{bindingFutility}{[logical]  whether the futility stopping rule is binding.}
+\item{bindingFutility}{[logical] whether the futility stopping rule is binding.}
 }
 \description{
 Compute the p-value at the end of the trial.

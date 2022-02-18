@@ -122,9 +122,11 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     if(type.update=="information"){
         if(inherits(delta,"lmmGSD")){
             object$Info.d[k] <- as.double(delta$information["decision"])
+            object$n.obs[k] <- delta$sample.size["total"]
         }else{
             object$Info.d[k] <- as.double(Info.d)
         }
+        
         object <- updateBoundaries(object, k = k, type.k = type.k, trace = trace-1, update.stage = FALSE)
         return(object)
     }
@@ -143,20 +145,64 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         if(type.k %in% c("interim","decision")){
             Info.d <- delta$information["decision"]
         }
+        if(is.null(delta$data.decision)){
+            object$n.obs[k] <- delta$sample.size["total"]
+        }else{
+            object$n.obs[k] <- delta$sample.size["decision"]
+        }
         delta <- delta$delta
         if(trace>0){cat("done \n", sep = "")}
+    }else{
+        if(is.numeric(delta) && length(delta)==1){
+            delta <- data.frame(estimate = delta, se = NA, statistic = NA, df = NA, p.value = NA)
+            if(type.k=="interim"){
+                delta$se <- 1/sqrt(Info.i)
+            }else if(type.k=="decision"){
+                delta$se <- 1/sqrt(Info.d)
+            }else if(type.k=="final"){
+                if(missing(Info.d) && !missing(Info.i)){
+                    delta$se <- 1/sqrt(Info.i)
+                }else if(missing(Info.i) && !missing(Info.d)){
+                    delta$se <- 1/sqrt(Info.d)                    
+                }else{
+                    stop("Could not guess the standard error based on the provided information. \n",
+                         "At final, exactly only one of the two arguments: \'Info.d\' and  \'Info.i\' should be provided. \n")
+                }
+            }
+            delta$statistic <- delta$estimate / delta$se
+            delta$df <- Inf
+            delta$p.value <- 2*(1-pnorm(abs(delta$statistic))) ## ignore object$alternative
+        }else if(!is.data.frame(delta) || NROW(delta)!=1 || NCOL(delta)!=5){
+            stop("Argument \'delta\' should be a data.frame with 1 line and 5 columns \n.")
+        }else if(any(names(delta) != c("estimate","se","statistic","df","p.value"))){
+            stop("Column names in argument \'delta\' should be \"estimate\", \"se\", \"statistic\", \"df\", \"p.value\" \n")
+        }
+        
     }
+    
     if(type.k=="decision"){
         object$delta[k+1,] <- delta
     }else{
         object$delta[k,] <- delta
     }
-    if(type.k %in% c("interim","final")){
+    if(type.k == "interim"){
         object$Info.i[k] <- as.double(Info.i)
+    }else if(type.k == "final"){
+        if(missing(Info.d) && !missing(Info.i)){
+            object$Info.i[k] <- as.double(Info.i)
+        }else if(missing(Info.i) && !missing(Info.d)){
+            object$Info.i[k] <- as.double(Info.d)
+        }else{
+            stop("Could not guess the information based on the provided information. \n",
+                 "At final, exactly only one of the two arguments: \'Info.d\' and  \'Info.i\' should be provided. \n")
+        }
     }
-    if(type.k %in% c("interim","decision")){
+    if(type.k %in% "interim" && !missing(Info.d)){ ## predicted information at decision is used by certain methods
+        object$Info.d[k] <- as.double(Info.d)
+    }else if(type.k %in% "decision"){
         object$Info.d[k] <- as.double(Info.d)
     }
+
     ## ** update boundaries
     ## also update k and type.k
     if(trace>0){cat(" - update boundaries: ", sep = "")}
@@ -181,14 +227,14 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         lk <- object$lk
         uk <- object$uk
 
-        object$correction <- data.frame(estimate=NA,
-                                        lower=NA,
-                                        upper=NA,
-                                        p.value=NA)
+        object$delta.MUE <- data.frame(estimate=NA,
+                                       lower=NA,
+                                       upper=NA,
+                                       p.value=NA)
 
         ## *** p.value
         if(p.value){
-            object$correction$p.value <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
+            object$delta.MUE$p.value <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
                                                      Info.i = Info.i[1:k],
                                                      ck = ck[1:min(k,kMax-1)],   
                                                      lk = lk[1:k],  
@@ -212,23 +258,23 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                              estimate = delta[NROW(delta),"estimate"],
                              futility2efficacy = object$method!=3,
                              bindingFutility = object$bindingFutility)
-            object$correction$lower <- resCI["lower"]
-            attr(object$correction$lower,"error") <- attr(resCI,"error")["lower"]
-            object$correction$upper <- resCI["upper"]
-            attr(object$correction$lower,"error") <- attr(resCI,"error")["upper"]
+            object$delta.MUE$lower <- resCI["lower"]
+            attr(object$delta.MUE$lower,"error") <- attr(resCI,"error")["lower"]
+            object$delta.MUE$upper <- resCI["upper"]
+            attr(object$delta.MUE$lower,"error") <- attr(resCI,"error")["upper"]
         }
         
         ## *** Estimate
         if(estimate){
-            object$correction$estimate <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
-                                                        Info.i = Info.i[1:k],
-                                                        ck = ck[1:min(k,kMax-1)],   
-                                                        lk = lk[1:k],  
-                                                        uk = uk[1:k],  
-                                                        kMax = kMax, 
-                                                        estimate = delta[NROW(delta),"estimate"],
-                                                        futility2efficacy = object$method!=3,
-                                                        bindingFutility = object$bindingFutility)
+            object$delta.MUE$estimate <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
+                                                      Info.i = Info.i[1:k],
+                                                      ck = ck[1:min(k,kMax-1)],   
+                                                      lk = lk[1:k],  
+                                                      uk = uk[1:k],  
+                                                      kMax = kMax, 
+                                                      estimate = delta[NROW(delta),"estimate"],
+                                                      futility2efficacy = object$method!=3,
+                                                      bindingFutility = object$bindingFutility)
         }
         
         if(trace>0){cat("done \n", sep = "")}

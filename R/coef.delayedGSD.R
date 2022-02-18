@@ -104,15 +104,12 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
                 index.lmm <- setdiff(1:(k+1),k)
             }else{
                 index.lmm <- 1:k
-            }
-            n.obs <- rep(NA,kMax)
-            n.obs[1:k] <- unlist(lapply(index.lmm, function(iLMM){
-                if(!is.null(object$lmm[[iLMM]])){as.double(object$lmm[[iLMM]]$sample.size["decision"])}else{NA}
-            }))
+            }            
+            n.obs <- object$n.obs
             index.lastNNA <- utils::tail(which(!is.na(n.obs)),1)
             index.NA <- which(is.na(n.obs))
-            if(length(index.lastNNA)>0 && length(index.NA)>0 && predicted && type.k == "interim"){
-                n.obs[index.NA] <- n.obs[index.lastNNA] * InfoR.d[index.NA]/InfoR.d[index.lastNNA]
+            if(length(index.lastNNA)>0 && length(index.NA)>0 && predicted && type.k == "interim" && object$planned$Info.i[index.NA[1]]>Info.i[index.lastNNA]){
+                n.obs[index.NA] <- n.obs[index.lastNNA] * object$planned$Info.i[index.NA]/Info.i[index.lastNNA]
             }
             if(type.k == "interim" && predicted==FALSE){
                 Info.d[k] <- NA

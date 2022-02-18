@@ -6,6 +6,7 @@
 \usage{
 updateBoundaries(
   object,
+  delta,
   Info.i,
   Info.d,
   k,

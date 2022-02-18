@@ -197,7 +197,7 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
     }
     df.printInfo[is.na(df.printInfo)] <- ""
     if(!is.null(space)){
-        if(planned == "only"){
+        if(planned == "only" || all(df.printInfo$n=="")){
             df.printInfo <- cbind(df.printInfo[,1,drop=FALSE]," "=space,df.printInfo[,2:3]," "=space,df.printInfo[,4:5]," "=space)
         }else{
             df.printInfo <- cbind(df.printInfo[,1,drop=FALSE]," "=space,df.printInfo[,2:3]," "=space,df.printInfo[,4:5]," "=space,df.printInfo[,6,drop=FALSE])
@@ -205,13 +205,13 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
         names(df.printInfo)[c(2,5,8)] <- space
     }
     print(df.printInfo, row.names = FALSE)
-    cat("\n")
-
+   
     ## ** Estimates
     if(planned=="only" && abreviated<=1){
+        cat("\n")
         cat(" * Expected effect : ",outDelta," \n",sep="")
     }else if(abreviated<=1){
-        x.CI <- stats::confint(x, method = c("ML","corrected ML"))
+        x.CI <- stats::confint(x, method = c("ML","MUE"))
         x.CI$estimate <- round(x.CI$estimate, digits)
         x.CI$se <- round(x.CI$se, digits)
         x.CI$lower <- round(x.CI$lower, digits)
@@ -221,27 +221,51 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
         x.CI$p.value <- format.pval(x.CI$p.value, digits)
         x.CI$stage <- paste0(x.CI$stage," (",x.CI$type,")")
         x.CI$type <- NULL
-        if(is.null(x$correction)){
-            cat(" * Current ML-estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
-            print(x.CI[,c("estimate","se","lower","upper","statistic","df","p.value")], row.names = FALSE)
+        if(is.null(x$delta.MUE)){
             cat("\n")
+            if(!is.na(x.CI$coef[1])){
+                cat(" * Current ML-estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
+            }else{
+                cat(" * Current ML-estimate of the treatment effect \n",sep="")
+            }
+            print(x.CI[,c("estimate","se","lower","upper","statistic","df","p.value")], row.names = FALSE)
         }else{
-            cat(" * Estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
+            cat("\n")
+            if(!is.na(x.CI$coef[1])){
+                cat(" * Estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
+            }else{
+                cat(" * Estimate of the treatment effect \n",sep="")
+            }
             x.CI[is.na(x.CI)] <- ""
             
             print(x.CI[,c("method","estimate","lower","upper","p.value")], quote = FALSE, row.names = FALSE)
-            cat("\n")
         }
     }
   
     ## ** Sample size
     if(planned=="only" && abreviated<=1){
+        cat("\n")
         cat(" * Inflation factor: ",x$planned$InflationFactor," \n",sep="")
-    }else if(abreviated<=1){
+        if(!is.na(x$planned$n.obs)){
+            cat(" * Expected sample size: ",x$planned$n.obs," \n",sep="")
+        }
+        cat("\n")
+    }else if(abreviated<=1 && !is.na(x$n.obs[k])){
+
         iLMM <- x$lmm[[k+(type.k=="decision")]]
-        cat(" * Number of clusters in the study: ",iLMM$sample.size["interim"]," with at least one outcome value \n ",
-            "                                   ",iLMM$sample.size["interim.cc"]," with complete data \n", sep = "")
-    }    
+
+        df.nobs <- data.frame(c1 = paste0(" * ",x$n.obs[k]," patients in the study"))
+        if(!is.null(iLMM)){
+            df.nobs$c1 <- paste0(df.nobs$c1,":")
+            df.nobs$c2 <- paste0(iLMM$sample.size["interim"]," with at least one outcome value ")
+            df.nobs <- rbind(df.nobs, data.frame(c1 = "", c2 = paste0(iLMM$sample.size["interim.cc"]," with complete data")))
+        }
+        colnames(df.nobs) <- NULL
+        print(df.nobs, quote = FALSE, right = FALSE, row.names = FALSE)
+        cat("\n")
+    }else{
+        cat("\n")
+    }
     return(invisible(NULL))
 }
 

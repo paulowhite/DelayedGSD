@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 11 2020 (10:18) 
 ## Version: 
-## Last-Updated: feb 15 2022 (11:52) 
+## Last-Updated: feb 18 2022 (10:50) 
 ##           By: Brice Ozenne
-##     Update #: 1095
+##     Update #: 1098
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -383,8 +383,8 @@ getInformation.gls <- function(object, name.coef, data = NULL, details = FALSE,
                                   X = X.interim.cc,
                                   pattern = resPattern.interim.cc,
                                   vcov = solve(info.interim.cc)),
-                sample.size = c(decision = n.decision,  ## no missing data analysis: all patients with at least one observable outcome (i.e. including those with not yet observed values)
-                                total = n.all, ## all patients in the original dataset: all patient including those who dropped out early and have no observable outcome
+                sample.size = c(total = n.all, ## all patients in the original dataset: all patient including those who dropped out early and have no observable outcome
+                                decision = n.decision,  ## no missing data analysis: all patients with at least one observable outcome (i.e. including those with not yet observed values)
                                 interim = n.interim, ## full information analysis: all patients with at least one observed outcome
                                 interim.cc = n.interim.cc), ## complete case analysis: all patients with all observed outcomes
                 information = c(decision = 1/solve(info.decision)[name.coef,name.coef],

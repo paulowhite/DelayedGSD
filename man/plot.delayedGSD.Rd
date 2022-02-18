@@ -21,6 +21,8 @@
   sep.arrow = c(0.2, 0.1),
   size.arrow = 0.1,
   lwd.arrow = 1,
+  cex.bound = 1.2,
+  cex.estimate = 1.2,
   ...
 )
 }
@@ -57,6 +59,10 @@ Can also be \code{"only"} to only display planned boundaries.}
 \item{size.arrow}{[numeric, >0] width of the arrow.}
 
 \item{lwd.arrow}{[numeric, >0] thickness of the arrow.}
+
+\item{cex.bound}{[numeric, >0] size of the dots for the boundaries.}
+
+\item{cex.estimate}{[numeric vector of size 2] size of the dots for the estimated statistic/p-value/effect and its label.}
 
 \item{...}{not used. For compatibility with the generic method.}
 }

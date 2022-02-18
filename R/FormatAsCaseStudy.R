@@ -1,3 +1,9 @@
+#' @title Convert to L-format
+#' @description Rename variable and relevel factor variables.
+#' 
+#' @param [data.frame] data output by \code{GenData}.
+#' 
+#' @export
 FormatAsCase <- function(d){
     rm.col <- setdiff(names(d),paste0("missing",1:3))
     long <- stats::reshape(d[,rm.col,drop=FALSE],

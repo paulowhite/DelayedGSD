@@ -62,7 +62,7 @@ CalcBoundaries <- function(kMax=2,
                            InfoR.d=0.55,   
                            bindingFutility=TRUE,
                            alternative = "greater",
-                           n=NULL,
+                           n=NA,
                            trace=FALSE){  
 
     requireNamespace("gsDesign")
@@ -156,7 +156,6 @@ CalcBoundaries <- function(kMax=2,
 
     ## ** output
     out <- list(call = call,
-                n.obs = n,
                 stage = data.frame(k = 0, type = "planning"),
                 conclusion = matrix(as.character(NA), nrow = 4, ncol = kMax, dimnames = list(c("interim","reason.interim","decision","comment.decision"),NULL)),
                 uk = rep(NA, kMax), 
@@ -172,6 +171,7 @@ CalcBoundaries <- function(kMax=2,
                 betaSpent = rep(NA, kMax),
                 method = method,
                 delta = data.frame(estimate = rep(NA,kMax), se = rep(NA,kMax), statistic = rep(NA,kMax), df = rep(NA,kMax), p.value = rep(NA,kMax)),
+                n.obs = rep(NA, kMax), 
                 cNotBelowFixedc = cNotBelowFixedc,
                 cMin = cMin,
                 bindingFutility = bindingFutility,
@@ -187,7 +187,8 @@ CalcBoundaries <- function(kMax=2,
                                betaSpent = cumsum(delayedBnds$boundaries$Inc.Type.II),
                                Info.i = InfoR.i*delayedBnds$Info.max,
                                Info.d = delayedBnds$Info.d,
-                               delta = delta))
+                               delta = delta,
+                               n.obs = n))
     class(out) <- append("delayedGSD",class(out))
     return(out)
 }

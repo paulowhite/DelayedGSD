@@ -66,7 +66,7 @@
 
 ## * updateBoundaries (code)
 #' @export
-updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, trace = FALSE){
+updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.stage, trace = FALSE){
 
     kMax <- object$kMax
     Info.max <- object$planned$Info.max
@@ -79,9 +79,28 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
     ## ** update information
     if(missing(Info.i)){
         Info.i <- object$Info.i
+    }else{
+        if(type.k=="decision"){
+            object$Info.i[k+1] <- Info.i
+        }else{
+            object$Info.i[k] <- Info.i
+        }
     }
     if(missing(Info.d)){
         Info.d <- object$Info.d
+    }else{
+        if(type.k=="decision"){
+            object$Info.d[k+1] <- Info.d
+        }else{
+            object$Info.d[k] <- Info.d
+        }
+    }
+    if(!missing(delta)){
+        if(type.k=="decision"){
+            object$delta$estimate[k+1] <- delta
+        }else{
+            object$delta$estimate[k] <- delta
+        }
     }
     
     ## ** update boundaries
@@ -124,7 +143,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = FALSE,
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding = bindingFutility,
                                            Trace = trace,
@@ -141,7 +160,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = FALSE,
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta$estimate,
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace,
@@ -158,7 +177,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = FALSE,
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace)
@@ -202,7 +221,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace,
@@ -220,7 +239,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace,
@@ -238,7 +257,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace)
@@ -267,7 +286,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace,
@@ -285,7 +304,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace,
@@ -303,7 +322,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
                                            InfoR.d = object$Info.d/object$planned$Info.max,
-                                           delta = object$planned$delta, 
+                                           delta = object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding = bindingFutility,
                                            Trace = trace)
@@ -336,7 +355,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                        k = k, type.k = type.k, ImaxAnticipated = FALSE,
                                        InfoR.i = object$Info.i/object$planned$Info.max,
                                        InfoR.d = object$Info.d/object$planned$Info.max,
-                                       delta = object$planned$delta, 
+                                       delta = object$delta$estimate, 
                                        alternative = object$alternative,
                                        binding=bindingFutility,
                                        Trace = trace,
@@ -353,7 +372,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                        k = k, type.k = type.k, ImaxAnticipated = FALSE,
                                        InfoR.i = object$Info.i/object$planned$Info.max,
                                        InfoR.d = object$Info.d/object$planned$Info.max,
-                                       delta = object$planned$delta, 
+                                       delta = object$delta$estimate, 
                                        alternative = object$alternative,
                                        binding=bindingFutility,
                                        Trace = trace,
@@ -370,7 +389,7 @@ updateBoundaries <- function(object, Info.i, Info.d, k, type.k, update.stage, tr
                                        k = k, type.k = type.k, ImaxAnticipated = FALSE,
                                        InfoR.i = object$Info.i/object$planned$Info.max,
                                        InfoR.d = object$Info.d/object$planned$Info.max,
-                                       delta = object$planned$delta, 
+                                       delta = object$delta$estimate, 
                                        alternative = object$alternative,
                                        binding=bindingFutility,
                                        Trace = trace)
