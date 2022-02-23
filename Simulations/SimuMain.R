@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: feb 18 2022 (11:47) 
+## Last-Updated: feb 23 2022 (16:15) 
 ##           By: Brice Ozenne
-##     Update #: 478
+##     Update #: 479
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -138,7 +138,7 @@ RES <- NULL # initialize results to save
 allj <- ((i-1)*NMC + 1):(i*NMC) # indices of all iterations (replicates) for this job, accountng for the other jobs running in parallel
 # }}}
 
-
+## * Loop
 for(j in allj){ ## j <- 5 ## 5
 
     startComp <- Sys.time()

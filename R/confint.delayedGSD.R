@@ -30,32 +30,9 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
         stop("Argument(s) \'",paste(names(dots), collapse = "\' \'"),"\' not used. ")
     }
     if(identical(k,"all")){
-        if(object$stage$type=="decision"){
-            delta <- object$delta[1:(object$stage$k+1),,drop=FALSE]
-            stage <- c(1:object$stage$k,object$stage$k)
-            type <- c(rep("interim",object$stage$k), "decision")
-        }else{
-            delta <- object$delta[1:object$stage$k,,drop=FALSE]
-            stage <- 1:object$stage$k
-            if(object$stage$type=="interim"){
-                type <- rep("interim",object$stage$k)
-            }else if(object$stage$type=="final"){
-                type <- c(rep("interim",object$stage$k-1), "final")
-            }
-        }
-        out <- data.frame(method = "ML",
-                          stage = stage,
-                          type = type,
-                          coef = object$lmm[[1]]$name.coef,
-                          estimate = delta$estimate,
-                          se = delta$se,
-                          lower = delta$estimate + stats::qt(object$alpha/2, df = delta$df) * delta$se,
-                          upper = delta$estimate + stats::qt(1-object$alpha/2, df = delta$df) * delta$se,
-                          statistic = delta$statistic,
-                          df = delta$df,
-                          p.value = delta$p.value)
 
-        return(out)
+        out <- object$delta
+
     }else{
     
         kMax <- object$kMax
@@ -84,48 +61,19 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
         }
 
         ## ** extract information from object
-        if(type.k == "decision"){
-            iDelta <- object$delta[k+1,]
-        }else{
-            iDelta <- object$delta[k,]
-        }
-        if(any(sapply(object$lmm, length)>0)){
-            name.coef <- unlist(sapply(object$lmm,"[[","name.coef"))[1]
-        }else{
-            name.coef <- NA
-        }
-        out <- data.frame(method = "ML",
-                          stage = k,
-                          type = type.k,
-                          coef = name.coef,
-                          estimate = iDelta$estimate,
-                          se = iDelta$se,
-                          lower = iDelta$estimate + stats::qt(object$alpha/2, df = iDelta$df) * iDelta$se,
-                          upper = iDelta$estimate + stats::qt(1-object$alpha/2, df = iDelta$df) * iDelta$se,
-                          statistic = iDelta$statistic,
-                          df = iDelta$df,
-                          p.value = iDelta$p.value)
-        if(!is.null(object$delta.MUE)){
-            out <- rbind(out, data.frame(method = "MUE",
-                                         stage = k,
-                                         type = type.k,
-                                         coef = object$lmm[[1]]$name.coef,
-                                         estimate = object$delta.MUE$estimate,
-                                         se = NA,
-                                         lower = object$delta.MUE$lower,
-                                         upper = object$delta.MUE$upper,
-                                         statistic = iDelta$statistic,
-                                         df = NA,
-                                         p.value = object$delta.MUE$p.value)
-                         )
-
-        }
+        out <- object$delta[object$delta$type == type.k & object$delta$stage == k,]
     }
 
+
+
     ## ** export
-    if(is.null(method)){
-        out <- out[NROW(out),,drop=FALSE]
+    if(any(sapply(object$lmm, length)>0)){
+        out$coef <- unlist(sapply(object$lmm,"[[","name.coef"))[1]
     }else{
+        out$coef <- NA
+    }
+    out <- out[,c("method","stage","type","coef","estimate","se","statistic","df","p.value","lower","upper")]
+    if(!is.null(method)){
         out <- out[out$method %in% method,,drop=FALSE]
     }
     rownames(out) <- NULL            

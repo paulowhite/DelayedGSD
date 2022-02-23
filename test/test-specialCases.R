@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan  7 2022 (15:00) 
 ## Version: 
-## Last-Updated: feb 23 2022 (14:16) 
+## Last-Updated: feb 23 2022 (16:16) 
 ##           By: Brice Ozenne
-##     Update #: 10
+##     Update #: 14
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -39,10 +39,18 @@ GD.I2 <- SelectData(GD$d, t = GD$d[45,"t3"])
 lmmI2.3t <- analyzeData(GD.I2, ddf = "nlme", getinfo = TRUE, trace = TRUE)
 GSDI2.3t <- update(GSDI1.3t, delta = lmmI2.3t)
 
+plot(GSDI1.3t)
 plot(GSDI2.3t)
-plot(GSDI2.3t, cex.estimate = c(2,0.7))
+plot(GSDI2.3t, cex.estimate = c(2,0.7)) ## plot function seems to work now!
 
+lmmF.3t <- analyzeData(GD$d, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+GSDF.3t <- update(GSDI2.3t, delta = lmmF.3t)
 
+confint(GSDF.3t)
+plot(GSDF.3t, cex.estimate = c(2,0.7)) 
+
+summary(GSDF.3t)
+summary(GSDF.3t, planned = "only")
 
 ##----------------------------------------------------------------------
 ### test-specialCases.R ends here

@@ -179,12 +179,11 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         }
         
     }
-    
-    if(type.k=="decision"){
-        object$delta[k+1,] <- delta
-    }else{
-        object$delta[k,] <- delta
-    }
+    object$delta <- rbind(object$delta,
+                          data.frame(method = "ML", stage = k, type = type.k,
+                                     delta,
+                                     lower = delta$estimate + stats::qt(object$alpha/2, df = delta$df) * delta$se,
+                                     upper = delta$estimate + stats::qt(1-object$alpha/2, df = delta$df) * delta$se))
     if(type.k == "interim"){
         object$Info.i[k] <- as.double(Info.i)
     }else if(type.k == "final"){
@@ -220,6 +219,9 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     ## ** estimate
     if(type.k %in% c("decision","final")){
         if(trace>0){cat(" - correct estimate: ", sep = "")}
+        delta.MUE <- data.frame(method = "MUE", stage = k, type = type.k,
+                                estimate = NA, se = NA, statistic = NA, df = NA, lower = NA, upper = NA, p.value = NA)
+
         delta <- stats::confint(object)
         Info.i <- object$Info.i
         Info.d <- object$Info.d
@@ -227,25 +229,35 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         lk <- object$lk
         uk <- object$uk
 
-        object$delta.MUE <- data.frame(estimate=NA,
-                                       lower=NA,
-                                       upper=NA,
-                                       p.value=NA)
+        ## *** remove skipped interim
+        index.skip <- which(object$conclusion["reason.interim",]=="decreasing information")
+        if(length(index.skip)>0){
+            Info.d <- Info.d[-index.skip]
+            Info.i <- Info.i[-index.skip]
+            ck <- ck[-index.skip]
+            uk <- uk[-index.skip]
+            lk <- lk[-index.skip]
+            kMax <- kMax - length(index.skip)
+            k <- k - length(index.skip)
+        }
+
 
         ## *** p.value
         if(p.value){
-            object$delta.MUE$p.value <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
-                                                     Info.i = Info.i[1:k],
-                                                     ck = ck[1:min(k,kMax-1)],   
-                                                     lk = lk[1:k],  
-                                                     uk = uk[1:k],  
-                                                     kMax = kMax, 
-                                                     delta = 0,  
-                                                     estimate = delta[NROW(delta),"estimate"],
-                                                     futility2efficacy = object$method!=3,
-                                                     bindingFutility = object$bindingFutility)
+            resP <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
+                                Info.i = Info.i[1:k],
+                                ck = ck[1:min(k,kMax-1)],   
+                                lk = lk[1:k],  
+                                uk = uk[1:k],  
+                                kMax = kMax, 
+                                delta = 0,  
+                                estimate = delta[1,"estimate"],
+                                futility2efficacy = object$method!=3,
+                                bindingFutility = object$bindingFutility)
+            delta.MUE[1,"p.value"] <- as.double(resP)
+            attr(delta.MUE,"error") <- c(p.value = attr(resP,"error"))
         }
-        
+
         ## *** CI
         if(ci){
             resCI <- FinalCI(Info.d = Info.d[1:min(k,kMax-1)],  
@@ -255,28 +267,34 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                              uk = uk[1:k],  
                              kMax = kMax, 
                              alpha = object$alpha,  
-                             estimate = delta[NROW(delta),"estimate"],
+                             estimate = delta[1,"estimate"],
                              futility2efficacy = object$method!=3,
                              bindingFutility = object$bindingFutility)
-            object$delta.MUE$lower <- resCI["lower"]
-            attr(object$delta.MUE$lower,"error") <- attr(resCI,"error")["lower"]
-            object$delta.MUE$upper <- resCI["upper"]
-            attr(object$delta.MUE$lower,"error") <- attr(resCI,"error")["upper"]
+            delta.MUE[1,"lower"] <- resCI["lower"]
+            delta.MUE[1,"upper"] <- resCI["upper"]
+
+            if(is.null(attr(delta.MUE,"error"))){
+                attr(delta.MUE,"error") <- c(lower = attr(resCI,"error")["lower"], upper = attr(resCI,"error")["upper"])
+            }else{
+                attr(delta.MUE,"error") <- c(attr(delta.MUE,"error"), lower = attr(resCI,"error")["lower"], upper = attr(resCI,"error")["upper"])
+            }
         }
         
         ## *** Estimate
         if(estimate){
-            object$delta.MUE$estimate <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
-                                                      Info.i = Info.i[1:k],
-                                                      ck = ck[1:min(k,kMax-1)],   
-                                                      lk = lk[1:k],  
-                                                      uk = uk[1:k],  
-                                                      kMax = kMax, 
-                                                      estimate = delta[NROW(delta),"estimate"],
-                                                      futility2efficacy = object$method!=3,
-                                                      bindingFutility = object$bindingFutility)
+            delta.MUE[1,"estimate"] <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
+                                                     Info.i = Info.i[1:k],
+                                                     ck = ck[1:min(k,kMax-1)],   
+                                                     lk = lk[1:k],  
+                                                     uk = uk[1:k],  
+                                                     kMax = kMax, 
+                                                     estimate = delta[1,"estimate"],
+                                                     futility2efficacy = object$method!=3,
+                                                     bindingFutility = object$bindingFutility)
         }
         
+        object$delta <- rbind(object$delta,delta.MUE)
+        attr(object$delta,"error") <- attr(delta.MUE,"error")
         if(trace>0){cat("done \n", sep = "")}
     }
     

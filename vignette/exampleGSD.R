@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: Dec 16 2021 (08:56) 
 ## Version: 
-## Last-Updated: feb 23 2022 (12:14) 
+## Last-Updated: feb 23 2022 (16:15) 
 ##           By: Brice Ozenne
-##     Update #: 48
+##     Update #: 49
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -121,6 +121,7 @@ GSDD.2t <- update(GSDI.2t, delta = lmmD.2t)
 
 GSDD.2t
 summary(GSDD.2t)
+summary(GSDD.2t, planned = FALSE)
 coef(GSDD.2t, type = "information", planned = TRUE)
 coef(GSDD.2t, type = "information", planned = FALSE)
 confint(GSDD.2t, k = "all")
@@ -157,11 +158,6 @@ confint(GSDI1.4t, k = "all")
 lmmD1.4t <- analyzeData(dataD1.4t, ddf = "nlme", getinfo = TRUE, trace = TRUE)
 GSDD1.4t <- update(GSDI1.4t, delta = lmmD1.4t, k = 1, type.k = "decision")
 
-## ** 4 interim (decreasing)
-lmmI1.4t.dec <- analyzeData(dataI1.4t[-(1:10),], ddf = "nlme", getinfo = TRUE, trace = TRUE)
-GSDI1.4t.dec <- update(GSD.4t, delta = lmmI1.4t.dec)
-
-plot(GSDI1.4t.dec, planned = TRUE)
 
 ## * Second interim
 lmmI2.4t <- analyzeData(dataI2.4t, ddf = "nlme", getinfo = TRUE, trace = TRUE)

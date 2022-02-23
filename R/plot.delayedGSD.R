@@ -82,10 +82,17 @@ plot.delayedGSD <- function(x,
         outInfo <- coef(x, type = "information", planned = TRUE)
         outBound <- coef(x, type = "boundary", planned = TRUE)
         delta <- NULL
+        index.skip <- NULL
     }else{
         outInfo <- coef(x, type = "information", planned = FALSE, predicted = predicted)
         outBound <- coef(x, type = "boundary", planned = FALSE, predicted = predicted)
-        outDelta <- stats::confint(x, k = "all")
+        outDelta <- stats::confint(x, k = "all", method = "ML")
+
+        index.skip <- which(x$conclusion["reason.interim",]=="decreasing information")
+        if(length(index.skip)>0){
+            outDelta <- outDelta[outDelta$stage %in% index.skip == FALSE,,drop=FALSE]
+            k <- k - length(index.skip)
+        }
         delta <- switch(EXPR = type,
                         "Z" = outDelta$statistic,
                         "E" = outDelta$estimate,
@@ -140,11 +147,11 @@ plot.delayedGSD <- function(x,
 
     ## NOTE: subset by [!is.na(uk)] to handle the case where we end the study early, e.g. for efficacy
     ## in that case bounds after the decision analysis are set to NA and should be ignored
-    xu <- Ival[!is.na(uk)]
-    xd <- Idval[!is.na(ck)]
-    yu <- uk[!is.na(uk)]
-    yl <- lk[!is.na(lk)]   
-    yc <- ck[!is.na(ck)]
+    xu <- Ival[!is.na(uk) & !is.infinite(uk)]
+    xd <- Idval[!is.na(ck) & !is.infinite(ck)]
+    yu <- uk[!is.na(uk) & !is.infinite(uk)]
+    yl <- lk[!is.na(lk) & !is.infinite(lk)]   
+    yc <- ck[!is.na(ck) & !is.infinite(ck)]
     yh <- stats::qnorm(1-alpha)
     whereleg <- "bottomright"
     ylab <- "Stopping boundary (Z-statistic)"
@@ -173,7 +180,7 @@ plot.delayedGSD <- function(x,
     }
     if(is.null(xlim)){
         if(Itype=="rate"){
-            xlim <- c(0,1.1)
+            xlim <- c(0,max(1,xu)*1.1)
         }else{
             xlim <- c(0,1.1*max(xu,na.rm=TRUE))
         }
@@ -192,14 +199,20 @@ plot.delayedGSD <- function(x,
         if(type.k=="decision"){
             xdelta <- c(xdelta,xd[k])
         }
-
         ## lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
         graphics::points(xdelta,delta,col="purple",pch=22,bg="purple",cex=cex.estimate[1])
         if(length(cex.estimate)>1){
-            if(type.k=="decision"){
-                graphics::text(x=xdelta,y=delta,labels=c(1:k,"D"),col="white", cex = cex.estimate[2])
+
+            if(length(index.skip)>0){
+                k.labels <- (1:x$stage$k)[-index.skip]
             }else{
-                graphics::text(x=xdelta,y=delta,labels=1:k,col="white", cex = cex.estimate[2])
+                k.labels <- 1:k
+            }
+
+            if(type.k=="decision"){
+                graphics::text(x=xdelta,y=delta,labels=c(k.labels,"D"),col="white", cex = cex.estimate[2])
+            }else{
+                graphics::text(x=xdelta,y=delta,labels=k.labels,col="white", cex = cex.estimate[2])
             }
         }
         graphics::text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple", pos = 4)
@@ -259,7 +272,7 @@ plot.delayedGSD <- function(x,
         col.legend  <- c("green3","red","grey","black")
         pt.bg.legend <- c("green3","red",NA,NA)
         if(!is.null(delta)){
-            text.legend <- c(text.legend,"Current estimate")
+            text.legend <- c(text.legend,"Estimate")
             lty.legend <- c(lty.legend,NA)
             pch.legend <- c(pch.legend,22)
             col.legend <- c(col.legend,"purple")
