@@ -37,6 +37,7 @@ updateMethod2 <- function(rho_alpha=2,
                           mycoefL=1,            
                           myseed=2902,          
                           cMin=-Inf){
+
     ## {{{ set seed
     if(!is.null(myseed)){
         if(!is.null(get0(".Random.seed"))){ ## avoid error when .Random.seed do not exists, e.g. fresh R session with no call to RNG
@@ -132,7 +133,7 @@ updateMethod2 <- function(rho_alpha=2,
             }
             lk[1] <- uniroot(find.lk,lower=uk[1]-10,upper=uk[1])$root  #dirty solution to use -10 for lower bound
         }
-        
+
         ck <- calc_ck(uk=uk[1],
                       lk=lk[1],
                       Info.i=Info.i[1],
