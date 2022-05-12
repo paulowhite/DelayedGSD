@@ -186,14 +186,20 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
       betaSpent[k] <- beta
       betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
-      
+
+      lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
+      upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
+      if(InfoR.i[k]>1){
+          lowerRoot <- -10
+      }
+            
       uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
                                            upper = c(uk[1:(k-1)],Inf),
                                            mean=rep(0,k),
                                            sigma= sigmaZk[1:k,1:k],
                                            abseps = abseps) - alphaSpentInc[k]},
-                       lower = lk[k-1],
-                       upper = uk[k-1],
+                       lower = lowerRoot,
+                       upper = upperRoot,
                        tol = abseps)$root
       
       ## lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),

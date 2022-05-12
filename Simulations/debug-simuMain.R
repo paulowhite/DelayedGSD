@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj  9 2022 (13:51) 
 ## Version: 
-## Last-Updated: maj  9 2022 (13:51) 
+## Last-Updated: May 12 2022 (11:13) 
 ##           By: Brice Ozenne
-##     Update #: 3
+##     Update #: 8
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -49,30 +49,28 @@ i.res <- GenData(n=283,
                  )
 
 i.d <- i.res$d
+
+## interim 
 i.thet <- i.d$t3[142]
 i.di <- SelectData(i.d,t=i.thet)
 i.lmmI <- analyzeData(i.di, ddf = "nlme", data.decision = sum(i.d$t1 <= i.thet + 1.50001*14), getinfo = TRUE, trace = TRUE)
-
 i.currentGSD <- update(i.plannedB, delta = i.lmmI, trace = FALSE)
-i.dDecision <- i.d[which(i.d$t1 <= i.thet + 1.50001*14),]
-i.lmmD <- analyzeData(i.dDecision, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+i.currentGSD
 
-i.lmmD$information-i.lmmI$information ## decreasing information
-
-i.currentGSD <- update(i.currentGSD, delta = i.lmmD, k = 1, type.k = "decision", trace = FALSE)
-
-i.dDecision <- i.d[which(i.d$t1 <= i.thet + 1.50001*14),]
-i.lmmD <- analyzeData(i.dDecision, ddf = "nlme", getinfo = TRUE, trace = TRUE)
-
-i.currentGSD <- update(i.currentGSD, delta = i.lmmD, k = 1, type.k = "decision", trace = FALSE)
-
+## final
 i.dFinal <- i.d
 i.lmmF <- analyzeData(i.dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
-
 i.currentGSD <- update(i.currentGSD, delta = i.lmmF, trace = FALSE)
+
+
 
 i.currentGSD <- update.delayedGSD(i.currentGSD, delta = i.lmmF, trace = FALSE)
 
+i.fff <- function(x){pmvnorm(lower = c(TheLowerValues,x),
+                                     upper = c(uk[1:(k-1)],Inf),
+                                     mean=rep(0,k),
+                                     sigma= sigmaZk[1:k,1:k],
+                                     abseps = abseps) - betaSpentInc[k]}
 
 i.fff <- function(x){pmvnorm(lower = c(0.8144777,x),
                              upper = c(2.345527,Inf),

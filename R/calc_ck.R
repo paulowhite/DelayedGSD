@@ -33,16 +33,18 @@ calc_ck <- function(uk,
     
     ## If interim analysis k was skipped due to max info reached at interim or expected to be reached at decision, then calculate c according to Eq 15 from HJ
     if(ImaxAnticipated==TRUE){
-                                        #stop("Function cannot handle Info.d >= Imax yet")
-      
-      Info.all <- c(Info.i[1:(k-1)],Info.d)
-      sigmaZk <- diag(1,k)
-      for(i in 1:(k)){
-        for(j in i:(k)){
-          sigmaZk[i,j] <- sqrt(Info.all[i]/Info.all[j])
-          sigmaZk[j,i] <- sqrt(Info.all[i]/Info.all[j])
+        if(k==1){ ## we just have a single analysis of the trial where we spend all alpha
+            return(qnorm(p=1-alpha,mean=0,sd=1))
         }
-      }
+        
+        Info.all <- c(Info.i[1:(k-1)],Info.d)
+        sigmaZk <- diag(1,k)
+        for(i in 1:(k)){
+            for(j in i:(k)){
+                sigmaZk[i,j] <- sqrt(Info.all[i]/Info.all[j])
+                sigmaZk[j,i] <- sqrt(Info.all[i]/Info.all[j])
+            }
+        }
       
         if(bindingFutility){
             f <- function(x){
@@ -104,10 +106,16 @@ calc_ck <- function(uk,
         }
     }
 
+    lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
+    upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]*1.1
+    if(ImaxAnticipated & Info.d > Info.max){
+        lowerRoot <- -10
+    }
+
     c <- try(stats::uniroot(f,
-                            lower = lk[utils::tail(intersect(which(!is.infinite(lk)),1:k),1)], ## last boundary among the k already computed that is not infinite  
-                            upper = uk[utils::tail(intersect(which(!is.infinite(uk)),1:k),1)]*1.1)$root,
-             silent=T)
+                            lower = lowerRoot,
+                            upper = upperRoot)$root,
+             silent=TRUE)
     if(inherits(c,"try-error")){
         warning("uniroot produced an error, switching to dfsane")
         c <- BB::dfsane(f,

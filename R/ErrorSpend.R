@@ -9,6 +9,9 @@
 ErrorSpend <- function(I,
                        rho,
                        beta_or_alpha,
-                       Info.max){  
-    beta_or_alpha*min(1,(I/Info.max)^rho)
+                       Info.max){
+    if(length(I)==0){
+        stop("Information at analysis is missing.")
+    }
+    return(beta_or_alpha*min(1,(I/Info.max)^rho))
 }
