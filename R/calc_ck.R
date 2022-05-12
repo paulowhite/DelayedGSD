@@ -106,12 +106,11 @@ calc_ck <- function(uk,
         }
     }
 
-    lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
-    upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]*1.1
+    lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:k),1)]  ## last boundary among the k-1 already computed that is not infinite
+    upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:k),1)]*1.1
     if(ImaxAnticipated & Info.d > Info.max){
         lowerRoot <- -10
     }
-
     c <- try(stats::uniroot(f,
                             lower = lowerRoot,
                             upper = upperRoot)$root,
@@ -119,7 +118,7 @@ calc_ck <- function(uk,
     if(inherits(c,"try-error")){
         warning("uniroot produced an error, switching to dfsane")
         c <- BB::dfsane(f,
-                        par = (uk[utils::tail(intersect(which(!is.infinite(uk)),1:k),1)]*1.1+lk[utils::tail(intersect(which(!is.infinite(lk)),1:k),1)])/2,
+                        par = (upperRoot*1.1+lowerRoot)/2,
                         control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
     }
     return(max(c,cMin))
