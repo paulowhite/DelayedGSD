@@ -147,7 +147,8 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            alternative = object$alternative,
                                            binding = bindingFutility,
                                            Trace = trace,
-                                           cMin = object$cMin)
+                                           cMin = object$cMin,
+                                           PowerCorrection=object$PowerCorrection)
             } else if(method==2){
                 newBounds <- updateMethod2(rho_alpha = object$planned$rho_alpha,
                                            rho_beta = object$planned$rho_beta,
@@ -225,7 +226,8 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace,
-                                           cMin = object$cMin)
+                                           cMin = object$cMin,
+                                           PowerCorrection=object$PowerCorrection)
                 
             } else if(method==2){
                 newBounds <- updateMethod2(rho_alpha = object$planned$rho_alpha,
@@ -290,7 +292,8 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            alternative = object$alternative,
                                            binding=bindingFutility,
                                            Trace = trace,
-                                           cMin = object$cMin)
+                                           cMin = object$cMin,
+                                           PowerCorrection=object$PowerCorrection)
                 
             } else if(method==2){
                 newBounds <- updateMethod2(rho_alpha = object$planned$rho_alpha,
@@ -359,7 +362,8 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                        alternative = object$alternative,
                                        binding=bindingFutility,
                                        Trace = trace,
-                                       cMin = object$cMin)
+                                       cMin = object$cMin,
+                                       PowerCorrection=object$PowerCorrection)
         } else if(method==2){
             newBounds <- updateMethod2(rho_alpha = object$planned$rho_alpha,
                                        rho_beta = object$planned$rho_beta,

@@ -18,6 +18,7 @@
 #' Note that in Jennison and Turnbull's book chapter (2013) they consider greater.
 #' @param n planned sample size in each group. Optional argument.
 #' @param trace whether to print some messages
+#' @param PowerCorrection whether to correct the power for Method 1
 #'
 #' @examples
 #' myBound <- CalcBoundaries(kMax=2,
@@ -63,7 +64,8 @@ CalcBoundaries <- function(kMax=2,
                            bindingFutility=TRUE,
                            alternative = "greater",
                            n=NA,
-                           trace=FALSE){  
+                           trace=FALSE,
+                           PowerCorrection=FALSE){  
 
     requireNamespace("gsDesign")
 
@@ -100,6 +102,10 @@ CalcBoundaries <- function(kMax=2,
         stop("The values given for arguments alternative and delta are inconsistent. \n",
              "When alternative=\"less\", delta should be negative. \n")
     }
+    
+    if(PowerCorrection & method!=1){
+      stop("PowerCorrection is only applicable for Method 1")
+    }
 
     ## ** compute boundaries at decision and possibly update futility boundary at interim
     cMin <- ifelse(cNotBelowFixedc,stats::qnorm(1-alpha),-Inf)
@@ -120,7 +126,8 @@ CalcBoundaries <- function(kMax=2,
                                alternative = alternative,
                                binding=bindingFutility,
                                Trace = trace,
-                               cMin = cMin)
+                               cMin = cMin,
+                               PowerCorrection=PowerCorrection)
     } else if(method==2){
 
         delayedBnds <- Method2(rho_alpha = rho_alpha,
@@ -176,6 +183,7 @@ CalcBoundaries <- function(kMax=2,
                 cMin = cMin,
                 bindingFutility = bindingFutility,
                 alternative = alternative,
+                PowerCorrection=PowerCorrection,
                 planned = list(rho_alpha = rho_alpha,
                                rho_beta = rho_beta,
                                InflationFactor = delayedBnds$coef,

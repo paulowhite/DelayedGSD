@@ -25,6 +25,7 @@
 #' @param mycoefL Used only if Info.max=NULL. Lower limit of the interval (see mycoefMax)
 #' @param myseed seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)
 #' @param cMin minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
+#' @param PowerCorrection whether or not to apply a correction to the type II error spending to reduce the extent to which Method 1 is overpowered   
 #'  
 #' @examples
 #' ## see test-boundary.R                    
@@ -51,7 +52,8 @@ Method1 <- function(rho_alpha=2,
                     mycoefMax= 1.2,       
                     mycoefL=1,            
                     myseed=2902,          
-                    cMin=-Inf){
+                    cMin=-Inf,
+                    PowerCorrection=FALSE){
   
     require(mvtnorm)
     ## {{{ set seed
@@ -134,9 +136,10 @@ Method1 <- function(rho_alpha=2,
                       alternative="greater",
                       binding=binding,
                       Trace=FALSE,
-                      cMin=cMin)
+                      cMin=cMin,
+                      PowerCorrection=PowerCorrection)
         thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
-        ## }}}       
+        ## }}}
         if(thediff==0){
             ## {{{ if yes, we search coef
             mycoef <- (mycoefL + mycoefU)/2
@@ -162,7 +165,8 @@ Method1 <- function(rho_alpha=2,
                               toldiff=toldiff,
                               alternative="greater",
                               binding=binding,
-                              cMin=cMin)
+                              cMin=cMin,
+                              PowerCorrection=PowerCorrection)
                 thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
                 if(thediff>toldiff){
                     if(Trace){
@@ -261,9 +265,26 @@ Method1 <- function(rho_alpha=2,
       if(!lk[k-1]==uk[k-1]){
         ## {{{ if  over-running has not occurred yet
         thealpha[k] <- ErrorSpend(I=Info.i[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
-        IncAlpha[k] <- thealpha[k] - thealpha[(k-1)]   
+        IncAlpha[k] <- thealpha[k] - thealpha[(k-1)]
         thebeta[k] <- ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
+        if(PowerCorrection){
+          #real type II error spent at analysis k-1
+          IncBeta[k-1] <- TypeIIerrorSpent(lk=lk,
+                                           uk=uk,
+                                           ck=ck,
+                                           Info.i=Info.i,
+                                           Info.dk=Info.d[k-1],
+                                           sigmaZk=sigmaZk,
+                                           thetheta=thetheta,
+                                           k=k-1,
+                                           delta=delta,
+                                           abseps=abseps)
+          #correct the type II error that has been spent up to analysis k-1
+          thebeta[k-1] <- ifelse(k==2,IncBeta[k-1],thebeta[k-2])+IncBeta[k-1] 
+        } 
         IncBeta[k] <- thebeta[k] - thebeta[(k-1)]   
+        
+        
         ## {{{ 
         ## {{{ u_k by solving what follows 
         uk[k] <- (uk[k-1] + lk[k-1])/2 # just to handle cases in which there is no root in what follows (when binding = TRUE )
@@ -376,7 +397,8 @@ Method1 <- function(rho_alpha=2,
               toldiff=toldiff,
               alternative=alternative,
               binding=binding,
-              cMin=cMin)
+              cMin=cMin,
+              PowerCorrection=PowerCorrection)
   class(out) <- "delayedGSD"
   ## }}}
   return(out)

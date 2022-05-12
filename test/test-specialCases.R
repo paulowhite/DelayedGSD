@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan  7 2022 (15:00) 
 ## Version: 
-## Last-Updated: feb 23 2022 (16:16) 
+## Last-Updated: May 12 2022 (14:44) 
 ##           By: Brice Ozenne
-##     Update #: 14
+##     Update #: 22
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -16,6 +16,66 @@
 ### Code:
 
 library(testthat)
+
+## * Exceeding maximum information
+plannedB <- CalcBoundaries(kMax=3,
+                           alpha=0.025,
+                           beta=0.2,
+                           InfoR.i=c(0.5,0.75,1.0),
+                           InfoR.d=c(0.55,0.8,1),
+                           rho_alpha=2,
+                           rho_beta=2,
+                           method=1,
+                           cNotBelowFixedc=FALSE,
+                           bindingFutility=TRUE,
+                           delta=0.8)
+
+df.sim <- GenData(n=1000,
+                  N.fw=2,
+                  rand.block=c(1,1,0,0),
+                  allsd=c(2.5, 2.1, 2.4),
+                  mean0=c(10, 0, 0),
+                  delta=c(0, 0.6, 0.8),
+                  ar=3.44,
+                  cor.01.1=-0.15,
+                  cor.ij.1=0.68,
+                  cor.0j.1=-0.27,
+                  seed=19519,
+                  MissProb=matrix(c(0.04807692, 0.05769231, 0.00961538, 0.88461538), nrow = 2, ncol = 2,
+                                  dimnames = list(c("V1 missing", "V1 not missing"),c("V2 missing", "V2 not missing"))),
+                  DigitsOutcome=2,
+                  TimeFactor=14,
+                  DigitsTime=0
+                  )
+
+## ** At interim and at decision
+test_that("I(1st interim)>Imax, I(1st decison)>Imax",{
+
+    ## interim
+    df.interim1 <- df.sim$d[1:500,]
+    lmm.interim1 <- analyzeData(df.interim1, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+    GSD.interim1 <- update(plannedB, delta = lmm.interim1, trace = FALSE)
+
+    ## final
+    lmm.decision1 <- analyzeData(df.sim$d, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+    GSD.decision1 <- update(GSD.interim1, delta = lmm.decision1, trace = FALSE)
+
+    ## test
+    GS <- data.frame("Stage" = c(1, 2, 3), 
+                     "Fbound" = c(0.07782464, NA, NA), 
+                     "Ebound" = c(2.61973824, NA, NA), 
+                     "statistic.interim" = c(2.35222215, NA, NA), 
+                     "Cbound" = c(1.36968504, NA, NA), 
+                     "statistic.decision" = c(NA, NA, NA))
+    expect_equivalent(GS, coef(GSD.interim1, type = "boundary"), tol = 1e-5)
+
+})
+
+## ** At interim but not at decision
+## ** Not at interim but at decision
+## ** At final
+
+
 
 ## * Skipped interim analysis
 GSD.3t <- CalcBoundaries(kMax=3,  ## max number of analyses (including final)
