@@ -65,6 +65,7 @@ CalcBoundaries <- function(kMax=2,
                            alternative = "greater",
                            n=NA,
                            trace=FALSE,
+                           mycoefMax=1.2,
                            PowerCorrection=FALSE){  
 
     requireNamespace("gsDesign")
@@ -127,6 +128,7 @@ CalcBoundaries <- function(kMax=2,
                                binding=bindingFutility,
                                Trace = trace,
                                cMin = cMin,
+                               mycoefMax=mycoefMax,
                                PowerCorrection=PowerCorrection)
     } else if(method==2){
 
