@@ -107,7 +107,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                                          delta=delta,
                                          abseps=abseps)
         #correct the type II error that has been spent up to analysis k-1
-        betaSpent[k-1] <- ifelse(k==2,betaSpentInc[k-1],betaSpent[k-2])+betaSpentInc[k-1] 
+        betaSpent[k-1] <- ifelse(k==2,betaSpentInc[k-1],betaSpent[k-2]+betaSpentInc[k-1]) 
       } 
       
       betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
@@ -161,7 +161,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                                            upper = c(uk[1:(k-1)],Inf),
                                            mean=rep(0,k),
                                            sigma= sigmaZk[1:k,1:k],
-                                           abseps = abseps) - betaSpentInc[k]},
+                                           abseps = abseps) - alphaSpentInc[k]},
                        lower = lowerRoot,
                        upper = upperRoot,
                        tol = abseps)$root

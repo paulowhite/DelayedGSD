@@ -65,6 +65,8 @@ Method1 <- function(rho_alpha=2,
         set.seed(myseed)
     }
 
+  
+  
     ## }}}
     ## {{{ preliminaries
     mycoef <- NULL # initialize as needed for output
@@ -107,7 +109,7 @@ Method1 <- function(rho_alpha=2,
     }
     ## }}}
     if(is.null(Info.max)){
-                                        #browser()
+                                        
         ## {{{ Compute Info.max from If and the other arguments (Recursive calls to the function)
         if(Trace){
             cat("\n We start the search of the value for coef=Info.max/If. \n \n")
@@ -201,7 +203,7 @@ Method1 <- function(rho_alpha=2,
                     if(Trace){
                         cat("\n Info.max computed as=",Info.max,"\n")
                     }
-                    ## browser()
+                    
                     ## print("Info.max created")
                 }else{
                     if(nwhile==nWhileMax){
@@ -280,7 +282,7 @@ Method1 <- function(rho_alpha=2,
                                            delta=delta,
                                            abseps=abseps)
           #correct the type II error that has been spent up to analysis k-1
-          thebeta[k-1] <- ifelse(k==2,IncBeta[k-1],thebeta[k-2])+IncBeta[k-1] 
+          thebeta[k-1] <- ifelse(k==2,IncBeta[k-1],thebeta[k-2]+IncBeta[k-1]) 
         } 
         IncBeta[k] <- thebeta[k] - thebeta[(k-1)]   
         
