@@ -1,0 +1,758 @@
+
+R version 4.1.2 (2021-11-01) -- "Bird Hippie"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ### BATCH_simuMain.R --- 
+> #----------------------------------------------------------------------
+> ## Author: Paul Blanche
+> ## Created: Mar  5 2021 (10:56) 
+> ## Version: 
+> ## Last-Updated: jul  7 2022 (13:56) 
+> ##           By: Brice Ozenne
+> ##     Update #: 518
+> #----------------------------------------------------------------------
+> ## 
+> ### Commentary: 
+> ## 
+> ### Change Log:
+> #----------------------------------------------------------------------
+> ## 
+> ### Code:
+> 
+> ## ** BATCH loop
+> ## cd /projects/biostat01/people/hpl802/DelayedGSD/
+> ## for ITER in `seq 1 10`;
+> ## do
+> ## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=10" BATCH_simuMain.R output/R-simuMain-'$ITER'.Rout &'
+> ## done
+> 
+> ## [1] 1186669
+> ## [2] 1186670
+> ## [3] 1186671
+> ## [4] 1186672
+> ## [5] 1186673
+> ## [6] 1186674
+> ## [7] 1186675
+> ## [8] 1186676
+> ## [9] 1186677
+> ## [10] 1186678
+> 
+> rm(list=ls())
+>                                    # {{{ parameters
+> ## * parameters
+> name <- "ScenarioName" # To save the results
+> method <- 1:2 # methods used to compute the boundaries
+>                                         #---
+> myseed <- 140786598
+>                                         #--- to plan the trial ----
+> NMC <- 250 # number of sequential simulations to run in parallel. Eg. with 250, then we can run 40 scripts in paralell to get N=10,000 runs in total.
+> kMax <- 2  #max number of analyses (including final)
+> alpha <- 0.025  #type I error (one sided)
+> beta <- 0.2  #type II error
+> informationRates <- c(0.5,1)  #planned  information rates
+> rho_alpha <- 2  # rho parameter for alpha error spending function
+> rho_beta <- 2  # rho parameter for beta error spending function
+> ## deltaPower <- 0.75 # just to try another value when Id > Imax
+> Id <- 0.55  #(expected) information rate at each decision analysis
+> binding <- TRUE
+>                                         #
+>                                         #---- to generate data -----------
+>                                         #
+> block <- c(1,1,0,0) 
+> allsd <- c(2.5,2.1,2.4) # sd, first from baseline measurement, then the two changes from baseline
+> mean0 <- c(10,0,0) # mean placebo group (again, first is absolute value, then change from baseline)
+> delta <- c(0,0.6,0.8) # treatment effect
+> ar <- (0.86*2)*2 # orginial accrual rate from data from Corine is 0.86 per week, hence we multiply by 2 for by 14 days. As to low, we further multiply by 2
+> cor011 <- -0.15 # ~ from data from Corine
+> corij1 <- 0.68  # ~ from data from Corine
+> cor0j1 <- -0.27  # ~ from data from Corine
+> Miss11 <- 5/104 # miss both V1 and V2
+> Miss12 <- 1/104 # miss V1 and but not V2
+> Miss21 <- 6/104 # do not miss V1 and but miss V2
+> Miss22 <- 92/104 # miss none
+> PropForInterim <- 0.5 # Decide to have interim analysiz when PropForInterim % of all subjects have had the chance to have one follow-up measuement recorded in the data to be available for analysis.
+> theDelta.t <- 1.50001 # time lag to process the data and make them ready to analyze after collecting them (unit is time between two follow-up visits)
+> TimeFactor <- 14 ## number of days between two visits
+>                                         #
+>                                         #--- actually for both planing the trial  and generating data-----
+>                                         #
+>                                         #
+> deltaPower <- abs(delta[3]) # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
+> n <- ceiling(2*2*((allsd[3]/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
+>                                         # inflate SS as required for interim
+> 
+>                                         # {{{ Set seeds for parallel computing and reproducibility
+> ## * Seed
+> args <- commandArgs(TRUE) ## BATCH MODE
+> if(length(args)>0){
++     for (arg in args){
++         eval(parse(text=arg))
++     }
++ }else{ ## SLUMR
++     iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
++     n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
++ } ## interactive
+> if(is.na(iter_sim)){iter_sim <- 1}
+> if(is.na(n.iter_sim)){n.iter_sim <- 40}
+> 
+> set.seed(140786598)
+> allseeds <- sample.int(n = 10*n.iter_sim*NMC, size = n.iter_sim*NMC, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
+> # }}}
+> 
+> # {{{ set path to load and save and othe machine specific variables
+> ## * path
+> path <- "."
+> path.res <- file.path(path,"Results","simuMain")
+> if(dir.exists(path.res)==FALSE){
++     if(dir.exists(file.path(path,"Results"))==FALSE){
++     dir.create(file.path(path,"Results"))
++     }
++     dir.create(path.res)
++ }
+> path.output <- file.path(path,"output","simuMain")
+> if(dir.exists(path.output)==FALSE){
++     if(dir.exists(file.path(path,"output"))==FALSE){
++     dir.create(file.path(path,"output"))
++     }
++     dir.create(path.output)
++ }
+> # }}}
+> 
+> 
+> ## * libraries and functions
+> library(DelayedGSD)
+DelayedGSD version 0.0.3
+> ## sourceDir <- function(path, trace = TRUE, ...) {
+> ##     for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
+> ##         if(trace) cat(nm,":")
+> ##         source(file.path(path, nm), ...)
+> ##         if(trace) cat("\n")
+> ##     }
+> ## }
+> ## sourceDir(pathToLoad)
+>     
+> 
+> ## * Compute inflation factor and sample size
+> plannedB <- vector(mode = "list", length = 3)
+> for(iMeth in method){ ## iMeth <- 1
++     plannedB[[iMeth]] <- CalcBoundaries(kMax=kMax,  
++                                         alpha=alpha, 
++                                         beta=beta,  
++                                         InfoR.i=informationRates,  
++                                         InfoR.d=c(Id,1),  
++                                         rho_alpha=rho_alpha,  
++                                         rho_beta=rho_beta,  
++                                         method=iMeth,  
++                                         cNotBelowFixedc=FALSE,
++                                         bindingFutility=binding,
++                                         delta=tail(delta,1))
++     ## summary(plannedB[[1]])
++     ## coef(plannedB[[iMeth]], type = "information")
++ }
+Loading required namespace: gsDesign
+Loading required package: mvtnorm
+Loading required namespace: BB
+> inflationFactor <- unlist(lapply(plannedB,function(iP){iP$planned$InflationFactor}))
+> nGSD <- ceiling(n*inflationFactor)
+> ##  plot(plannedB[[1]])
+> 
+> #
+> # --- just to check---
+> ## n
+> ## InfoFixed <- ((qnorm(1-beta)-qnorm(alpha))/(deltaPower))^2
+> ## InfoFixed
+> ## n/(4*(allsd[3])^2)
+> #---
+> # }}}
+> 
+> 
+> 
+> 
+> # {{{ technical details to loop
+> RES <- NULL # initialize results to save
+> allj <- ((iter_sim-1)*NMC + 1):(iter_sim*NMC) # indices of all iterations (replicates) for this job, accountng for the other jobs running in parallel
+> # }}}
+> 
+> ## * Loop
+> for(j in allj){ ## j <- 51 ## 5
++     startComp <- Sys.time()
++     myseedi <- allseeds[j]
++     # {{{ TRACE info (e.g. to check the Rout)
++     print(paste0("seed ",myseedi," for ","j=",which(j==allj)," out of ",NMC, " (i.e. j=",j," in [",(iter_sim-1)*NMC + 1,";",iter_sim*NMC,"], as job id is i=",iter_sim,")"))
++     # }}}
++     # {{{ Missing probabilities
++     MyMissProb <- matrix(c(Miss11,Miss12,Miss21,Miss22),ncol=2,nrow=2,byrow=TRUE) # to additionnally remove 1 more because some FASFL=N
++     colnames(MyMissProb) <- c("V2 missing","V2 not missing")
++     rownames(MyMissProb) <- c("V1 missing","V1 not missing")
++     # }}}
++ 
++                                         # {{{ generate data
++     ## ** simulate
++     res <- GenData(n=n, 
++                    N.fw=2,
++                    rand.block=block,
++                    allsd=allsd,
++                    mean0=mean0,
++                    delta=delta,
++                    ar=ar,
++                    cor.01.1=cor011,
++                    cor.ij.1=corij1,
++                    cor.0j.1=cor0j1,
++                    seed=myseedi,
++                    MissProb=MyMissProb,
++                    DigitsOutcome=2,
++                    TimeFactor=TimeFactor,
++                    DigitsTime=0
++                    )
++     d <- res$d
++     ## head(d,n=20)
++                                         # }}}
++                                         # {{{ reformat data like those of Corine
++     ## Make data long format
++     ## dd <- FormatAsCase(d)
++     ## head(dd)
++     ## summary(dd)
++                                         # }}}
++    
++                                         # {{{ make data available at interim
++                                         # Here we stop inclusion data collection for the interim analysis as soon as
++                                         # half of the participants have completed (or had the opportunity to complete) the follow-up 
++     thet <- d$t3[ceiling(n*PropForInterim)]
++     di <- SelectData(d,t=thet)
++     ## ddi <- FormatAsCase(di) # needed ????
++     ## head(d[d$id==52,])
++                                         # }}}
++     ## {{{ analyze data at at interim
++     ## ** interim
++     lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thet + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
++     ## lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
++ 
++     currentGSD <- vector(mode = "list", length = 3)
++     out.interim <- vector(mode = "list", length = 3)
++     for(iMeth in method){ ## iMeth <- 1
++ 
++         currentGSD[[iMeth]] <- update(plannedB[[iMeth]], delta = lmmI, trace = FALSE)
++ 
++         iConfint.interim <- confint(currentGSD[[iMeth]])
++         iInfo.interim <- coef(currentGSD[[iMeth]], type = "information")
++         iBoundary.interim <- coef(currentGSD[[iMeth]], type = "boundary")
++         iDecision.interim <- coef(currentGSD[[iMeth]], type = "decision")
++ 
++         out.interim[[iMeth]] <-  data.frame(statistic = iConfint.interim[1,"statistic"],
++                                             estimate_ML = iConfint.interim[1,"estimate"],
++                                             se_ML = iConfint.interim[1,"se"],
++                                             info = iInfo.interim[1,"Interim"],
++                                             infoPC = iInfo.interim[1,"Interim.pc"],
++                                             info.pred = iInfo.interim[1,"Decision"],
++                                             infoPC.pred = iInfo.interim[1,"Decision.pc"],
++                                             uk = iBoundary.interim[1,"Ebound"],
++                                             lk = iBoundary.interim[1,"Fbound"],
++                                             decision = iDecision.interim["decision","stage 1"],
++                                             reason = iDecision.interim["reason.interim","stage 1"])
++     }
++     ## currentGSD[[1]]
++     ## plot(currentGSD[[1]])
++ 
++     ## ** decision
++     dDecision <- d[which(d$t1 <= thet + theDelta.t*TimeFactor),]
++     lmmD <- analyzeData(dDecision, ddf = "nlme", getinfo = TRUE, trace = TRUE)
++     
++     out.decision <- vector(mode = "list", length = 3)
++     for(iMeth in method){ ## iMeth <- 1
++           
++         if(out.interim[[iMeth]]$decision == "stop"){
++             currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, trace = FALSE)
++             ## plot(currentGSD[[iMeth]])
++ 
++             iConfint.decision <- confint(currentGSD[[iMeth]], method = c("ML","MUE"))
++             iInfo.decision <- coef(currentGSD[[iMeth]], type = "information")
++             iBoundary.decision <- coef(currentGSD[[iMeth]], type = "boundary")
++             iDecision.decision  <- coef(currentGSD[[iMeth]], type = "decision")
++ 
++             out.decision[[iMeth]] <- data.frame(statistic = iConfint.decision[1,"statistic"],
++                                                 p.value_ML = iConfint.decision[iConfint.decision$method == "ML","p.value"],
++                                                 lower_ML = iConfint.decision[iConfint.decision$method == "ML","lower"],
++                                                 upper_ML = iConfint.decision[iConfint.decision$method == "ML","upper"],
++                                                 estimate_ML = iConfint.decision[iConfint.decision$method == "ML","estimate"],
++                                                 p.value_MUE = iConfint.decision[iConfint.decision$method == "MUE","p.value"],
++                                                 lower_MUE = iConfint.decision[iConfint.decision$method == "MUE","lower"],
++                                                 upper_MUE = iConfint.decision[iConfint.decision$method == "MUE","upper"],
++                                                 estimate_MUE = iConfint.decision[iConfint.decision$method == "MUE","estimate"],
++                                                 info = iInfo.decision[1,"Interim"],
++                                                 infoPC = iInfo.decision[1,"Interim.pc"],
++                                                 ck = iBoundary.decision[1,"Cbound"],
++                                                 decision = unname(iDecision.decision["decision","stage 2"])
++                                                 )
++ 
++         }else{
++             ## update information
++             currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, k = 1, type.k = "decision", trace = FALSE)
++ 
++             iInfo.decision <- coef(currentGSD[[iMeth]], type = "information")
++             iBoundary.decision <- coef(currentGSD[[iMeth]], type = "boundary")
++ 
++             out.decision[[iMeth]] <- data.frame(statistic = NA,
++                                                 p.value_ML = NA,
++                                                 lower_ML = NA,
++                                                 upper_ML = NA,
++                                                 estimate_ML = NA,
++                                                 p.value_MUE = NA,
++                                                 lower_MUE = NA,
++                                                 upper_MUE = NA,
++                                                 estimate_MUE = NA,
++                                                 info = iInfo.decision[1,"Decision"],
++                                                 infoPC = iInfo.decision[1,"Decision.pc"],
++                                                 ck = iBoundary.decision[1,"Cbound"],
++                                                 decision = NA)
++         }
++     }
++                                         # }}}
++                                         # {{{ Analyze data at decision
++ 
++     ## ** finale
++     dFinal <- d
++     lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
++ 
++     out.final <- vector(mode = "list", length = 3)
++     for(iMeth in method){ ## iMeth <- 1
++         if(out.interim[[iMeth]]$decision == "stop"){
++             out.final[[iMeth]] <- data.frame(statistic = NA,
++                                              p.value_ML = NA,
++                                              lower_ML = NA,
++                                              upper_ML = NA,
++                                              estimate_ML = NA,
++                                              p.value_MUE = NA,
++                                              lower_MUE = NA,
++                                              upper_MUE = NA,
++                                              estimate_MUE = NA,
++                                              info = NA,
++                                              infoPC = NA,
++                                              ck = NA,
++                                              decision = NA)
++ 
++         }else{
++             currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmF, trace = FALSE)
++ 
++             ## plot(test)
++             ## summary(test)
++             iConfint.final <- confint(currentGSD[[iMeth]], method = c("ML","MUE"))
++             iInfo.final <- coef(currentGSD[[iMeth]], type = "information")
++             iBoundary.final <- coef(currentGSD[[iMeth]], type = "boundary")
++             iDecision.final  <- coef(currentGSD[[iMeth]], type = "decision")
++ 
++             out.final[[iMeth]] <- data.frame(statistic = iConfint.final[1,"statistic"],
++                                              p.value_ML = iConfint.final[iConfint.final$method == "ML","p.value"],
++                                              lower_ML = iConfint.final[iConfint.final$method == "ML","lower"],
++                                              upper_ML = iConfint.final[iConfint.final$method == "ML","upper"],
++                                              estimate_ML = iConfint.final[iConfint.final$method == "ML","estimate"],
++                                              p.value_MUE = iConfint.final[iConfint.final$method == "MUE","p.value"],
++                                              lower_MUE = iConfint.final[iConfint.final$method == "MUE","lower"],
++                                              upper_MUE = iConfint.final[iConfint.final$method == "MUE","upper"],
++                                              estimate_MUE = iConfint.final[iConfint.final$method == "MUE","estimate"],
++                                              info = iInfo.final[1,"Interim"],
++                                              infoPC = iInfo.final[1,"Interim.pc"],
++                                              ck = iBoundary.final[1,"Cbound"],
++                                              decision = unname(coef(currentGSD[[iMeth]], type = "decision")["decision","stage 2"])
++                                              )
++         }
++     }
++                                         # }}}
++ 
++     stopComp <- Sys.time()
++                                         # {{{ Save results
++ 
++     outMerge <- do.call(rbind,lapply(method, function(iMeth){
++         iNames <- unique(c(names(out.interim[[iMeth]]),names(out.decision[[iMeth]]),names(out.final[[iMeth]])))
++         iMerge <- data.frame(matrix(NA, ncol = length(iNames)+3, nrow = 3, dimnames = list(NULL, c("method", "stage", "type", iNames))))
++         iMerge[1,c("method","stage","type",names(out.interim[[iMeth]]))] <- data.frame(method = iMeth, stage = 1, type = "interim", out.interim[[iMeth]]) 
++         iMerge[2,c("method","stage","type",names(out.decision[[iMeth]]))] <- data.frame(method = iMeth, stage = 1, type = "decision", out.decision[[iMeth]]) 
++         iMerge[3,c("method","stage","type",names(out.final[[iMeth]]))] <- data.frame(method = iMeth, stage = 2, type = "final", out.final[[iMeth]])
++         return(iMerge)
++     }))
++ 
++     ## outMerge[outMerge$method==3,]
++ 
++     out <- cbind(
++         ## results
++         outMerge,
++         ## simulation details
++         time.interim = thet,
++         seed=myseedi,             
++         nX1.interim = sum(!is.na(di$X1)),
++         nX2.interim = sum(!is.na(di$X2)),
++         nX3.interim = sum(!is.na(di$X3)),
++         ## computation time
++         computation.time=as.double(round(difftime(stopComp,startComp,units="secs"),3))
++     )
++     ## names(out) <- myColNames
++     RES <- rbind(RES,out)
++     save(RES,file=paste0(path.res,name,"(tempo)-",iter_sim,".rda"))
++                                         # }}}
++ }
+[1] "seed 73950 for j=1 out of 250 (i.e. j=2751 in [2751;3000], as job id is i=12)"
+Loading required namespace: nlme
+[1] "seed 28649 for j=2 out of 250 (i.e. j=2752 in [2751;3000], as job id is i=12)"
+[1] "seed 89260 for j=3 out of 250 (i.e. j=2753 in [2751;3000], as job id is i=12)"
+[1] "seed 46264 for j=4 out of 250 (i.e. j=2754 in [2751;3000], as job id is i=12)"
+[1] "seed 33011 for j=5 out of 250 (i.e. j=2755 in [2751;3000], as job id is i=12)"
+[1] "seed 49505 for j=6 out of 250 (i.e. j=2756 in [2751;3000], as job id is i=12)"
+[1] "seed 57790 for j=7 out of 250 (i.e. j=2757 in [2751;3000], as job id is i=12)"
+[1] "seed 82293 for j=8 out of 250 (i.e. j=2758 in [2751;3000], as job id is i=12)"
+[1] "seed 99622 for j=9 out of 250 (i.e. j=2759 in [2751;3000], as job id is i=12)"
+[1] "seed 12193 for j=10 out of 250 (i.e. j=2760 in [2751;3000], as job id is i=12)"
+[1] "seed 82511 for j=11 out of 250 (i.e. j=2761 in [2751;3000], as job id is i=12)"
+[1] "seed 52896 for j=12 out of 250 (i.e. j=2762 in [2751;3000], as job id is i=12)"
+[1] "seed 13583 for j=13 out of 250 (i.e. j=2763 in [2751;3000], as job id is i=12)"
+[1] "seed 66907 for j=14 out of 250 (i.e. j=2764 in [2751;3000], as job id is i=12)"
+[1] "seed 26145 for j=15 out of 250 (i.e. j=2765 in [2751;3000], as job id is i=12)"
+[1] "seed 69073 for j=16 out of 250 (i.e. j=2766 in [2751;3000], as job id is i=12)"
+[1] "seed 66650 for j=17 out of 250 (i.e. j=2767 in [2751;3000], as job id is i=12)"
+[1] "seed 66240 for j=18 out of 250 (i.e. j=2768 in [2751;3000], as job id is i=12)"
+[1] "seed 76209 for j=19 out of 250 (i.e. j=2769 in [2751;3000], as job id is i=12)"
+[1] "seed 16855 for j=20 out of 250 (i.e. j=2770 in [2751;3000], as job id is i=12)"
+[1] "seed 68712 for j=21 out of 250 (i.e. j=2771 in [2751;3000], as job id is i=12)"
+[1] "seed 25117 for j=22 out of 250 (i.e. j=2772 in [2751;3000], as job id is i=12)"
+[1] "seed 10351 for j=23 out of 250 (i.e. j=2773 in [2751;3000], as job id is i=12)"
+[1] "seed 72705 for j=24 out of 250 (i.e. j=2774 in [2751;3000], as job id is i=12)"
+[1] "seed 70689 for j=25 out of 250 (i.e. j=2775 in [2751;3000], as job id is i=12)"
+[1] "seed 24602 for j=26 out of 250 (i.e. j=2776 in [2751;3000], as job id is i=12)"
+[1] "seed 47097 for j=27 out of 250 (i.e. j=2777 in [2751;3000], as job id is i=12)"
+[1] "seed 73698 for j=28 out of 250 (i.e. j=2778 in [2751;3000], as job id is i=12)"
+[1] "seed 84764 for j=29 out of 250 (i.e. j=2779 in [2751;3000], as job id is i=12)"
+[1] "seed 41395 for j=30 out of 250 (i.e. j=2780 in [2751;3000], as job id is i=12)"
+[1] "seed 53527 for j=31 out of 250 (i.e. j=2781 in [2751;3000], as job id is i=12)"
+[1] "seed 98156 for j=32 out of 250 (i.e. j=2782 in [2751;3000], as job id is i=12)"
+[1] "seed 68080 for j=33 out of 250 (i.e. j=2783 in [2751;3000], as job id is i=12)"
+[1] "seed 40368 for j=34 out of 250 (i.e. j=2784 in [2751;3000], as job id is i=12)"
+[1] "seed 94807 for j=35 out of 250 (i.e. j=2785 in [2751;3000], as job id is i=12)"
+[1] "seed 44513 for j=36 out of 250 (i.e. j=2786 in [2751;3000], as job id is i=12)"
+[1] "seed 49784 for j=37 out of 250 (i.e. j=2787 in [2751;3000], as job id is i=12)"
+[1] "seed 56739 for j=38 out of 250 (i.e. j=2788 in [2751;3000], as job id is i=12)"
+[1] "seed 39083 for j=39 out of 250 (i.e. j=2789 in [2751;3000], as job id is i=12)"
+[1] "seed 55675 for j=40 out of 250 (i.e. j=2790 in [2751;3000], as job id is i=12)"
+[1] "seed 48393 for j=41 out of 250 (i.e. j=2791 in [2751;3000], as job id is i=12)"
+[1] "seed 30550 for j=42 out of 250 (i.e. j=2792 in [2751;3000], as job id is i=12)"
+[1] "seed 66576 for j=43 out of 250 (i.e. j=2793 in [2751;3000], as job id is i=12)"
+[1] "seed 7213 for j=44 out of 250 (i.e. j=2794 in [2751;3000], as job id is i=12)"
+[1] "seed 74722 for j=45 out of 250 (i.e. j=2795 in [2751;3000], as job id is i=12)"
+[1] "seed 47136 for j=46 out of 250 (i.e. j=2796 in [2751;3000], as job id is i=12)"
+[1] "seed 54838 for j=47 out of 250 (i.e. j=2797 in [2751;3000], as job id is i=12)"
+[1] "seed 96480 for j=48 out of 250 (i.e. j=2798 in [2751;3000], as job id is i=12)"
+[1] "seed 98842 for j=49 out of 250 (i.e. j=2799 in [2751;3000], as job id is i=12)"
+[1] "seed 99758 for j=50 out of 250 (i.e. j=2800 in [2751;3000], as job id is i=12)"
+[1] "seed 5816 for j=51 out of 250 (i.e. j=2801 in [2751;3000], as job id is i=12)"
+[1] "seed 43319 for j=52 out of 250 (i.e. j=2802 in [2751;3000], as job id is i=12)"
+[1] "seed 33319 for j=53 out of 250 (i.e. j=2803 in [2751;3000], as job id is i=12)"
+[1] "seed 39803 for j=54 out of 250 (i.e. j=2804 in [2751;3000], as job id is i=12)"
+[1] "seed 94791 for j=55 out of 250 (i.e. j=2805 in [2751;3000], as job id is i=12)"
+[1] "seed 17736 for j=56 out of 250 (i.e. j=2806 in [2751;3000], as job id is i=12)"
+[1] "seed 21170 for j=57 out of 250 (i.e. j=2807 in [2751;3000], as job id is i=12)"
+[1] "seed 67367 for j=58 out of 250 (i.e. j=2808 in [2751;3000], as job id is i=12)"
+[1] "seed 17056 for j=59 out of 250 (i.e. j=2809 in [2751;3000], as job id is i=12)"
+[1] "seed 48925 for j=60 out of 250 (i.e. j=2810 in [2751;3000], as job id is i=12)"
+[1] "seed 41692 for j=61 out of 250 (i.e. j=2811 in [2751;3000], as job id is i=12)"
+[1] "seed 95418 for j=62 out of 250 (i.e. j=2812 in [2751;3000], as job id is i=12)"
+[1] "seed 76695 for j=63 out of 250 (i.e. j=2813 in [2751;3000], as job id is i=12)"
+[1] "seed 21326 for j=64 out of 250 (i.e. j=2814 in [2751;3000], as job id is i=12)"
+[1] "seed 52170 for j=65 out of 250 (i.e. j=2815 in [2751;3000], as job id is i=12)"
+[1] "seed 7364 for j=66 out of 250 (i.e. j=2816 in [2751;3000], as job id is i=12)"
+[1] "seed 41403 for j=67 out of 250 (i.e. j=2817 in [2751;3000], as job id is i=12)"
+[1] "seed 3972 for j=68 out of 250 (i.e. j=2818 in [2751;3000], as job id is i=12)"
+[1] "seed 56385 for j=69 out of 250 (i.e. j=2819 in [2751;3000], as job id is i=12)"
+[1] "seed 50982 for j=70 out of 250 (i.e. j=2820 in [2751;3000], as job id is i=12)"
+[1] "seed 65521 for j=71 out of 250 (i.e. j=2821 in [2751;3000], as job id is i=12)"
+[1] "seed 26513 for j=72 out of 250 (i.e. j=2822 in [2751;3000], as job id is i=12)"
+[1] "seed 92196 for j=73 out of 250 (i.e. j=2823 in [2751;3000], as job id is i=12)"
+[1] "seed 78872 for j=74 out of 250 (i.e. j=2824 in [2751;3000], as job id is i=12)"
+[1] "seed 48918 for j=75 out of 250 (i.e. j=2825 in [2751;3000], as job id is i=12)"
+[1] "seed 39021 for j=76 out of 250 (i.e. j=2826 in [2751;3000], as job id is i=12)"
+[1] "seed 41009 for j=77 out of 250 (i.e. j=2827 in [2751;3000], as job id is i=12)"
+[1] "seed 48619 for j=78 out of 250 (i.e. j=2828 in [2751;3000], as job id is i=12)"
+[1] "seed 81363 for j=79 out of 250 (i.e. j=2829 in [2751;3000], as job id is i=12)"
+[1] "seed 31299 for j=80 out of 250 (i.e. j=2830 in [2751;3000], as job id is i=12)"
+[1] "seed 34251 for j=81 out of 250 (i.e. j=2831 in [2751;3000], as job id is i=12)"
+[1] "seed 98547 for j=82 out of 250 (i.e. j=2832 in [2751;3000], as job id is i=12)"
+[1] "seed 13251 for j=83 out of 250 (i.e. j=2833 in [2751;3000], as job id is i=12)"
+[1] "seed 43670 for j=84 out of 250 (i.e. j=2834 in [2751;3000], as job id is i=12)"
+[1] "seed 69422 for j=85 out of 250 (i.e. j=2835 in [2751;3000], as job id is i=12)"
+[1] "seed 44045 for j=86 out of 250 (i.e. j=2836 in [2751;3000], as job id is i=12)"
+[1] "seed 95371 for j=87 out of 250 (i.e. j=2837 in [2751;3000], as job id is i=12)"
+[1] "seed 99794 for j=88 out of 250 (i.e. j=2838 in [2751;3000], as job id is i=12)"
+[1] "seed 45057 for j=89 out of 250 (i.e. j=2839 in [2751;3000], as job id is i=12)"
+[1] "seed 2292 for j=90 out of 250 (i.e. j=2840 in [2751;3000], as job id is i=12)"
+[1] "seed 16112 for j=91 out of 250 (i.e. j=2841 in [2751;3000], as job id is i=12)"
+[1] "seed 41370 for j=92 out of 250 (i.e. j=2842 in [2751;3000], as job id is i=12)"
+[1] "seed 1048 for j=93 out of 250 (i.e. j=2843 in [2751;3000], as job id is i=12)"
+[1] "seed 64101 for j=94 out of 250 (i.e. j=2844 in [2751;3000], as job id is i=12)"
+[1] "seed 29121 for j=95 out of 250 (i.e. j=2845 in [2751;3000], as job id is i=12)"
+[1] "seed 23344 for j=96 out of 250 (i.e. j=2846 in [2751;3000], as job id is i=12)"
+[1] "seed 22893 for j=97 out of 250 (i.e. j=2847 in [2751;3000], as job id is i=12)"
+[1] "seed 19792 for j=98 out of 250 (i.e. j=2848 in [2751;3000], as job id is i=12)"
+[1] "seed 86976 for j=99 out of 250 (i.e. j=2849 in [2751;3000], as job id is i=12)"
+[1] "seed 7346 for j=100 out of 250 (i.e. j=2850 in [2751;3000], as job id is i=12)"
+[1] "seed 37909 for j=101 out of 250 (i.e. j=2851 in [2751;3000], as job id is i=12)"
+[1] "seed 56064 for j=102 out of 250 (i.e. j=2852 in [2751;3000], as job id is i=12)"
+[1] "seed 33052 for j=103 out of 250 (i.e. j=2853 in [2751;3000], as job id is i=12)"
+[1] "seed 64627 for j=104 out of 250 (i.e. j=2854 in [2751;3000], as job id is i=12)"
+[1] "seed 39674 for j=105 out of 250 (i.e. j=2855 in [2751;3000], as job id is i=12)"
+[1] "seed 69791 for j=106 out of 250 (i.e. j=2856 in [2751;3000], as job id is i=12)"
+[1] "seed 98582 for j=107 out of 250 (i.e. j=2857 in [2751;3000], as job id is i=12)"
+[1] "seed 27889 for j=108 out of 250 (i.e. j=2858 in [2751;3000], as job id is i=12)"
+[1] "seed 71999 for j=109 out of 250 (i.e. j=2859 in [2751;3000], as job id is i=12)"
+[1] "seed 58248 for j=110 out of 250 (i.e. j=2860 in [2751;3000], as job id is i=12)"
+[1] "seed 59589 for j=111 out of 250 (i.e. j=2861 in [2751;3000], as job id is i=12)"
+[1] "seed 23607 for j=112 out of 250 (i.e. j=2862 in [2751;3000], as job id is i=12)"
+[1] "seed 38220 for j=113 out of 250 (i.e. j=2863 in [2751;3000], as job id is i=12)"
+[1] "seed 63396 for j=114 out of 250 (i.e. j=2864 in [2751;3000], as job id is i=12)"
+[1] "seed 63813 for j=115 out of 250 (i.e. j=2865 in [2751;3000], as job id is i=12)"
+[1] "seed 98240 for j=116 out of 250 (i.e. j=2866 in [2751;3000], as job id is i=12)"
+[1] "seed 32174 for j=117 out of 250 (i.e. j=2867 in [2751;3000], as job id is i=12)"
+[1] "seed 64853 for j=118 out of 250 (i.e. j=2868 in [2751;3000], as job id is i=12)"
+[1] "seed 13906 for j=119 out of 250 (i.e. j=2869 in [2751;3000], as job id is i=12)"
+[1] "seed 98363 for j=120 out of 250 (i.e. j=2870 in [2751;3000], as job id is i=12)"
+[1] "seed 24293 for j=121 out of 250 (i.e. j=2871 in [2751;3000], as job id is i=12)"
+[1] "seed 42547 for j=122 out of 250 (i.e. j=2872 in [2751;3000], as job id is i=12)"
+[1] "seed 75126 for j=123 out of 250 (i.e. j=2873 in [2751;3000], as job id is i=12)"
+[1] "seed 94513 for j=124 out of 250 (i.e. j=2874 in [2751;3000], as job id is i=12)"
+[1] "seed 74068 for j=125 out of 250 (i.e. j=2875 in [2751;3000], as job id is i=12)"
+[1] "seed 10714 for j=126 out of 250 (i.e. j=2876 in [2751;3000], as job id is i=12)"
+[1] "seed 11076 for j=127 out of 250 (i.e. j=2877 in [2751;3000], as job id is i=12)"
+[1] "seed 17514 for j=128 out of 250 (i.e. j=2878 in [2751;3000], as job id is i=12)"
+[1] "seed 43886 for j=129 out of 250 (i.e. j=2879 in [2751;3000], as job id is i=12)"
+[1] "seed 27458 for j=130 out of 250 (i.e. j=2880 in [2751;3000], as job id is i=12)"
+[1] "seed 75985 for j=131 out of 250 (i.e. j=2881 in [2751;3000], as job id is i=12)"
+[1] "seed 32855 for j=132 out of 250 (i.e. j=2882 in [2751;3000], as job id is i=12)"
+[1] "seed 3914 for j=133 out of 250 (i.e. j=2883 in [2751;3000], as job id is i=12)"
+[1] "seed 87883 for j=134 out of 250 (i.e. j=2884 in [2751;3000], as job id is i=12)"
+[1] "seed 78311 for j=135 out of 250 (i.e. j=2885 in [2751;3000], as job id is i=12)"
+[1] "seed 67853 for j=136 out of 250 (i.e. j=2886 in [2751;3000], as job id is i=12)"
+[1] "seed 65201 for j=137 out of 250 (i.e. j=2887 in [2751;3000], as job id is i=12)"
+[1] "seed 74379 for j=138 out of 250 (i.e. j=2888 in [2751;3000], as job id is i=12)"
+[1] "seed 29860 for j=139 out of 250 (i.e. j=2889 in [2751;3000], as job id is i=12)"
+[1] "seed 72445 for j=140 out of 250 (i.e. j=2890 in [2751;3000], as job id is i=12)"
+[1] "seed 96890 for j=141 out of 250 (i.e. j=2891 in [2751;3000], as job id is i=12)"
+[1] "seed 65526 for j=142 out of 250 (i.e. j=2892 in [2751;3000], as job id is i=12)"
+[1] "seed 48618 for j=143 out of 250 (i.e. j=2893 in [2751;3000], as job id is i=12)"
+[1] "seed 60698 for j=144 out of 250 (i.e. j=2894 in [2751;3000], as job id is i=12)"
+[1] "seed 61856 for j=145 out of 250 (i.e. j=2895 in [2751;3000], as job id is i=12)"
+[1] "seed 8326 for j=146 out of 250 (i.e. j=2896 in [2751;3000], as job id is i=12)"
+[1] "seed 13649 for j=147 out of 250 (i.e. j=2897 in [2751;3000], as job id is i=12)"
+[1] "seed 68549 for j=148 out of 250 (i.e. j=2898 in [2751;3000], as job id is i=12)"
+[1] "seed 99938 for j=149 out of 250 (i.e. j=2899 in [2751;3000], as job id is i=12)"
+[1] "seed 9317 for j=150 out of 250 (i.e. j=2900 in [2751;3000], as job id is i=12)"
+[1] "seed 16005 for j=151 out of 250 (i.e. j=2901 in [2751;3000], as job id is i=12)"
+[1] "seed 42340 for j=152 out of 250 (i.e. j=2902 in [2751;3000], as job id is i=12)"
+[1] "seed 91719 for j=153 out of 250 (i.e. j=2903 in [2751;3000], as job id is i=12)"
+[1] "seed 34739 for j=154 out of 250 (i.e. j=2904 in [2751;3000], as job id is i=12)"
+[1] "seed 54965 for j=155 out of 250 (i.e. j=2905 in [2751;3000], as job id is i=12)"
+[1] "seed 3166 for j=156 out of 250 (i.e. j=2906 in [2751;3000], as job id is i=12)"
+[1] "seed 3536 for j=157 out of 250 (i.e. j=2907 in [2751;3000], as job id is i=12)"
+[1] "seed 74188 for j=158 out of 250 (i.e. j=2908 in [2751;3000], as job id is i=12)"
+[1] "seed 70924 for j=159 out of 250 (i.e. j=2909 in [2751;3000], as job id is i=12)"
+[1] "seed 72193 for j=160 out of 250 (i.e. j=2910 in [2751;3000], as job id is i=12)"
+[1] "seed 71004 for j=161 out of 250 (i.e. j=2911 in [2751;3000], as job id is i=12)"
+[1] "seed 1371 for j=162 out of 250 (i.e. j=2912 in [2751;3000], as job id is i=12)"
+[1] "seed 79931 for j=163 out of 250 (i.e. j=2913 in [2751;3000], as job id is i=12)"
+[1] "seed 61317 for j=164 out of 250 (i.e. j=2914 in [2751;3000], as job id is i=12)"
+[1] "seed 44448 for j=165 out of 250 (i.e. j=2915 in [2751;3000], as job id is i=12)"
+[1] "seed 58502 for j=166 out of 250 (i.e. j=2916 in [2751;3000], as job id is i=12)"
+[1] "seed 96139 for j=167 out of 250 (i.e. j=2917 in [2751;3000], as job id is i=12)"
+[1] "seed 34702 for j=168 out of 250 (i.e. j=2918 in [2751;3000], as job id is i=12)"
+[1] "seed 15090 for j=169 out of 250 (i.e. j=2919 in [2751;3000], as job id is i=12)"
+[1] "seed 57373 for j=170 out of 250 (i.e. j=2920 in [2751;3000], as job id is i=12)"
+[1] "seed 16633 for j=171 out of 250 (i.e. j=2921 in [2751;3000], as job id is i=12)"
+[1] "seed 6154 for j=172 out of 250 (i.e. j=2922 in [2751;3000], as job id is i=12)"
+[1] "seed 8132 for j=173 out of 250 (i.e. j=2923 in [2751;3000], as job id is i=12)"
+[1] "seed 61525 for j=174 out of 250 (i.e. j=2924 in [2751;3000], as job id is i=12)"
+[1] "seed 93729 for j=175 out of 250 (i.e. j=2925 in [2751;3000], as job id is i=12)"
+[1] "seed 33759 for j=176 out of 250 (i.e. j=2926 in [2751;3000], as job id is i=12)"
+[1] "seed 15505 for j=177 out of 250 (i.e. j=2927 in [2751;3000], as job id is i=12)"
+[1] "seed 16394 for j=178 out of 250 (i.e. j=2928 in [2751;3000], as job id is i=12)"
+[1] "seed 8250 for j=179 out of 250 (i.e. j=2929 in [2751;3000], as job id is i=12)"
+[1] "seed 22652 for j=180 out of 250 (i.e. j=2930 in [2751;3000], as job id is i=12)"
+[1] "seed 93224 for j=181 out of 250 (i.e. j=2931 in [2751;3000], as job id is i=12)"
+[1] "seed 97386 for j=182 out of 250 (i.e. j=2932 in [2751;3000], as job id is i=12)"
+[1] "seed 4562 for j=183 out of 250 (i.e. j=2933 in [2751;3000], as job id is i=12)"
+[1] "seed 38959 for j=184 out of 250 (i.e. j=2934 in [2751;3000], as job id is i=12)"
+[1] "seed 23743 for j=185 out of 250 (i.e. j=2935 in [2751;3000], as job id is i=12)"
+[1] "seed 96300 for j=186 out of 250 (i.e. j=2936 in [2751;3000], as job id is i=12)"
+[1] "seed 73488 for j=187 out of 250 (i.e. j=2937 in [2751;3000], as job id is i=12)"
+[1] "seed 39044 for j=188 out of 250 (i.e. j=2938 in [2751;3000], as job id is i=12)"
+[1] "seed 62074 for j=189 out of 250 (i.e. j=2939 in [2751;3000], as job id is i=12)"
+[1] "seed 89980 for j=190 out of 250 (i.e. j=2940 in [2751;3000], as job id is i=12)"
+[1] "seed 33856 for j=191 out of 250 (i.e. j=2941 in [2751;3000], as job id is i=12)"
+[1] "seed 94136 for j=192 out of 250 (i.e. j=2942 in [2751;3000], as job id is i=12)"
+[1] "seed 13813 for j=193 out of 250 (i.e. j=2943 in [2751;3000], as job id is i=12)"
+[1] "seed 56389 for j=194 out of 250 (i.e. j=2944 in [2751;3000], as job id is i=12)"
+[1] "seed 47218 for j=195 out of 250 (i.e. j=2945 in [2751;3000], as job id is i=12)"
+[1] "seed 88535 for j=196 out of 250 (i.e. j=2946 in [2751;3000], as job id is i=12)"
+[1] "seed 62894 for j=197 out of 250 (i.e. j=2947 in [2751;3000], as job id is i=12)"
+[1] "seed 66834 for j=198 out of 250 (i.e. j=2948 in [2751;3000], as job id is i=12)"
+[1] "seed 72676 for j=199 out of 250 (i.e. j=2949 in [2751;3000], as job id is i=12)"
+[1] "seed 24120 for j=200 out of 250 (i.e. j=2950 in [2751;3000], as job id is i=12)"
+[1] "seed 41760 for j=201 out of 250 (i.e. j=2951 in [2751;3000], as job id is i=12)"
+[1] "seed 52070 for j=202 out of 250 (i.e. j=2952 in [2751;3000], as job id is i=12)"
+[1] "seed 28002 for j=203 out of 250 (i.e. j=2953 in [2751;3000], as job id is i=12)"
+[1] "seed 25703 for j=204 out of 250 (i.e. j=2954 in [2751;3000], as job id is i=12)"
+[1] "seed 20589 for j=205 out of 250 (i.e. j=2955 in [2751;3000], as job id is i=12)"
+[1] "seed 65103 for j=206 out of 250 (i.e. j=2956 in [2751;3000], as job id is i=12)"
+[1] "seed 21826 for j=207 out of 250 (i.e. j=2957 in [2751;3000], as job id is i=12)"
+[1] "seed 92639 for j=208 out of 250 (i.e. j=2958 in [2751;3000], as job id is i=12)"
+[1] "seed 65646 for j=209 out of 250 (i.e. j=2959 in [2751;3000], as job id is i=12)"
+[1] "seed 70418 for j=210 out of 250 (i.e. j=2960 in [2751;3000], as job id is i=12)"
+[1] "seed 79005 for j=211 out of 250 (i.e. j=2961 in [2751;3000], as job id is i=12)"
+[1] "seed 70290 for j=212 out of 250 (i.e. j=2962 in [2751;3000], as job id is i=12)"
+[1] "seed 3245 for j=213 out of 250 (i.e. j=2963 in [2751;3000], as job id is i=12)"
+[1] "seed 66750 for j=214 out of 250 (i.e. j=2964 in [2751;3000], as job id is i=12)"
+[1] "seed 78940 for j=215 out of 250 (i.e. j=2965 in [2751;3000], as job id is i=12)"
+[1] "seed 97840 for j=216 out of 250 (i.e. j=2966 in [2751;3000], as job id is i=12)"
+[1] "seed 53207 for j=217 out of 250 (i.e. j=2967 in [2751;3000], as job id is i=12)"
+[1] "seed 11753 for j=218 out of 250 (i.e. j=2968 in [2751;3000], as job id is i=12)"
+[1] "seed 74835 for j=219 out of 250 (i.e. j=2969 in [2751;3000], as job id is i=12)"
+[1] "seed 56378 for j=220 out of 250 (i.e. j=2970 in [2751;3000], as job id is i=12)"
+[1] "seed 6854 for j=221 out of 250 (i.e. j=2971 in [2751;3000], as job id is i=12)"
+[1] "seed 359 for j=222 out of 250 (i.e. j=2972 in [2751;3000], as job id is i=12)"
+[1] "seed 65456 for j=223 out of 250 (i.e. j=2973 in [2751;3000], as job id is i=12)"
+[1] "seed 3156 for j=224 out of 250 (i.e. j=2974 in [2751;3000], as job id is i=12)"
+[1] "seed 77846 for j=225 out of 250 (i.e. j=2975 in [2751;3000], as job id is i=12)"
+[1] "seed 74635 for j=226 out of 250 (i.e. j=2976 in [2751;3000], as job id is i=12)"
+[1] "seed 61820 for j=227 out of 250 (i.e. j=2977 in [2751;3000], as job id is i=12)"
+[1] "seed 75655 for j=228 out of 250 (i.e. j=2978 in [2751;3000], as job id is i=12)"
+[1] "seed 67427 for j=229 out of 250 (i.e. j=2979 in [2751;3000], as job id is i=12)"
+[1] "seed 14257 for j=230 out of 250 (i.e. j=2980 in [2751;3000], as job id is i=12)"
+[1] "seed 78313 for j=231 out of 250 (i.e. j=2981 in [2751;3000], as job id is i=12)"
+[1] "seed 16719 for j=232 out of 250 (i.e. j=2982 in [2751;3000], as job id is i=12)"
+[1] "seed 16223 for j=233 out of 250 (i.e. j=2983 in [2751;3000], as job id is i=12)"
+[1] "seed 98359 for j=234 out of 250 (i.e. j=2984 in [2751;3000], as job id is i=12)"
+[1] "seed 22792 for j=235 out of 250 (i.e. j=2985 in [2751;3000], as job id is i=12)"
+[1] "seed 255 for j=236 out of 250 (i.e. j=2986 in [2751;3000], as job id is i=12)"
+[1] "seed 60757 for j=237 out of 250 (i.e. j=2987 in [2751;3000], as job id is i=12)"
+[1] "seed 99483 for j=238 out of 250 (i.e. j=2988 in [2751;3000], as job id is i=12)"
+[1] "seed 74253 for j=239 out of 250 (i.e. j=2989 in [2751;3000], as job id is i=12)"
+[1] "seed 76224 for j=240 out of 250 (i.e. j=2990 in [2751;3000], as job id is i=12)"
+[1] "seed 56126 for j=241 out of 250 (i.e. j=2991 in [2751;3000], as job id is i=12)"
+[1] "seed 39843 for j=242 out of 250 (i.e. j=2992 in [2751;3000], as job id is i=12)"
+[1] "seed 81908 for j=243 out of 250 (i.e. j=2993 in [2751;3000], as job id is i=12)"
+[1] "seed 74560 for j=244 out of 250 (i.e. j=2994 in [2751;3000], as job id is i=12)"
+[1] "seed 30445 for j=245 out of 250 (i.e. j=2995 in [2751;3000], as job id is i=12)"
+[1] "seed 6566 for j=246 out of 250 (i.e. j=2996 in [2751;3000], as job id is i=12)"
+[1] "seed 48728 for j=247 out of 250 (i.e. j=2997 in [2751;3000], as job id is i=12)"
+[1] "seed 25904 for j=248 out of 250 (i.e. j=2998 in [2751;3000], as job id is i=12)"
+[1] "seed 71588 for j=249 out of 250 (i.e. j=2999 in [2751;3000], as job id is i=12)"
+[1] "seed 70306 for j=250 out of 250 (i.e. j=3000 in [2751;3000], as job id is i=12)"
+There were 20 warnings (use warnings() to see them)
+> rownames(RES) <- NULL
+> save(RES,file=paste0(path.res,name,"-",iter_sim,".rda"))
+> 
+> ## * Summary results
+> sessionInfo()
+R version 4.1.2 (2021-11-01)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Red Hat Enterprise Linux 8.5 (Ootpa)
+
+Matrix products: default
+BLAS:   /opt/software/R/4.1.2/lib64/R/lib/libRblas.so
+LAPACK: /opt/software/R/4.1.2/lib64/R/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] mvtnorm_1.1-3    DelayedGSD_0.0.3
+
+loaded via a namespace (and not attached):
+ [1] BB_2019.10-1     magrittr_2.0.3   tidyselect_1.1.2 munsell_0.5.0   
+ [5] lattice_0.20-45  colorspace_2.0-3 xtable_1.8-4     R6_2.5.1        
+ [9] quadprog_1.5-8   rlang_1.0.3      fansi_1.0.3      dplyr_1.0.9     
+[13] grid_4.1.2       nlme_3.1-153     gtable_0.3.0     gsDesign_3.3.0  
+[17] utf8_1.2.2       cli_3.3.0        ellipsis_0.3.2   tibble_3.1.7    
+[21] lifecycle_1.0.1  crayon_1.5.1     purrr_0.3.4      ggplot2_3.3.6   
+[25] tidyr_1.2.0      vctrs_0.4.1      glue_1.6.2       compiler_4.1.2  
+[29] pillar_1.7.0     generics_0.1.3   scales_1.2.0     pkgconfig_2.0.3 
+> summary(RES)
+     method        stage           type             statistic     
+ Min.   :1.0   Min.   :1.000   Length:1500        Min.   :0.0137  
+ 1st Qu.:1.0   1st Qu.:1.000   Class :character   1st Qu.:1.6871  
+ Median :1.5   Median :1.000   Mode  :character   Median :2.4678  
+ Mean   :1.5   Mean   :1.333                      Mean   :2.3324  
+ 3rd Qu.:2.0   3rd Qu.:2.000                      3rd Qu.:3.0531  
+ Max.   :2.0   Max.   :2.000                      Max.   :5.5058  
+                                                  NA's   :500     
+  estimate_ML          se_ML             info           infoPC      
+ Min.   :-0.3780   Min.   :0.3345   Min.   :4.174   Min.   :0.3262  
+ 1st Qu.: 0.5727   1st Qu.:0.3859   1st Qu.:5.714   1st Qu.:0.4465  
+ Median : 0.8613   Median :0.4000   Median :6.310   Median :0.4931  
+ Mean   : 0.8301   Mean   :0.4026   Mean   :6.318   Mean   :0.4937  
+ 3rd Qu.: 1.0715   3rd Qu.:0.4207   3rd Qu.:6.809   3rd Qu.:0.5321  
+ Max.   : 1.7867   Max.   :0.4895   Max.   :9.163   Max.   :0.7160  
+ NA's   :500       NA's   :1000     NA's   :176     NA's   :176     
+   info.pred      infoPC.pred           uk              lk         
+ Min.   :4.445   Min.   :0.3473   Min.   :2.251   Min.   :-0.3937  
+ 1st Qu.:6.006   1st Qu.:0.4693   1st Qu.:2.463   1st Qu.: 0.1389  
+ Median :6.628   Median :0.5179   Median :2.514   Median : 0.3324  
+ Mean   :6.631   Mean   :0.5182   Mean   :2.519   Mean   : 0.3218  
+ 3rd Qu.:7.118   3rd Qu.:0.5562   3rd Qu.:2.585   3rd Qu.: 0.4756  
+ Max.   :9.582   Max.   :0.7488   Max.   :2.787   Max.   : 1.0969  
+ NA's   :1000    NA's   :1000     NA's   :1000    NA's   :1000     
+   decision            reason            p.value_ML        lower_ML      
+ Length:1500        Length:1500        Min.   :0.0000   Min.   :-0.9027  
+ Class :character   Class :character   1st Qu.:0.0014   1st Qu.:-0.0352  
+ Mode  :character   Mode  :character   Median :0.0053   Median : 0.1858  
+                                       Mean   :0.0699   Mean   : 0.1242  
+                                       3rd Qu.:0.0348   3rd Qu.: 0.3060  
+                                       Max.   :0.9718   Max.   : 1.0081  
+                                       NA's   :1000     NA's   :1000     
+    upper_ML       p.value_MUE       lower_MUE         upper_MUE     
+ Min.   :0.6806   Min.   :0.0000   Min.   :-0.8971   Min.   :0.7253  
+ 1st Qu.:1.2488   1st Qu.:0.0020   1st Qu.:-0.0411   1st Qu.:1.2511  
+ Median :1.5150   Median :0.0068   Median : 0.0861   Median :1.4826  
+ Mean   :1.5693   Mean   :0.0447   Mean   : 0.1014   Mean   :1.5788  
+ 3rd Qu.:1.9102   3rd Qu.:0.0188   3rd Qu.: 0.2438   3rd Qu.:1.9164  
+ Max.   :2.6514   Max.   :1.0000   Max.   : 1.6261   Max.   :3.0231  
+ NA's   :1000     NA's   :1000     NA's   :1000      NA's   :1000    
+  estimate_MUE           ck           time.interim        seed      
+ Min.   :-0.0859   Min.   :-0.1626   Min.   :507.0   Min.   :  255  
+ 1st Qu.: 0.6174   1st Qu.: 1.3994   1st Qu.:587.0   1st Qu.:25904  
+ Median : 0.8244   Median : 1.4583   Median :605.0   Median :53052  
+ Mean   : 0.8522   Mean   : 1.4266   Mean   :603.8   Mean   :51110  
+ 3rd Qu.: 1.0768   3rd Qu.: 1.5094   3rd Qu.:621.0   3rd Qu.:73488  
+ Max.   : 2.2247   Max.   : 1.6996   Max.   :683.0   Max.   :99938  
+ NA's   :1000      NA's   :676                                      
+  nX1.interim     nX2.interim     nX3.interim    computation.time
+ Min.   :146.0   Min.   :131.0   Min.   :121.0   Min.   :0.690   
+ 1st Qu.:148.0   1st Qu.:135.0   1st Qu.:125.0   1st Qu.:0.903   
+ Median :148.0   Median :136.0   Median :127.0   Median :0.981   
+ Mean   :148.6   Mean   :136.4   Mean   :127.1   Mean   :1.006   
+ 3rd Qu.:149.0   3rd Qu.:138.0   3rd Qu.:129.0   3rd Qu.:1.087   
+ Max.   :153.0   Max.   :145.0   Max.   :134.0   Max.   :3.685   
+                                                                 
+> 
+> #----------------------------------------------------------------------
+> ### BATCH_simuMain.R ends here
+> 
+> proc.time()
+   user  system elapsed 
+253.911   0.447 265.122 
