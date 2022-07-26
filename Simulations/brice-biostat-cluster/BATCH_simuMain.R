@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Mar  5 2021 (10:56) 
 ## Version: 
-## Last-Updated: maj  6 2022 (10:22) 
+## Last-Updated: jul  7 2022 (13:56) 
 ##           By: Brice Ozenne
-##     Update #: 512
+##     Update #: 518
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -14,6 +14,24 @@
 #----------------------------------------------------------------------
 ## 
 ### Code:
+
+## ** BATCH loop
+## cd /projects/biostat01/people/hpl802/DelayedGSD/
+## for ITER in `seq 1 10`;
+## do
+## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=10" BATCH_simuMain.R output/R-simuMain-'$ITER'.Rout &'
+## done
+
+## [1] 1186669
+## [2] 1186670
+## [3] 1186671
+## [4] 1186672
+## [5] 1186673
+## [6] 1186674
+## [7] 1186675
+## [8] 1186676
+## [9] 1186677
+## [10] 1186678
 
 rm(list=ls())
                                    # {{{ parameters
@@ -59,12 +77,19 @@ deltaPower <- abs(delta[3]) # effect (NOT Z-scale/unit, but outcome scale/unit!)
 n <- ceiling(2*2*((allsd[3]/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
                                         # inflate SS as required for interim
 
-# {{{ Set seeds for parallel computing and reproducibility
+                                        # {{{ Set seeds for parallel computing and reproducibility
 ## * Seed
-iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
-if(is.na(iter_sim)){iter_sim <- 2}
-if(is.na(n.iter_sim)){n.iter_sim <- 10}
+args <- commandArgs(TRUE) ## BATCH MODE
+if(length(args)>0){
+    for (arg in args){
+        eval(parse(text=arg))
+    }
+}else{ ## SLUMR
+    iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+    n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
+} ## interactive
+if(is.na(iter_sim)){iter_sim <- 1}
+if(is.na(n.iter_sim)){n.iter_sim <- 40}
 
 set.seed(140786598)
 allseeds <- sample.int(n = 10*n.iter_sim*NMC, size = n.iter_sim*NMC, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
@@ -141,7 +166,7 @@ allj <- ((iter_sim-1)*NMC + 1):(iter_sim*NMC) # indices of all iterations (repli
 # }}}
 
 ## * Loop
-for(j in allj){ ## j <- 5 ## 5
+for(j in allj){ ## j <- 51 ## 5
     startComp <- Sys.time()
     myseedi <- allseeds[j]
     # {{{ TRACE info (e.g. to check the Rout)

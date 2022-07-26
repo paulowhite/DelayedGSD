@@ -10,12 +10,12 @@
 R CMD BATCH --vanilla BATCH_simuMain.R output/simuMain/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
 
 ## go to directory    ## cd x:/DelayedGSD/
-                      ## cd /projects/biostat01/people/hpl802/
+                      ## cd /projects/biostat01/people/hpl802/DelayedGSD
 ## clean outputs      ## rm -r ./output/simuMain/*
 ## clean results      ## rm -r ./Results/simuMain/*
 ## submission command ## sbatch SUBM_simuMain.slurm
 
-## submission output  ## Submitted batch job 1397828 (time using C-c t: fredag 22-05-06 at 10:26) 
+## submission output  ## Submitted batch job 1748887 (time using C-c t: ) 
 
 ## init               ## module module load gcc/11.2.0 R/4.1.2
                       ## cat .bash_profile (in the root directory on the server to visualize the current configuration)

@@ -234,10 +234,10 @@ Method1 <- function(rho_alpha=2,
   ## {{{ case k=1 
   IncAlpha[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
   IncBeta[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
-  
+
     uk[1] <- qnorm(p=1-IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
     lk[1] <- qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
-  
+
     ck[1] <- calc_ck(uk=uk[1],
                      lk=lk[1],
                      Info.i=Info.i[1],
@@ -338,16 +338,16 @@ Method1 <- function(rho_alpha=2,
           }
           if(k==Kmax){
               lk[k] <- uk[k] # just to handle cases in which there is no root
-            
-            try(lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
-                                                     upper = c(uk[1:(k-1)],x),
-                                                     mean=thetheta[1:k],
-                                                     sigma= sigmaZk[1:k,1:k],
-                                                     abseps = abseps) - IncBeta[k]},
-                                 lower = lk[k-1], 
-                                 upper = uk[k], 
-                                 tol = abseps)$root, silent = TRUE)
-            if(inherits(lk[k],"try-error")){warning("try-error for calculation of lk[Kmax]")}
+
+              try(lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
+                                                       upper = c(uk[1:(k-1)],x),
+                                                       mean = thetheta[1:k],
+                                                       sigma = sigmaZk[1:k,1:k],
+                                                       abseps = abseps) - IncBeta[k]},
+                                   lower = lk[k-1], 
+                                   upper = uk[k-1],  ## put uk[k-1] instead of uk[k] (would often lead to no solution)
+                                   tol = abseps)$root, silent = TRUE)
+              if(inherits(lk[k],"try-error")){warning("try-error for calculation of lk[Kmax]")}
             
           }
         }else{
