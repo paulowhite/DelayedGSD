@@ -317,9 +317,9 @@ for(j in allj){ ## j <- 5 ## 5
                                              lower_MUE = iConfint.final[iConfint.final$method == "MUE","lower"],
                                              upper_MUE = iConfint.final[iConfint.final$method == "MUE","upper"],
                                              estimate_MUE = iConfint.final[iConfint.final$method == "MUE","estimate"],
-                                             info = iInfo.final[1,"Interim"],
-                                             infoPC = iInfo.final[1,"Interim.pc"],
-                                             ck = iBoundary.final[1,"Cbound"],
+                                             info = iInfo.final[2,"Interim"],
+                                             infoPC = iInfo.final[2,"Interim.pc"],
+                                             ck = iBoundary.final[2,"Cbound"],
                                              decision = unname(coef(currentGSD[[iMeth]], type = "decision")["decision","stage 2"])
                                              )
         }

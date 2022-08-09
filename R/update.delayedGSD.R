@@ -252,8 +252,9 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                 kMax = kMax, 
                                 delta = 0,  
                                 estimate = delta[1,"estimate"],
-                                futility2efficacy = object$method!=3,
-                                bindingFutility = object$bindingFutility)
+                                method = object$method,
+                                bindingFutility = object$bindingFutility,
+                                cNotBelowFixedc=object$cNotBelowFixedc)
             delta.MUE[1,"p.value"] <- as.double(resP)
             attr(delta.MUE,"error") <- c(p.value = attr(resP,"error"))
         }
@@ -268,8 +269,9 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                              kMax = kMax, 
                              alpha = object$alpha,  
                              estimate = delta[1,"estimate"],
-                             futility2efficacy = object$method!=3,
-                             bindingFutility = object$bindingFutility)
+                             method = object$method,
+                             bindingFutility = object$bindingFutility,
+                             cNotBelowFixedc=cNotBelowFixedc)
             delta.MUE[1,"lower"] <- resCI["lower"]
             delta.MUE[1,"upper"] <- resCI["upper"]
 
@@ -289,8 +291,9 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                                      uk = uk[1:k],  
                                                      kMax = kMax, 
                                                      estimate = delta[1,"estimate"],
-                                                     futility2efficacy = object$method!=3,
-                                                     bindingFutility = object$bindingFutility)
+                                                     method = object$method,
+                                                     bindingFutility = object$bindingFutility,
+                                                     cNotBelowFixedc=cNotBelowFixedc)
         }
         
         object$delta <- rbind(object$delta,delta.MUE)

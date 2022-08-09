@@ -341,9 +341,9 @@ for(j in allj){ ## j <- 51 ## 5
                                              lower_MUE = iConfint.final[iConfint.final$method == "MUE","lower"],
                                              upper_MUE = iConfint.final[iConfint.final$method == "MUE","upper"],
                                              estimate_MUE = iConfint.final[iConfint.final$method == "MUE","estimate"],
-                                             info = iInfo.final[1,"Interim"],
-                                             infoPC = iInfo.final[1,"Interim.pc"],
-                                             ck = iBoundary.final[1,"Cbound"],
+                                             info = iInfo.final[2,"Interim"],  #COBA: shouldn't this be taken from row 2?
+                                             infoPC = iInfo.final[2,"Interim.pc"], #COBA: shouldn't this be taken from row 2?
+                                             ck = iBoundary.final[2,"Cbound"], #COBA: shouldn't this be taken from row 2?
                                              decision = unname(coef(currentGSD[[iMeth]], type = "decision")["decision","stage 2"])
                                              )
         }

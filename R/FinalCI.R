@@ -10,8 +10,9 @@
 #' @param alpha confidence level (to get a 100*(1-alpha)\% CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
 #' @param optimizer the observed treatment estimate at decision
-#' @param futility2efficacy [logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.
+#' @param method  method 1, 2 or 3
 #' @param bindingFutility [logical]  whether the futility stopping rule is binding.
+#' @param cNotBelowFixedc [logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
 
 ## * FinalCI (code)
 #' @export
@@ -24,8 +25,9 @@ FinalCI <- function(Info.d,
                     alpha=0.05,
                     estimate,
                     optimizer = "optimise",
-                    futility2efficacy,
-                    bindingFutility){
+                    method,
+                    bindingFutility,
+                    cNotBelowFixedc){
 
     f <- function(delta){
         FinalPvalue(Info.d=Info.d,
@@ -36,8 +38,9 @@ FinalCI <- function(Info.d,
                     kMax=kMax,
                     estimate=estimate,
                     delta=delta,
-                    futility2efficacy=futility2efficacy,
-                    bindingFutility=bindingFutility) - alpha/2
+                    method=method,
+                    bindingFutility=bindingFutility,
+                    cNotBelowFixedc=cNotBelowFixedc) - alpha/2
     }
 
     g <- function(delta){
@@ -49,8 +52,9 @@ FinalCI <- function(Info.d,
                       kMax=kMax,
                       estimate=estimate,
                       delta=delta,
-                      futility2efficacy=futility2efficacy,
-                      bindingFutility=bindingFutility) - alpha/2
+                      method=method,
+                      bindingFutility=bindingFutility,
+                      cNotBelowFixedc=cNotBelowFixedc) - alpha/2
     }
 
     if(optimizer=="optimise"){

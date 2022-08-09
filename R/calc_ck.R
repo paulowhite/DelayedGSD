@@ -28,8 +28,11 @@ calc_ck <- function(uk,
     requireNamespace("BB")
   
     ## message("the method assumes that positive effects are good")
-  
+    
     k <- length(uk)
+    if(Info.d < Info.i[k]){
+      stop("Decreasing information, cannot compute ck because covariance matrix not positive semidefinite")
+    }
     
     ## If interim analysis k was skipped due to max info reached at interim or expected to be reached at decision, then calculate c according to Eq 15 from HJ
     if(ImaxAnticipated==TRUE){
@@ -108,9 +111,13 @@ calc_ck <- function(uk,
 
     lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:k),1)]  ## last boundary among the k-1 already computed that is not infinite
     upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:k),1)]*1.1
-    if(ImaxAnticipated & Info.d > Info.max){
+    
+    if(!is.null(Info.max)){
+      if(ImaxAnticipated & Info.d > Info.max){
         lowerRoot <- -10
+      }
     }
+    
     c <- try(stats::uniroot(f,
                             lower = lowerRoot,
                             upper = upperRoot)$root,
