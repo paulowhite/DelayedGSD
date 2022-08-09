@@ -347,6 +347,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
 
         if(Info.i[k] < Info.i[k-1]){
             object$conclusion["comment.decision",k] <- "decreasing information"
+            warning("boundaries will not be computed correctly")
         }
 
         if(method==1){

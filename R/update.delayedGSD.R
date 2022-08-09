@@ -271,7 +271,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                              estimate = delta[1,"estimate"],
                              method = object$method,
                              bindingFutility = object$bindingFutility,
-                             cNotBelowFixedc=cNotBelowFixedc)
+                             cNotBelowFixedc=object$cNotBelowFixedc)
             delta.MUE[1,"lower"] <- resCI["lower"]
             delta.MUE[1,"upper"] <- resCI["upper"]
 
@@ -293,7 +293,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                                      estimate = delta[1,"estimate"],
                                                      method = object$method,
                                                      bindingFutility = object$bindingFutility,
-                                                     cNotBelowFixedc=cNotBelowFixedc)
+                                                     cNotBelowFixedc=object$cNotBelowFixedc)
         }
         
         object$delta <- rbind(object$delta,delta.MUE)
