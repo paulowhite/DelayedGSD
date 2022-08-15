@@ -334,7 +334,7 @@ FinalPvalue <- function(Info.d,
               next
           } else {## or an interim analysis where we continued (interim 1:i, decision i)
               
-            if(i %in% index_infoDecr & delta==0 & method%in%c(1,2) & !cNotBelowFixedc){ #in case of decreasing information between interim and decision and we are calculating a p-value (under H0)
+            if(i %in% index_infoDecr & delta==0 & method%in%c(1,2) & !cNotBelowFixedc & bindingFutility){ #in case of decreasing information between interim and decision and we are calculating a p-value (under H0). Only in case of binding futility, otherwise we assume that we ignore option to stop for futility
               iIndex <- c(index_interim[1:i])
               
               pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf), #prob to stop for fut at analysis i. This equals the probability to conclude futility as the switching probabilities are equal
@@ -348,12 +348,12 @@ FinalPvalue <- function(Info.d,
                                               upper = c(iUk,Inf,ck[i]),
                                               mean = theta[iIndex],
                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-              if(method%in%c(1,2)){
+              if(method%in%c(1,2) & bindingFutility){  #in case of non-binding rule we will ignore the option to stop for futility, so this part should not be added
                 pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis i and conclude fut
                                                 upper = c(iUk,lk_orig[i],ck[i]),
                                                 mean = theta[iIndex],
                                                 sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-              } else if(method%in%3){
+              } else if(method%in%3 & bindingFutility){
                 pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis i and conclude fut (same as stopping for futility for method 3)
                                                 upper = c(iUk,lk_orig[i],Inf),
                                                 mean = theta[iIndex],

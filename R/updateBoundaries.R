@@ -205,6 +205,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
     if(type.k == "decision"){
 
         if(Info.d[k] < Info.i[k]){ ## if information has decreased since interim analysis
+          
             object$conclusion["comment.decision",k] <- "decreasing information"
             warning("Information has decreased between interim and decision, replacing information at decision with information at interim + epsilon. \n")
 
@@ -223,7 +224,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            lk = object$lk,
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
-                                           InfoR.d = object$Info.d/object$planned$Info.max,
+                                           InfoR.d = Info.d/object$planned$Info.max,
                                            delta = object$planned$delta, ## object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
@@ -242,7 +243,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            lk = object$lk,
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
-                                           InfoR.d = object$Info.d/object$planned$Info.max,
+                                           InfoR.d = Info.d/object$planned$Info.max,
                                            delta = object$planned$delta, ## object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
@@ -260,7 +261,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            lk = object$lk,
                                            k = k, type.k = type.k, ImaxAnticipated = (object$conclusion["reason.interim",k]=="Imax reached"),
                                            InfoR.i = object$Info.i/object$planned$Info.max,
-                                           InfoR.d = object$Info.d/object$planned$Info.max,
+                                           InfoR.d = Info.d/object$planned$Info.max,
                                            delta = object$planned$delta, ## object$delta$estimate, 
                                            alternative = object$alternative,
                                            binding=bindingFutility,
