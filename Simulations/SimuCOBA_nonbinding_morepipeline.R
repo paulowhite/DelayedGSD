@@ -1,6 +1,6 @@
 rm(list=ls())
 
-name <- "Power_2_analyses" # To save the results
+name <- "Power_2_analyses_nonbinding_more_pipeline2" # To save the results
 path.res <- "M:\\Research\\DelayedGSD\\Github\\DelayedGSD\\Simulations\\COBA\\"
 method <- 1:3 # methods used to compute the boundaries
 #---
@@ -9,12 +9,12 @@ myseed <- 140786598
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
-informationRates <- c(0.5,1)  #planned  information rates
+informationRates <- c(0.6,1)  #planned  information rates
 rho_alpha <- 2  # rho parameter for alpha error spending function
 rho_beta <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
-Id <- 0.6  #(expected) information rate at each decision analysis
-binding <- TRUE
+Id <- 0.75  #(expected) information rate at each decision analysis
+binding <- FALSE
 #
 #---- to generate data -----------
 #
@@ -22,7 +22,7 @@ block <- c(1,1,0,0)
 allsd <- c(2.5,2.1,2.4) # sd, first from baseline measurement, then the two changes from baseline
 mean0 <- c(10,0,0) # mean placebo group (again, first is absolute value, then change from baseline)
 delta <- c(0,0.3,0.6) # treatment effect
-ar <- (0.86*2)*2*5 # orginial accrual rate from data from Corine is 0.86 per week, hence we multiply by 2 for by 14 days. As too low, we further multiply by 2
+ar <- (0.86*2)*2*10 # orginial accrual rate from data from Corine is 0.86 per week, hence we multiply by 2 for by 14 days. As too low, we further multiply by 2
 cor011 <- -0.15 # ~ from data from Corine
 corij1 <- 0.68  # ~ from data from Corine
 cor0j1 <- -0.27  # ~ from data from Corine
@@ -37,13 +37,9 @@ TimeFactor <- 14 ## number of days between two visits
 #--- actually for both planing the trial  and generating data-----
 #
 #
-deltaPower <- delta[3] # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
-sdPower <- allsd[3]
-n <- ceiling(2*2*((sdPower/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
+deltaPower <- 0.6 # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
+n <- ceiling(2*2*((allsd[3]/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
 # inflate SS as required for interim
-
-#adjust for expected withdrawal
-n <- n/(1-(Miss11+Miss21))
 
 set.seed(140786598)
 nsim=1000
@@ -53,13 +49,13 @@ allseeds <- sample.int(n = 1000000000, size = nsim, replace=FALSE) #x=1:(.Machin
 #install_github("PauloWhite/DelayedGSD")
 #library(DelayedGSD)
 sourceDir <- function(path, trace = TRUE, ...) {
-       for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
-           if(trace) cat(nm,":")
-           source(file.path(path, nm), ...)
-           if(trace) cat("\n")
-       }
-   }
-   sourceDir("R")
+  for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
+    if(trace) cat(nm,":")
+    source(file.path(path, nm), ...)
+    if(trace) cat("\n")
+  }
+}
+sourceDir("R")
 
 plannedB <- vector(mode = "list", length = 3)
 for(iMeth in method){ ## iMeth <- 1
@@ -83,10 +79,11 @@ RES <- NULL
 
 ## * Loop
 allj <- 1:nsim
-#allj <- 572:1000
+
 for(j in allj){ ## j <- 51 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
+  #myseedi <- 222256069
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",which(j==allj)," out of ",nsim))
   # }}}
@@ -98,7 +95,7 @@ for(j in allj){ ## j <- 51 ## 5
   
   # {{{ generate data
   ## ** simulate
-  res <- GenData(n=max(nGSD), 
+  res <- GenData(n=n, 
                  N.fw=2,
                  rand.block=block,
                  allsd=allsd,
@@ -127,30 +124,19 @@ for(j in allj){ ## j <- 51 ## 5
   # {{{ make data available at interim
   # Here we stop inclusion data collection for the interim analysis as soon as
   # half of the participants have completed (or had the opportunity to complete) the follow-up 
-  thets <- d$t3[ceiling(nGSD*PropForInterim)]
-  #thet <- d$t3[ceiling(n*PropForInterim)]
-  
+  thet <- d$t3[ceiling(n*PropForInterim)]
+  di <- SelectData(d,t=thet)
   ## ddi <- FormatAsCase(di) # needed ????
   ## head(d[d$id==52,])
   # }}}
+  ## {{{ analyze data at at interim
+  ## ** interim
+  lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thet + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
+  ## lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
   
-  nX1.interim <- vector()
-  nX2.interim <- vector()
-  nX3.interim <- vector()
   currentGSD <- vector(mode = "list", length = 3)
   out.interim <- vector(mode = "list", length = 3)
   for(iMeth in method){ ## iMeth <- 1
-    # {{{ make data available at interim
-    di <- SelectData(d,t=thets[iMeth])
-    
-    nX1.interim[iMeth] <-  sum(!is.na(di$X1))
-    nX2.interim[iMeth] = sum(!is.na(di$X2)),
-    nX3.interim[iMeth] = sum(!is.na(di$X3)),
-    
-    ## {{{ analyze data at at interim
-    ## ** interim
-    lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
-    ## lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     
     currentGSD[[iMeth]] <- update(plannedB[[iMeth]], delta = lmmI, trace = FALSE)
     
@@ -174,14 +160,12 @@ for(j in allj){ ## j <- 51 ## 5
   ## currentGSD[[1]]
   ## plot(currentGSD[[1]])
   
+  ## ** decision
+  dDecision <- d[which(d$t1 <= thet + theDelta.t*TimeFactor),]
+  lmmD <- analyzeData(dDecision, ddf = "nlme", getinfo = TRUE, trace = TRUE)
   
   out.decision <- vector(mode = "list", length = 3)
   for(iMeth in method){ ## iMeth <- 1
-    
-    ## ** decision
-    dDecision <- d[which(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor),]
-    lmmD <- analyzeData(dDecision, ddf = "nlme", getinfo = TRUE, trace = TRUE)
-    
     
     if(out.interim[[iMeth]]$decision == "stop"){
       currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, trace = FALSE)
@@ -201,8 +185,8 @@ for(j in allj){ ## j <- 51 ## 5
                                           lower_MUE = iConfint.decision[iConfint.decision$method == "MUE","lower"],
                                           upper_MUE = iConfint.decision[iConfint.decision$method == "MUE","upper"],
                                           estimate_MUE = iConfint.decision[iConfint.decision$method == "MUE","estimate"],
-                                          info = iInfo.decision[1,"Decision"],
-                                          infoPC = iInfo.decision[1,"Decision.pc"],
+                                          info = iInfo.decision[1,"Interim"],
+                                          infoPC = iInfo.decision[1,"Interim.pc"],
                                           ck = iBoundary.decision[1,"Cbound"],
                                           decision = unname(iDecision.decision["decision","stage 2"])
       )
@@ -233,12 +217,11 @@ for(j in allj){ ## j <- 51 ## 5
   # {{{ Analyze data at decision
   
   ## ** finale
+  dFinal <- d
+  lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
   
   out.final <- vector(mode = "list", length = 3)
   for(iMeth in method){ ## iMeth <- 1
-    dFinal <- d[1:nGSD[iMeth],]
-    lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
-    
     if(out.interim[[iMeth]]$decision == "stop"){
       out.final[[iMeth]] <- data.frame(statistic = NA,
                                        p.value_ML = NA,
@@ -300,11 +283,11 @@ for(j in allj){ ## j <- 51 ## 5
     ## results
     outMerge,
     ## simulation details
-    time.interim = rep(thets,each=3),
+    time.interim = thet,
     seed=myseedi,             
-    nX1.interim = rep(nX1.interim,each=3),
-    nX2.interim = rep(nX2.interim,each=3),
-    nX3.interim = rep(nX3.interim,each=3),
+    nX1.interim = sum(!is.na(di$X1)),
+    nX2.interim = sum(!is.na(di$X2)),
+    nX3.interim = sum(!is.na(di$X3)),
     ## computation time
     computation.time=as.double(round(difftime(stopComp,startComp,units="secs"),3))
   )

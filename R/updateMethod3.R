@@ -100,16 +100,18 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
     } else if(type.k=="decision"){
       if(ImaxAnticipated){
         alphaSpent[1] <- alpha  #spend all remaining alpha if study was stopped due to anticipation of Imax reached
+        ck <- qnorm(1-alpha) #if the first IA is skipped due to Max info reached, then there is only one analysis, using the usual critval
+      } else {
+        c_new <- uniroot(function(x){pmvnorm(lower = c(uk[1],x),
+                                             upper = c(Inf,Inf),
+                                             mean=rep(0,2),
+                                             sigma= sigmaZk2,
+                                             abseps = abseps) - alphaSpent[1]},
+                         lower = lk[1],
+                         upper = uk[1],
+                         tol = abseps)$root
+        ck <- max(cMin,c_new)
       }
-      c_new <- uniroot(function(x){pmvnorm(lower = c(uk[1],x),
-                                        upper = c(Inf,Inf),
-                                        mean=rep(0,2),
-                                        sigma= sigmaZk2,
-                                        abseps = abseps) - alphaSpent[1]},
-                    lower = lk[1],
-                    upper = uk[1],
-                    tol = abseps)$root
-      ck <- max(cMin,c_new)
     }
 
   }else{
@@ -191,6 +193,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
       if(InfoR.i[k]>1){
           lowerRoot <- -10
+          upperRoot <- 10
       }
             
       uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
