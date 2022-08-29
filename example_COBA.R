@@ -70,6 +70,15 @@ for(iMeth in method){ ## iMeth <- 1
   ## summary(plannedB[[1]])
   ## coef(plannedB[[iMeth]], type = "information")
 }
+
+plot(plannedB[[1]])
+
+png(file="planned_bounds_poster.png")
+plot(plannedB[[3]])
+dev.off()
+
+
+
 inflationFactor <- unlist(lapply(plannedB,function(iP){iP$planned$InflationFactor}))
 nGSD <- ceiling(n*inflationFactor)
 
@@ -154,7 +163,12 @@ nGSD <- ceiling(n*inflationFactor)
                                         reason = iDecision.interim["reason.interim","stage 1"])
   }
   ## currentGSD[[1]]
-  ## plot(currentGSD[[1]])
+  
+  png(filename = "plot_interim_poster.png")
+  plot(currentGSD[[3]])
+  dev.off()
+  
+  PlotProgress(di)
   
   out.decision <- vector(mode = "list", length = 3)
   for(iMeth in method){ ## iMeth <- 1
@@ -211,6 +225,10 @@ nGSD <- ceiling(n*inflationFactor)
   }
   # }}}
   # {{{ Analyze data at decision
+  
+  png("final_decision_poster.png")
+  plot(currentGSD[[3]])
+  dev.off()
   
   ## ** finale
   out.final <- vector(mode = "list", length = 3)

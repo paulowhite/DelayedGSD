@@ -1,3 +1,8 @@
+##issue with seed 142895152 18 AUG 2022
+#Fejl i uniroot(function(x) { : 
+#    f() values at end points not of opposite sign
+
+
 rm(list=ls())
 
 name <- "Power_2_analyses" # To save the results
@@ -9,11 +14,11 @@ myseed <- 140786598
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
-informationRates <- c(0.5,1)  #planned  information rates
+informationRates <- c(0.58,1)  #planned  information rates
 rho_alpha <- 2  # rho parameter for alpha error spending function
 rho_beta <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
-Id <- 0.6  #(expected) information rate at each decision analysis
+Id <- 0.68  #(expected) information rate at each decision analysis
 binding <- TRUE
 #
 #---- to generate data -----------
@@ -46,7 +51,7 @@ n <- ceiling(2*2*((sdPower/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 w
 n <- n/(1-(Miss11+Miss21))
 
 set.seed(140786598)
-nsim=1000
+nsim=10000
 allseeds <- sample.int(n = 1000000000, size = nsim, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
 
 #library(devtools)
@@ -144,8 +149,8 @@ for(j in allj){ ## j <- 51 ## 5
     di <- SelectData(d,t=thets[iMeth])
     
     nX1.interim[iMeth] <-  sum(!is.na(di$X1))
-    nX2.interim[iMeth] = sum(!is.na(di$X2)),
-    nX3.interim[iMeth] = sum(!is.na(di$X3)),
+    nX2.interim[iMeth] = sum(!is.na(di$X2))
+    nX3.interim[iMeth] = sum(!is.na(di$X3))
     
     ## {{{ analyze data at at interim
     ## ** interim
