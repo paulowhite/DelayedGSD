@@ -318,6 +318,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            cMin = object$cMin)
                 
             } else if(method==3){
+              
                 newBounds <- updateMethod3(rho_alpha = object$planned$rho_alpha,
                                            rho_beta = object$planned$rho_beta,
                                            alpha = object$alpha, alphaSpent = object$alphaSpent,

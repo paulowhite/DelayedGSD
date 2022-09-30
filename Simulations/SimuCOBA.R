@@ -92,6 +92,7 @@ allj <- 1:nsim
 for(j in allj){ ## j <- 51 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
+  #myseedi <- 955535360
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",which(j==allj)," out of ",nsim))
   # }}}
@@ -355,3 +356,4 @@ dim(discrep)
 
 discrep <- res[res$p.value_MUE<0.025 & !is.na(res$p.value_MUE),]
 discrep <- discrep[is.na(discrep$final.efficacy),]
+dim(discrep)

@@ -102,15 +102,28 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
         alphaSpent[1] <- alpha  #spend all remaining alpha if study was stopped due to anticipation of Imax reached
         ck <- qnorm(1-alpha) #if the first IA is skipped due to Max info reached, then there is only one analysis, using the usual critval
       } else {
-        c_new <- uniroot(function(x){pmvnorm(lower = c(uk[1],x),
-                                             upper = c(Inf,Inf),
-                                             mean=rep(0,2),
-                                             sigma= sigmaZk2,
-                                             abseps = abseps) - alphaSpent[1]},
-                         lower = lk[1],
-                         upper = uk[1],
-                         tol = abseps)$root
-        ck <- max(cMin,c_new)
+        f <- function(x){pmvnorm(lower = c(uk[1],x),
+                                 upper = c(Inf,Inf),
+                                 mean=rep(0,2),
+                                 sigma= sigmaZk2,
+                                 abseps = abseps) - alphaSpent[1]}
+        if(f(cMin)<0){  #if we are already spending too little Type I error with cMin, the real ck will be smaller, in which case ck will be set to cMin, so no need to do root search
+          ck <- cMin
+        } else {
+          c_new <- try(uniroot(f,
+                           lower = lk[1],
+                           upper = uk[1],
+                           tol = abseps)$root,silent=T)
+          if(inherits(c_new,"try-error")){
+            c_new <- try(uniroot(f,
+                                 lower = lk[1]/2,
+                                 upper = uk[1]*2,
+                                 tol = abseps)$root,silent=T)
+            ck <- max(cMin,c_new)
+          } else {
+            ck <- max(cMin,c_new)
+          }
+        }
       }
     }
 
@@ -174,15 +187,29 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       ck[k] <- cMin
     }
     if(type.k %in% c("decision")){
-      c_new <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,uk[k],x),
-                                                 upper = c(uk[1:(k-1)],Inf,Inf),
-                                                 mean=rep(0,k+1),
-                                                 sigma= sigmaZk2,
-                                                 abseps = obj$abseps) - alphaSpentInc[k]},
+      
+      f <- function(x){pmvnorm(lower = c(TheLowerValues,uk[k],x),
+                               upper = c(uk[1:(k-1)],Inf,Inf),
+                               mean=rep(0,k+1),
+                               sigma= sigmaZk2,
+                               abseps = obj$abseps) - alphaSpentInc[k]}
+      if(f(cMin)<0){  #if we are already spending too little Type I error with cMin, the real ck will be smaller, in which case ck will be set to cMin, so no need to do root search
+        ck <- cMin
+      } else {
+        c_new <- try(uniroot(f,
                              lower = lk[k-1],
                              upper = uk[k-1],
-                             tol = obj$abseps)$root
-      ck <- max(cMin,c_new)
+                             tol = abseps)$root,silent=T)
+        if(inherits(c_new,"try-error")){
+          c_new <- try(uniroot(f,
+                               lower = lk[k-1]/2,
+                               upper = uk[k-1]*2,
+                               tol = abseps)$root,silent=T)
+          ck <- max(cMin,c_new)
+        } else {
+          ck <- max(cMin,c_new)
+        }
+      }
     }else if(type.k=="final"){
       alphaSpent[k] <- alpha
       alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
