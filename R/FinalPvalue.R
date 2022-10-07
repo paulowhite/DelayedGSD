@@ -9,8 +9,9 @@
 #' @param kMax maximum number of analyses
 #' @param delta true effect under which to calculate the probability (should always be 0 for p-value, only change for calculation of CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
-#' @param futility2efficacy [logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.
+#' @param method  method 1, 2 or 3
 #' @param bindingFutility [logical] whether the futility stopping rule is binding.
+#' @param cNotBelowFixedc [logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
 #'
 #' @examples
 #' library(mvtnorm)
@@ -143,9 +144,12 @@ FinalPvalue <- function(Info.d,
                         kMax, 
                         delta=0,  
                         estimate,
-                        futility2efficacy,  #TO DO: would prefer to replace this with method, would be more user friendly, as it should alsways be FALSE for methods 1 and 2 and TRUE for method 3
-                        bindingFutility){
+                        method,  
+                        bindingFutility,
+                        cNotBelowFixedc){
     
+  
+  
     requireNamespace("mvtnorm")
   
     ## message("the method assumes that positive effects are good")
@@ -179,9 +183,13 @@ FinalPvalue <- function(Info.d,
     if(k==kMax){
         statistic <- estimate * sqrt(c(Info.d,Info.i[kMax]))
         index_infoPB <- which(Info.d > Info.d[k-1])  #find decision information levels that are higher than final information levels.
+        index_infoDecr <- which(Info.d < Info.i[1:(kMax-1)]) #find decision information levels that are lower than corresponding interim information levels
+        Info.d[index_infoDecr] <- Info.i[index_infoDecr]+Info.i[index_infoDecr]/10000  #set decision analysis information levels to interim information levels in case of decreasing information
     }else{
         statistic <- estimate * sqrt(Info.d)
         index_infoPB <- which(Info.d > Info.d[k])  #find decision information levels that are higher than final information levels.
+        index_infoDecr <- which(Info.d < Info.i) #find decision information levels that are lower than corresponding interim information levels
+        Info.d[index_infoDecr] <- Info.i[index_infoDecr]+Info.i[index_infoDecr]/10000 #set decision analysis information levels to interim information levels in case of decreasing information
     }
   
 
@@ -212,38 +220,83 @@ FinalPvalue <- function(Info.d,
                                                     mean = theta[iIndex],
                                                     sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
                 }else{ ## or a decision analysis (interim 1:i, decision i)
-                    iIndex <- c(index_interim[1:i], index_decision[i])
-
-                  ## prob to stop for eff at analysis k and conclude more extreme result
-                  pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],statistic[i]),  
-                                                   upper = c(iUk,Inf,Inf),
-                                                   mean = theta[iIndex],
-                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-                    if(futility2efficacy){
+                  iIndex <- c(index_interim[1:i], index_decision[i])  
+                  
+                    if(method%in%c(1,2)){
+                      ## prob to stop for eff at analysis k and conclude more extreme result
+                      pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],statistic[i]),  
+                                                       upper = c(iUk,Inf,Inf),
+                                                       mean = theta[iIndex],
+                                                       sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                      
                       ## prob to stop for fut at analysis k and switch to eff with more extreme result
                       pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic[i]),   
                                                       upper = c(iUk,lk_orig[i],Inf),
                                                       mean = theta[iIndex],
                                                       sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-                  }
+                    } else if (method%in%3){
+                      
+                      ## prob to stop for eff at analysis k and conclude more extreme result
+                      pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],statistic[i]),  
+                                                       upper = c(iUk,Inf,Inf),
+                                                       mean = theta[iIndex],
+                                                       sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                    }
+                    
+                 
               }
           } else if(i %in% index_infoPB){
               next #results for larger information levels are never more extreme than smaller information levels with results above c
           } else { ## or an interim analysis where we continued (interim 1:i, decision i)
-              iIndex <- c(index_interim[1:i], index_decision[i])
-
-              ## prob to stop for eff at analysis i and conclude eff
-              pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],ck[i]),  
-                                               upper = c(iUk,Inf,Inf),
-                                               mean = theta[iIndex],
-                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-              if(futility2efficacy){
+            
+            if(i %in% index_infoDecr & delta==0){ #in case of decreasing information from interim to decision, for calculation of p-value (under H0) only
+            #we will ignore the decision analysis and simply calculate the probability of stopping for efficacy. This is correct for Methods 1 and 2 if c can be chosen freely. It is conservative otherwise as it is more likely to flip from efficacy to futility, hence the p-value will be larger than it should be
+                
+                  iIndex <- c(index_interim[1:i])
+                  
+                  ## prob to stop for eff at analysis i
+                  pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i]),  
+                                                   upper = c(iUk,Inf),
+                                                   mean = theta[iIndex],
+                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+  
+            } else {
+              if(method%in%c(1,2)){
+                if(cNotBelowFixedc | delta!=0){  #if c has to be at least the critval of a fixed trial, or if we are using this function under delta!=0, then the switching probabilities are not equal
+                  iIndex <- c(index_interim[1:i], index_decision[i])
+                  
+                  ## prob to stop for eff at analysis i and conclude eff
+                  pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],ck[i]),  
+                                                   upper = c(iUk,Inf,Inf),
+                                                   mean = theta[iIndex],
+                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                  
                   ## prob to stop for fut at analysis i and switch to eff
                   pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,ck[i]),   
                                                   upper = c(iUk,lk_orig[i],Inf),
                                                   mean = theta[iIndex],
                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                  
+                } else { #if c can be below the critval of a fixed trial, make use of knowledge that switching probs are equal (automatically solves issue with decreasing info at decision as this info is not needed)
+                  iIndex <- c(index_interim[1:i])
+                  
+                  ## prob to stop for eff at analysis i
+                  pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i]),  
+                                                   upper = c(iUk,Inf),
+                                                   mean = theta[iIndex],
+                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                  
+                }
+              } else if(method%in%3){
+                iIndex <- c(index_interim[1:i], index_decision[i])
+                
+                ## prob to stop for eff at analysis i and conclude eff
+                pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],ck[i]),  
+                                                 upper = c(iUk,Inf,Inf),
+                                                 mean = theta[iIndex],
+                                                 sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
               }
+            }
           }
         }
     } else {  #In case futility is concluded, calculate 1-obtaining a less extreme result, i.e. 1-prob of concluding futility at earlier IA
@@ -280,16 +333,36 @@ FinalPvalue <- function(Info.d,
                                         #i cannot be kMax in this case, since Info.d[k] would be Info.d[kMax] in the definition of the index
               next
           } else {## or an interim analysis where we continued (interim 1:i, decision i)
+              
+            if(i %in% index_infoDecr & delta==0 & method%in%c(1,2) & !cNotBelowFixedc & bindingFutility){ #in case of decreasing information between interim and decision and we are calculating a p-value (under H0). Only in case of binding futility, otherwise we assume that we ignore option to stop for futility
+              iIndex <- c(index_interim[1:i])
+              
+              pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf), #prob to stop for fut at analysis i. This equals the probability to conclude futility as the switching probabilities are equal
+                                              upper = c(iUk,lk_orig[i]),
+                                              mean = theta[iIndex],
+                                              sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+            } else {
               iIndex <- c(index_interim[1:i], index_decision[i])
-
+              
               pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[i],-Inf), #prob to stop for eff at analysis i and switch to fut
                                               upper = c(iUk,Inf,ck[i]),
                                               mean = theta[iIndex],
                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-              pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis i and conclude fut
-                                              upper = c(iUk,lk_orig[i],ck[i]),
-                                              mean = theta[iIndex],
-                                              sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+              if(method%in%c(1,2) & bindingFutility){  #in case of non-binding rule we will ignore the option to stop for futility, so this part should not be added
+                pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis i and conclude fut
+                                                upper = c(iUk,lk_orig[i],ck[i]),
+                                                mean = theta[iIndex],
+                                                sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+              } else if(method%in%3 & bindingFutility){
+                pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis i and conclude fut (same as stopping for futility for method 3)
+                                                upper = c(iUk,lk_orig[i],Inf),
+                                                mean = theta[iIndex],
+                                                sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+              }
+            }
+            
+            
+              
           }
       }
       pval <- 1-pval

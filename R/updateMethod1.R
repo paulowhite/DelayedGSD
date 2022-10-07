@@ -155,6 +155,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
       if(InfoR.i[k]>1){
           lowerRoot <- -10
+          upperRoot <- 10
       }
 
       uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
