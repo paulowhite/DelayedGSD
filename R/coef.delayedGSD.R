@@ -125,13 +125,19 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
         rownames(out) <- NULL
         attr(out,"Info.max") <- Info.max
     }else if(type == "decision"){
-        out <- object$conclusion[c("interim","reason.interim"),,drop=FALSE]
-        rownames(out) <- c("decision","reason.interim")
-        colnames(out) <- paste0("stage ",1:kMax)
-
-        index.decision <- which(!is.na(object$conclusion["decision",]))
-        if(length(index.decision)>0){
-            out["decision",index.decision] <- object$conclusion["decision",index.decision]
+        out <- object$conclusion[c("interim","reason.interim"),1:resStage$k,drop=FALSE]
+        rownames(out) <- c("decision","comment")
+        colnames(out) <- paste0("stage ",1:resStage$k)
+        browser()
+        if(resStage$type.k == "decision"){
+            index.decision <- which(!is.na(object$conclusion["decision",]))
+            add.decision <- object$conclusion[c("decision","comment.decision"),index.decision,drop=FALSE]
+            colnames(add.decision) <- paste0("stage ",resStage$k," decision")
+            out <- cbind(out, add.decision)
+        }else if(resStage$type.k == "finla"){
+            add.decision <- object$conclusion[c("decision","comment.decision"),kMax,drop=FALSE]
+            colnames(add.decision) <- paste0("stage ",kMax)
+            out <- cbind(out, add.decision)
         }
     }
 
