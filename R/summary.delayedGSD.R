@@ -86,9 +86,9 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
     if(planned=="only"){
 
         if(abreviated>0){
-            colnames(df.printBound) <- c("Stage","F-bound","E-bound","C-bound")
+            colnames(df.printBound) <- c("stage","F-bound","E-bound","C-bound")
         }else{
-            colnames(df.printBound) <- c("Stage","Futility boundary","Efficacy boundary","Critical boundary")
+            colnames(df.printBound) <- c("stage","Futility boundary","Efficacy boundary","Critical boundary")
         }
         df.printBound[["alpha-spent"]] <- round(x$planned$alphaSpent, digits)
         df.printBound[["beta-spent"]] <- round(x$planned$betaSpent, digits)
@@ -121,7 +121,7 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
         conclusion.interim.print <- .reformatInterimTxt(x$conclusion, kMax = kMax, abreviated = abreviated>0)
         conclusion.decision.print <- .reformatDecisionTxt(x$conclusion, kMax = kMax, abreviated = abreviated>0)
 
-        df.printBound2 <- data.frame("Stage" = df.printBound$Stage,
+        df.printBound2 <- data.frame("stage" = df.printBound$stage,
                                      "Futility boundary" = df.printBound$Fbound,
                                      "Efficacy boundary" = df.printBound$Ebound,
                                      "Statistic" = df.printBound$statistic.interim,
@@ -133,7 +133,7 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
                                      "beta" = df.printBound[["beta-spent"]],
                                      check.names = FALSE)
         if(abreviated>0){
-            names(df.printBound2) <- c("Stage", "F-bound", "E-bound", "Stat", "", "C-bound", "Stat", "","alpha","beta")
+            names(df.printBound2) <- c("stage", "F-bound", "E-bound", "Stat", "", "C-bound", "Stat", "","alpha","beta")
         }
         df.printBound3 <- rbind(names(df.printBound2),df.printBound2)
         df.printBound3[1,1] <- ""
@@ -185,10 +185,10 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
 
     if(planned == "only"){
         df.printInfo$n <- NULL
-        names(df.printInfo) <- c("Stage", "Interim", "(%)", "Decision", "(%)")
+        names(df.printInfo) <- c("stage", "Interim", "(%)", "Decision", "(%)")
         cat(" * Planned information: \n",sep="")
     }else{
-        names(df.printInfo) <- c("Stage", "Interim", "(%)", "Decision", "(%)", "n")
+        names(df.printInfo) <- c("stage", "Interim", "(%)", "Decision", "(%)", "n")
         if(planned){
             cat(" * Observed and planned information: \n",sep="")
         }else{
