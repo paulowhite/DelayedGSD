@@ -8,11 +8,11 @@ rm(list=ls())
 ## * Settings
 name <- "Power_2_analyses" # To save the results
 if(system("whoami",intern=TRUE) %in% "unicph\\hpl802"){
-path.res <- "Simulations/COBA/results"
+path.res <- "Results"
     }else{
     path.res <- "M:\\Research\\DelayedGSD\\Github\\DelayedGSD\\Simulations\\COBA\\"
     }
-nsim <- 100 # number of simulations
+nsim <- 5 # number of simulations
 method <- 1:3 # methods used to compute the boundaries
 #---
 myseed <- 140786598
@@ -85,7 +85,7 @@ allseeds <- sample.int(n = 1000000000, size = nsim, replace=FALSE) #x=1:(.Machin
 ## * Load dependencies
 ## library(devtools)
 ## install_github("PauloWhite/DelayedGSD")
-source("Simulations/FCT.R") ## exportGSD function
+source("FctCOBA.R") ## exportGSD function
 if(system("whoami",intern=TRUE) %in% "unicph\\hpl802"){
     library(DelayedGSD)
 }else{

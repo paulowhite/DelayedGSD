@@ -24,7 +24,8 @@ Method1(
   mycoefMax = 1.2,
   mycoefL = 1,
   myseed = 2902,
-  cMin = -Inf
+  cMin = -Inf,
+  PowerCorrection = FALSE
 )
 }
 \arguments{
@@ -67,6 +68,8 @@ Note that in Jennison and Turnbull's book chapter (2013) they consider greater.}
 \item{myseed}{seed for producing reproducible results. Because we call functions which are based on Monte-Carlo compuation (pmvnorm)}
 
 \item{cMin}{minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)}
+
+\item{PowerCorrection}{whether or not to apply a correction to the type II error spending to reduce the extent to which Method 1 is overpowered}
 
 \item{kMax}{max number of analyses (including final)}
 }

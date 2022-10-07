@@ -12,8 +12,9 @@ FinalEstimate(
   uk,
   kMax,
   estimate,
-  futility2efficacy,
-  bindingFutility
+  method,
+  bindingFutility,
+  cNotBelowFixedc
 )
 }
 \arguments{
@@ -31,9 +32,11 @@ FinalEstimate(
 
 \item{estimate}{naive estimate (e.g. using  ML or REML).}
 
-\item{futility2efficacy}{[logical] is it possible to stop for futility at interim and reject the null hypothesis at decision.}
+\item{method}{method 1, 2 or 3}
 
 \item{bindingFutility}{[logical]  whether the futility stopping rule is binding.}
+
+\item{cNotBelowFixedc}{[logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)}
 }
 \description{
 calculate de-biased estimate

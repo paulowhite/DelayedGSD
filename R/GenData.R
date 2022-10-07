@@ -86,19 +86,21 @@ GenData <- function(n=52,
         }
     }
 
-    # Missing values
+                                        # Missing values
     if(!is.null(MissProb)){
         if(N.fw !=2){
             stop("MissProb can be used only if N.fw=2.")
         }
-        #
+                                        #
         ## browser()
         FreqMiss <- round(MissProb*n)
         HowManyMiss <- sum(FreqMiss[1,1]+FreqMiss[1,2]+FreqMiss[2,1])
         whichMiss <- sample(x=1:n,size=HowManyMiss,replace=FALSE)
-        d[whichMiss[1:(FreqMiss[1,1] + FreqMiss[1,2] ) ],"X2"] <- NA
-        d[whichMiss[1:(FreqMiss[1,1])],"X3"] <- NA
-        d[whichMiss[(FreqMiss[1,1] + FreqMiss[1,2] +1):HowManyMiss ],"X3"] <- NA
+        if(length(whichMiss)>0){
+            d[whichMiss[1:(FreqMiss[1,1] + FreqMiss[1,2] ) ],"X2"] <- NA
+            d[whichMiss[1:(FreqMiss[1,1])],"X3"] <- NA
+            d[whichMiss[(FreqMiss[1,1] + FreqMiss[1,2] +1):HowManyMiss ],"X3"] <- NA
+        }
     }
 
     # round the outcome values

@@ -7,11 +7,11 @@ rm(list=ls())
 
 ## * Settings
 name <- "Power_2_analyses" # To save the results
-if(system("whoami",intern=TRUE) %in% "unicph\\hpl802"){
-path.res <- "Simulations/COBA/results"
+if(system("whoami",intern=TRUE) %in% c("unicph\\hpl802","hpl802")){
+    path.res <- "Results"
     }else{
     path.res <- "M:\\Research\\DelayedGSD\\Github\\DelayedGSD\\Simulations\\COBA\\"
-    }
+}
 nsim <- 100 # number of simulations
 method <- 1:3 # methods used to compute the boundaries
 #---
@@ -37,10 +37,10 @@ ar <- (0.86*2)*2*5 # orginial accrual rate from data from Corine is 0.86 per wee
 cor011 <- -0.15 # ~ from data from Corine
 corij1 <- 0.68  # ~ from data from Corine
 cor0j1 <- -0.27  # ~ from data from Corine
-Miss11 <- 5/104 # miss both V1 and V2
-Miss12 <- 1/104 # miss V1 and but not V2
-Miss21 <- 6/104 # do not miss V1 and but miss V2
-Miss22 <- 92/104 # miss none
+Miss11 <- 0*5/104 # miss both V1 and V2
+Miss12 <- 0*1/104 # miss V1 and but not V2
+Miss21 <- 0*6/104 # do not miss V1 and but miss V2
+Miss22 <- 0*92/104 # miss none
 PropForInterim <- 0.5 # Decide to have interim analysiz when PropForInterim % of all subjects have had the chance to have one follow-up measuement recorded in the data to be available for analysis.
 theDelta.t <- 1.50001 # time lag to process the data and make them ready to analyze after collecting them (unit is time between two follow-up visits)
 TimeFactor <- 14 ## number of days between two visits
@@ -59,9 +59,9 @@ n <- n/(1-(Miss11+Miss21))
 ## * Server interface
 ## ** BATCH loop
 ## cd /projects/biostat01/people/hpl802/GPC/article-restricted/
-## for ITER in `seq 1 100`;
+## for ITER in `seq 1 10`;
 ## do
-## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=10" BATCH_scenario1-ChemoVSChemo.R output/scenario1-ChemoVSChemo/R-ChemoVSChemo-'$ITER'.Rout &'
+## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=10" SimuCOBA-light.R output/SimuCOBA-light-'$ITER'.Rout &'
 ## done
 
 args <- commandArgs(TRUE) ## BATCH MODE
@@ -73,28 +73,31 @@ if(length(args)>0){
     iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
     n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
 } ## interactive
-if(is.na(iter_sim)){iter_sim <- 1}
-if(is.na(n.iter_sim)){n.iter_sim <- 1}
+if(is.na(iter_sim)){iter_sim <- 3}
+if(is.na(n.iter_sim)){n.iter_sim <- 10}
 cat("BATCH ",iter_sim," over ",n.iter_sim,"\n",sep="")
 
 ## * Seed
 set.seed(140786598)
 nsimAll <- n.iter_sim * nsim
-allseeds <- sample.int(n = 1000000000, size = nsim, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
+allseeds <- sample.int(n = 1000000000, size = nsimAll, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
 
 ## * Load dependencies
 ## library(devtools)
 ## install_github("PauloWhite/DelayedGSD")
-## library(DelayedGSD)
-source("Simulations/FCT.R") ## exportGSD function
-sourceDir <- function(path, trace = TRUE, ...) {
-    for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
-        if(trace) cat(nm,":")
-        source(file.path(path, nm), ...)
-        if(trace) cat("\n")
+source("FctCOBA.R") ## exportGSD function
+if(system("whoami",intern=TRUE) %in% c("unicph\\hpl802","hpl802")){
+    library(DelayedGSD)
+}else{
+    sourceDir <- function(path, trace = TRUE, ...) {
+        for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
+            if(trace) cat(nm,":")
+            source(file.path(path, nm), ...)
+            if(trace) cat("\n")
+        }
     }
+    sourceDir("R")
 }
-sourceDir("R")
 
 ## * Planned boundaries
 plannedB <- vector(mode = "list", length = 3)
@@ -299,7 +302,7 @@ for(j in allj){ ## j <- 51 ## 5
   # }}}
 }
 rownames(RES) <- NULL
-save(RES,file=paste0(path.res,name,"-",iter_sim,"_",nsim,".rda"))
+save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rda")))
 
 ## * Summary results
 if(FALSE){

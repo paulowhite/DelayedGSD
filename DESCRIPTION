@@ -2,7 +2,7 @@ Package: DelayedGSD
 Type: Package
 Title: Planning and analysis of group sequential trial with pipeline data
 Version: 0.0.3
-Date: 2022-02-23
+Date: 2022-10-07
 Authors@R: c(
     person("Corine", "Baayen", role = "aut"),
     person("Paul", "Blanche", role = "aut"),
@@ -24,4 +24,4 @@ Imports:
 Suggests:
     rpact,
     testthat
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
