@@ -53,7 +53,7 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
     }else if(type=="boundary"){
         if(planned==TRUE){
 
-            out <- data.frame(Stage = 1:kMax,
+            out <- data.frame(stage = 1:kMax,
                               Fbound = object$planned$lk,
                               Ebound = object$planned$uk,
                               Cbound = c(object$planned$ck,utils::tail(object$planned$uk,1)))
@@ -71,7 +71,7 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
             }
 
             ## assemble
-            out <- data.frame(Stage = 1:kMax, Fbound = object$lk, Ebound = object$uk, statistic.interim = statistic.interim,
+            out <- data.frame(stage = 1:kMax, Fbound = object$lk, Ebound = object$uk, statistic.interim = statistic.interim,
                               Cbound = c(object$ck, utils::tail(object$uk,1)), statistic.decision = statistic.decision)
             rownames(out) <- NULL                
 
@@ -116,7 +116,7 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
                 InfoR.d[k] <- NA
             }
         }
-        out <- data.frame(Stage = 1:kMax,
+        out <- data.frame(stage = 1:kMax,
                           Interim = Info.i,
                           Interim.pc = InfoR.i,
                           Decision = Info.d,
@@ -125,13 +125,18 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
         rownames(out) <- NULL
         attr(out,"Info.max") <- Info.max
     }else if(type == "decision"){
-        out <- object$conclusion[c("interim","reason.interim"),,drop=FALSE]
-        rownames(out) <- c("decision","reason.interim")
-        colnames(out) <- paste0("stage ",1:kMax)
 
-        index.decision <- which(!is.na(object$conclusion["decision",]))
-        if(length(index.decision)>0){
-            out["decision",index.decision] <- object$conclusion["decision",index.decision]
+        out <- object$conclusion[c("interim","reason.interim"),1:resStage$k,drop=FALSE]
+        rownames(out) <- c("decision","comment")
+        colnames(out) <- paste0("stage ",1:resStage$k)
+
+        if(resStage$type.k == "decision"){
+            index.decision <- which(!is.na(object$conclusion["decision",]))
+            add.decision <- object$conclusion[c("decision","comment.decision"),index.decision,drop=FALSE]
+            colnames(add.decision) <- paste0("stage ",resStage$k," decision")
+            out <- cbind(out, add.decision)
+        }else if(resStage$type.k == "final"){
+            out[,paste0("stage ",kMax)] <- object$conclusion[c("decision","comment.decision"),kMax,drop=FALSE]            
         }
     }
 

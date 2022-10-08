@@ -18,7 +18,9 @@ CalcBoundaries(
   bindingFutility = TRUE,
   alternative = "greater",
   n = NA,
-  trace = FALSE
+  trace = FALSE,
+  mycoefMax = 1.2,
+  PowerCorrection = FALSE
 )
 }
 \arguments{
@@ -51,6 +53,8 @@ Note that in Jennison and Turnbull's book chapter (2013) they consider greater.}
 \item{n}{planned sample size in each group. Optional argument.}
 
 \item{trace}{whether to print some messages}
+
+\item{PowerCorrection}{whether to correct the power for Method 1}
 }
 \description{
 Calculate boundaries (interim and decision) for a group sequential design with delayed endpoints based on planned and/or observed information using an error spending approach

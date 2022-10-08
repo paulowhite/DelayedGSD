@@ -35,7 +35,7 @@ library(DelayedGSD)
 source("FCT.R")
 
 ## * settings
-n.sim <- 250
+n.sim <- 50
 
 ## * function to execute
 ## method2num[c(4,10,14),]
@@ -45,7 +45,7 @@ n.sim <- 250
 ## 14    14      3   FALSE      FALSE TRUE
 
 
-out <- FCT_simGSD(method = c(4,10,14),
+out <- FCT_simGSD(method = 4,## c(4,10,14),
                   kMax = 2,
                   InfoR.i = c(0.5,1),
                   InfoR.d = c(0.55,1),
@@ -57,7 +57,7 @@ out <- FCT_simGSD(method = c(4,10,14),
                   n.sample = 1000,
                   path = path.res,
                   export.tempo = TRUE,
-                  n.sim = c(250,iter_sim),
+                  n.sim = c(n.sim,iter_sim),
                   seed = 140786598)
 
 

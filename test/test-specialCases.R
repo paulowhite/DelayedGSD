@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan  7 2022 (15:00) 
 ## Version: 
-## Last-Updated: May 12 2022 (14:44) 
+## Last-Updated: okt  7 2022 (14:13) 
 ##           By: Brice Ozenne
-##     Update #: 22
+##     Update #: 23
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -59,6 +59,7 @@ test_that("I(1st interim)>Imax, I(1st decison)>Imax",{
     ## final
     lmm.decision1 <- analyzeData(df.sim$d, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     GSD.decision1 <- update(GSD.interim1, delta = lmm.decision1, trace = FALSE)
+    ## coef(GSD.decision1, type = "decision")
 
     ## test
     GS <- data.frame("Stage" = c(1, 2, 3), 

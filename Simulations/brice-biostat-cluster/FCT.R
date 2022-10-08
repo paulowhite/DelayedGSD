@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: aug  1 2022 (15:45) 
 ## Version: 
-## Last-Updated: aug  1 2022 (18:24) 
+## Last-Updated: aug  1 2022 (18:52) 
 ##           By: Brice Ozenne
-##     Update #: 114
+##     Update #: 116
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -388,14 +388,15 @@ FCT_simGSD <- function(method, kMax, InfoR.i, InfoR.d, PropForInterim, deltaPlan
         )
         ## names(out) <- myColNames
         RES <- rbind(RES,out)
-        save(RES,file=paste0(path.res,name,"(tempo)-",iter_sim,".rda"))
+        save(RES,file=file.path(path.res,paste0(name,"(tempo)-",iter_sim,".rda")))
                                         # }}}
     }
 
     ## ** final export
     rownames(RES) <- NULL
-    save(RES,file=paste0(path,name,"-",iter_sim,".rda"))
+    save(RES,file=file.path(path,paste0(name,"-",iter_sim,".rda")))
 
+    return(invisible(RES))
 }
 
 ## * method2num
