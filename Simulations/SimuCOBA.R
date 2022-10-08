@@ -92,7 +92,7 @@ allj <- 1:nsim
 for(j in allj){ ## j <- 51 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 955535360
+  #myseedi <- 474821724
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",which(j==allj)," out of ",nsim))
   # }}}
@@ -210,7 +210,7 @@ for(j in allj){ ## j <- 51 ## 5
                                           info = iInfo.decision[1,"Decision"],
                                           infoPC = iInfo.decision[1,"Decision.pc"],
                                           ck = iBoundary.decision[1,"Cbound"],
-                                          decision = unname(iDecision.decision["decision","stage 2"])
+                                          decision = unname(iDecision.decision["decision","stage 1"])
       )
       
     }else{
@@ -357,3 +357,9 @@ dim(discrep)
 discrep <- res[res$p.value_MUE<0.025 & !is.na(res$p.value_MUE),]
 discrep <- discrep[is.na(discrep$final.efficacy),]
 dim(discrep)
+
+
+#mean(res[res$method%in%1 & res$type%in%"interim","infoPC"])
+#mean(res[res$method%in%1 & res$type%in%"decision","infoPC"])
+y <- cbind(res[res$method%in%1 & res$type%in%"interim",c("info","seed")],res[res$method%in%1 & res$type%in%"decision",c("info","seed")])
+y[which(y[,1]>y[,3]),]
