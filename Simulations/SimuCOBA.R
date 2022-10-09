@@ -1,8 +1,3 @@
-##issue with seed 142895152 18 AUG 2022
-#Fejl i uniroot(function(x) { : 
-#    f() values at end points not of opposite sign
-
-
 rm(list=ls())
 
 name <- "Power_2_analyses" # To save the results
@@ -210,15 +205,9 @@ for(j in allj){ ## j <- 51 ## 5
                                           info = iInfo.decision[1,"Decision"],
                                           infoPC = iInfo.decision[1,"Decision.pc"],
                                           ck = iBoundary.decision[1,"Cbound"],
-<<<<<<< HEAD
-                                          decision = unname(iDecision.decision["decision","stage 1"])
-      )
-      
-=======
                                           decision = unname(iDecision.decision["decision","stage 1 decision"]),
                                           reason = unname(iDecision.decision["comment","stage 1 decision"]))
             
->>>>>>> bd3d831011be1c52db1ee033bbb26b4089b04d40
     }else{
       ## update information
       currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, k = 1, type.k = "decision", trace = FALSE)
@@ -365,12 +354,11 @@ dim(discrep)
 discrep <- res[res$p.value_MUE<0.025 & !is.na(res$p.value_MUE),]
 discrep <- discrep[is.na(discrep$final.efficacy),]
 dim(discrep)
-<<<<<<< HEAD
+
 
 
 #mean(res[res$method%in%1 & res$type%in%"interim","infoPC"])
 #mean(res[res$method%in%1 & res$type%in%"decision","infoPC"])
-y <- cbind(res[res$method%in%1 & res$type%in%"interim",c("info","seed")],res[res$method%in%1 & res$type%in%"decision",c("info","seed")])
-y[which(y[,1]>y[,3]),]
-=======
->>>>>>> bd3d831011be1c52db1ee033bbb26b4089b04d40
+#y <- cbind(res[res$method%in%1 & res$type%in%"interim",c("info","seed")],res[res$method%in%1 & res$type%in%"decision",c("info","seed")])
+#y[which(y[,1]>y[,3]),]
+
