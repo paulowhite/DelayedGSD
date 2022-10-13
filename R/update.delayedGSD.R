@@ -295,8 +295,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                                      bindingFutility = object$bindingFutility,
                                                      cNotBelowFixedc=object$cNotBelowFixedc)
         }
-        
-        object$delta <- rbind(object$delta,delta.MUE)
+        object$delta <- rbind(object$delta, delta.MUE)
         attr(object$delta,"error") <- attr(delta.MUE,"error")
         if(trace>0){cat("done \n", sep = "")}
     }

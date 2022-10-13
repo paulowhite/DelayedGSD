@@ -62,6 +62,7 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
 
         ## ** extract information from object
         out <- object$delta[object$delta$type == type.k & object$delta$stage == k,]
+        
     }
 
 
@@ -72,6 +73,7 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
     }else{
         out$coef <- NA
     }
+
     out <- out[,c("method","stage","type","coef","estimate","se","statistic","df","p.value","lower","upper")]
     if(!is.null(method)){
         out <- out[out$method %in% method,,drop=FALSE]

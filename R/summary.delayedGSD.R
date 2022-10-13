@@ -221,24 +221,34 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
         x.CI$p.value <- format.pval(x.CI$p.value, digits)
         x.CI$stage <- paste0(x.CI$stage," (",x.CI$type,")")
         x.CI$type <- NULL
-        if(is.null(x$delta.MUE)){
+
+        if(all(x.CI$method == "ML")){
             cat("\n")
             if(!is.na(x.CI$coef[1])){
                 cat(" * Current ML-estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
             }else{
                 cat(" * Current ML-estimate of the treatment effect \n",sep="")
             }
-            print(x.CI[,c("estimate","se","lower","upper","statistic","df","p.value")], row.names = FALSE)
+            print(x.CI[x.CI$method == "ML",c("estimate","se","lower","upper","statistic","df","p.value")], row.names = FALSE)
+        }else if("MUE" %in% x.CI$method){
+            cat("\n")
+            if(!is.na(x.CI$coef[1])){
+                cat(" * Current MUE-estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
+            }else{
+                cat(" * Current MUE-estimate of the treatment effect \n",sep="")
+            }
+            print(x.CI[x.CI$method == "MUE",c("estimate","lower","upper","p.value")], row.names = FALSE)
         }else{
             cat("\n")
             if(!is.na(x.CI$coef[1])){
-                cat(" * Estimate of the treatment effect (",x.CI$coef[1],") \n",sep="")
+                cat(" * Current estimates of the treatment effect (",x.CI$coef[1],") \n",sep="")
             }else{
-                cat(" * Estimate of the treatment effect \n",sep="")
+                cat(" * Current estimates of the treatment effect \n",sep="")
             }
-            x.CI[is.na(x.CI)] <- ""
-            
-            print(x.CI[,c("method","estimate","lower","upper","p.value")], quote = FALSE, row.names = FALSE)
+            x.CI$se <- as.character(round(x.CI$se, digits))
+            x.CI$statistic <- as.character(round(x.CI$statistic, digits))
+            x.CI$df <- as.character(round(x.CI$df))
+            print(x.CI[,c("method","estimate","se","lower","upper","statistic","df","p.value")], row.names = FALSE, na.print = "", digits = digits)
         }
     }
   
