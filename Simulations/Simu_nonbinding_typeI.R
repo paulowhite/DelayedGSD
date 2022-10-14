@@ -6,7 +6,7 @@
 rm(list=ls())
 
 ## * Settings
-name <- "Missing_typeI_2_analyses" # To save the results
+name <- "Nonbinding_typeI_2_analyses" # To save the results
 if(system("whoami",intern=TRUE) %in% "unicph\\hpl802"){
   path.res <- "Results"
 }else{

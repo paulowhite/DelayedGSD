@@ -6,7 +6,7 @@
 rm(list=ls())
 
 ## * Settings
-name <- "Nonbinding_Power_2_analyses" # To save the results
+name <- "NoFixC_Power_2_analyses" # To save the results
 if(system("whoami",intern=TRUE) %in% "unicph\\hpl802"){
   path.res <- "Results"
 }else{
