@@ -9,11 +9,11 @@ myseed <- 140786598
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
-informationRates <- c(0.58,1)  #planned  information rates
+informationRates <- c(0.57,1)  #planned  information rates
 rho_alpha <- 2  # rho parameter for alpha error spending function
 rho_beta <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
-Id <- 0.68  #(expected) information rate at each decision analysis
+Id <- 0.67  #(expected) information rate at each decision analysis
 binding <- TRUE
 #
 #---- to generate data -----------
@@ -87,7 +87,7 @@ allj <- 1:nsim
 for(j in allj){ ## j <- 51 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 474821724
+  #myseedi <- 189558800
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",which(j==allj)," out of ",nsim))
   # }}}

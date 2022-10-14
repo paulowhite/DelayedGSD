@@ -96,8 +96,8 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
         
       }
       lk[1] <- uniroot(find.lk,lower=uk[1]-10,upper=uk[1])$root  #dirty solution to use -10 for lower bound
-      ck <- cMin
-    } else if(type.k=="decision"){
+      #ck <- cMin
+    } if(type.k%in%c("interim","decision")){
       if(ImaxAnticipated){
         alphaSpent[1] <- alpha  #spend all remaining alpha if study was stopped due to anticipation of Imax reached
         ck <- qnorm(1-alpha) #if the first IA is skipped due to Max info reached, then there is only one analysis, using the usual critval
@@ -184,9 +184,9 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                   abseps = abseps) - betaSpentInc[k]
       }
       lk[k] <- uniroot(find.lkk,lower=uk[k]-10,upper=uk[k])$root
-      ck[k] <- cMin
+      #ck[k] <- cMin
     }
-    if(type.k %in% c("decision")){
+    if(type.k %in% c("interim","decision")){
       
       f <- function(x){pmvnorm(lower = c(TheLowerValues,uk[k],x),
                                upper = c(uk[1:(k-1)],Inf,Inf),

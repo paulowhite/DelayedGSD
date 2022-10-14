@@ -332,7 +332,7 @@ res$final.futility <- res$statistic <= res$lk | res$statistic < res$ck
 res$final.futility[res$type%in%"interim"] <- NA
 
 nsim <- length(unique(res$seed))
-true_eff <- 0.6
+true_eff <- delta[3]
 result <- NULL
 for(m in unique(res$method)){
   res_temp <- res[res$method%in%m,]
@@ -361,4 +361,8 @@ dim(discrep)
 #mean(res[res$method%in%1 & res$type%in%"decision","infoPC"])
 #y <- cbind(res[res$method%in%1 & res$type%in%"interim",c("info","seed")],res[res$method%in%1 & res$type%in%"decision",c("info","seed")])
 #y[which(y[,1]>y[,3]),]
+#table(res[res$method%in%1 & res$type%in%"interim","reason"])
+#table(res[res$method%in%1 & res$type%in%"decision","reason"])
+#table(res[res$method%in%1 & res$type%in%"final","reason"])
 
+#sum(res[res$method%in%1 & res$type%in%"final","info"]> 22.88511, na.rm=T)
