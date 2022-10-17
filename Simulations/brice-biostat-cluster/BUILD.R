@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt  7 2022 (16:40) 
 ## Version: 
-## Last-Updated: okt 13 2022 (11:23) 
+## Last-Updated: okt 13 2022 (14:04) 
 ##           By: Brice Ozenne
-##     Update #: 7
+##     Update #: 10
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,10 +22,10 @@ path <- "x:/DelayedGSD"
 path.results <- file.path(path,"Results")
 
 ## * Collect files
-vec.file <- list.files(file.path(path.results."SimuCOBA-light"))
+vec.file <- list.files(file.path(path.results,"SimuCOBA-light"))
 
 ls.file <- lapply(vec.file, function(iFile){
-    load(file.path(path.results."SimuCOBA-light",iFile))
+    load(file.path(path.results,"SimuCOBA-light",iFile))
     return(RES)
 })
 dt.sim <- as.data.table(do.call(rbind,ls.file))
@@ -51,15 +51,7 @@ dcast(dt.sim[type!="final",.(N=.N,infoPC=mean(infoPC)),by=c("method","type")],
 
 dt.sim[p.value_MUE<0.025 & decision=="futility",.(method,stage,type,seed)]
 ##    method stage  type      seed
-## 1:      3     2 final  65836753
-## 2:      3     2 final 522862069
-## 3:      3     2 final 632796957
-## 4:      3     2 final 502705982
-## 5:      3     2 final 545711051
-## 6:      3     2 final 866677443
-## 7:      3     2 final 524781539
-## 8:      3     2 final 782550339
-## 9:      3     2 final 826717444
+## 1:      3     2 final 65836753
 dt.sim[p.value_MUE>0.025 & decision=="efficacy"]
 
 ##----------------------------------------------------------------------

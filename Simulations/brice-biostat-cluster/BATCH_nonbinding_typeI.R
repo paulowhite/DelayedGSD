@@ -1,46 +1,68 @@
-##issue with seed 142895152 18 AUG 2022
-#Fejl i uniroot(function(x) { : 
-#    f() values at end points not of opposite sign
-
-
 rm(list=ls())
 
-## * Settings
-name <- "Power_2_analyses" # To save the results
-if(system("whoami",intern=TRUE) %in% c("unicph\\hpl802","hpl802")){
-    path.res <- "Results/SimuCOBA-light"
-    }else{
-    path.res <- "M:\\Research\\DelayedGSD\\Github\\DelayedGSD\\Simulations\\COBA\\"
+## * User interface
+## ** Server
+## cd /projects/biostat01/people/hpl802/DelayedGSD/
+args <- commandArgs(TRUE) ## BATCH MODE
+if(length(args)>0){
+    for (arg in args){
+        eval(parse(text=arg))
+    }
+    ## for ITER in `seq 1 100`;
+    ## do
+    ## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=100" BATCH_nonbinding_type1.R output/nonbinding_type1/nonbinding_type1-'$ITER'.Rout &'
+    ## done
+}else{ ## SLUMR
+    iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+    n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
+} ## interactive
+if(is.na(iter_sim)){iter_sim <- 1}
+if(is.na(n.iter_sim)){n.iter_sim <- 100}
+cat("BATCH ",iter_sim," over ",n.iter_sim,"\n",sep="")
+
+## ** Path
+path.res <- file.path("Results","nonbinding_type1")
+if(dir.exists(path.res)==FALSE){
+    dir.create(path.res)
 }
-nsim <- 10 # number of simulations
+path.output <- file.path("output","nonbinding_type1")
+if(dir.exists(path.output)==FALSE){
+    dir.create(path.output)
+}
+
+## * Load dependencies
+library(DelayedGSD) ## remotes::install_github("PauloWhite/DelayedGSD")
+source("FCT.R") ## exportGSD function
+
+## * Settings
+name <- "Nonbinding_typeI_2_analyses" # To save the results
+nsim <- 100 # number of simulations
 method <- 1:3 # methods used to compute the boundaries
-#---
-myseed <- 140786598
 #--- to plan the trial ----
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
-informationRates <- c(0.52,1)  #planned  information rates
+informationRates <- c(0.58,1)  #planned  information rates
 rho_alpha <- 2  # rho parameter for alpha error spending function
 rho_beta <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
-Id <- 0.56  #(expected) information rate at each decision analysis
-binding <- TRUE
+Id <- 0.68  #(expected) information rate at each decision analysis
+binding <- FALSE
 #
 #---- to generate data -----------
 #
 block <- c(1,1,0,0) 
 allsd <- c(2.5,2.1,2.4) # sd, first from baseline measurement, then the two changes from baseline
 mean0 <- c(10,0,0) # mean placebo group (again, first is absolute value, then change from baseline)
-delta <- c(0,0.3,0.6) # treatment effect
+delta <- c(0,0,0) # treatment effect
 ar <- (0.86*2)*2*5 # orginial accrual rate from data from Corine is 0.86 per week, hence we multiply by 2 for by 14 days. As too low, we further multiply by 2
 cor011 <- -0.15 # ~ from data from Corine
 corij1 <- 0.68  # ~ from data from Corine
 cor0j1 <- -0.27  # ~ from data from Corine
-Miss11 <- 0*5/104 # miss both V1 and V2
-Miss12 <- 0*1/104 # miss V1 and but not V2
-Miss21 <- 0*6/104 # do not miss V1 and but miss V2
-Miss22 <- 0*92/104 # miss none
+Miss11 <- 5/104 # miss both V1 and V2
+Miss12 <- 1/104 # miss V1 and but not V2
+Miss21 <- 6/104 # do not miss V1 and but miss V2
+Miss22 <- 92/104 # miss none
 MyMissProb <- matrix(c(Miss11,Miss12,Miss21,Miss22),ncol=2,nrow=2,byrow=TRUE, # to additionnally remove 1 more because some FASFL=N
                      dimnames = list(c("V1 missing","V1 not missing"), c("V2 missing","V2 not missing"))) 
 PropForInterim <- 0.5 # Decide to have interim analysiz when PropForInterim % of all subjects have had the chance to have one follow-up measuement recorded in the data to be available for analysis.
@@ -50,57 +72,18 @@ TimeFactor <- 14 ## number of days between two visits
 #--- actually for both planing the trial  and generating data-----
 #
 #
-deltaPower <- delta[3] # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
-sdPower <- allsd[3]*sqrt(1-cor0j1^2)
+deltaPower <- 0.6 # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
+sdPower <- allsd[3]
 n <- ceiling(2*2*((sdPower/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
 # inflate SS as required for interim
 
 #adjust for expected withdrawal
 n <- n/(1-(Miss11+Miss21))
 
-## * Server interface
-## ** BATCH loop
-## cd /projects/biostat01/people/hpl802/DelayedGSD/
-## for ITER in `seq 1 100`;
-## do
-## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=100" SimuCOBA-light.R output/SimuCOBA-light/SimuCOBA-light-'$ITER'.Rout &'
-## done
-## 2226014-2226140
-
-args <- commandArgs(TRUE) ## BATCH MODE
-if(length(args)>0){
-    for (arg in args){
-        eval(parse(text=arg))
-    }
-}else{ ## SLUMR
-    iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
-    n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
-} ## interactive
-if(is.na(iter_sim)){iter_sim <- 1}
-if(is.na(n.iter_sim)){n.iter_sim <- 100}
-cat("BATCH ",iter_sim," over ",n.iter_sim," (sample size ",n,")\n",sep="")
-
 ## * Seed
 set.seed(140786598)
 nsimAll <- n.iter_sim * nsim
-allseeds <- sample.int(n = 1000000000, size = nsimAll, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
-
-## * Load dependencies
-## library(devtools)
-## install_github("PauloWhite/DelayedGSD")
-source("FctCOBA.R") ## exportGSD function
-if(system("whoami",intern=TRUE) %in% c("unicph\\hpl802","hpl802")){
-    library(DelayedGSD)
-}else{
-    sourceDir <- function(path, trace = TRUE, ...) {
-        for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
-            if(trace) cat(nm,":")
-            source(file.path(path, nm), ...)
-            if(trace) cat("\n")
-        }
-    }
-    sourceDir("R")
-}
+allseeds <- sample.int(n = 1000000000, size = nsim, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
 
 ## * Planned boundaries
 plannedB <- vector(mode = "list", length = 3)
@@ -177,7 +160,7 @@ for(j in allj){ ## j <- 51 ## 5
   nX3.interim <- vector()
   currentGSD <- vector(mode = "list", length = 3)
   out.interim <- vector(mode = "list", length = 3)
-  for(iMeth in method){ ## iMeth <- 3
+  for(iMeth in method){ ## iMeth <- 1
     # {{{ make data available at interim
     di <- SelectData(d,t=thets[iMeth])
     
@@ -185,21 +168,21 @@ for(j in allj){ ## j <- 51 ## 5
     nX2.interim[iMeth] = sum(!is.na(di$X2))
     nX3.interim[iMeth] = sum(!is.na(di$X3))
     
-      ## {{{ analyze data at at interim
-      ## ** interim
-      lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
-      ## lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+    ## {{{ analyze data at at interim
+    ## ** interim
+    lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
+    ## lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     
-      currentGSD[[iMeth]] <- update(plannedB[[iMeth]], delta = lmmI, trace = FALSE)
+    currentGSD[[iMeth]] <- update(plannedB[[iMeth]], delta = lmmI, trace = FALSE)
     
-      out.interim[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
-                                        export.statistic = TRUE,
-                                        export.ML = TRUE,
-                                        export.MUE = FALSE,
-                                        export.info = TRUE,
-                                        export.predinfo = TRUE,
-                                        export.boundary = TRUE,
-                                        export.decision = TRUE)
+    out.interim[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
+                                      export.statistic = TRUE,
+                                      export.ML = TRUE,
+                                      export.MUE = FALSE,
+                                      export.info = TRUE,
+                                      export.predinfo = TRUE,
+                                      export.boundary = TRUE,
+                                      export.decision = TRUE)
   }
   ## currentGSD[[1]]
   ## plot(currentGSD[[1]])
@@ -211,7 +194,7 @@ for(j in allj){ ## j <- 51 ## 5
     ## ** decision
     dDecision <- d[which(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor),]
     lmmD <- analyzeData(dDecision, ddf = "nlme", getinfo = TRUE, trace = TRUE)
-        
+    
     if(out.interim[[iMeth]]$decision == "stop"){
       currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, trace = FALSE)
       ## plot(currentGSD[[iMeth]])
@@ -224,8 +207,8 @@ for(j in allj){ ## j <- 51 ## 5
                                          export.predinfo = FALSE,
                                          export.boundary = TRUE,
                                          export.decision = TRUE)
-
-            
+      
+      
     }else{
       ## update information
       currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, k = 1, type.k = "decision", trace = FALSE)
@@ -246,28 +229,28 @@ for(j in allj){ ## j <- 51 ## 5
   ## ** finale
   out.final <- vector(mode = "list", length = 3)
   for(iMeth in method){ ## iMeth <- 1
-      dFinal <- d[1:nGSD[iMeth],]
-      lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+    dFinal <- d[1:nGSD[iMeth],]
+    lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     
-      if(out.interim[[iMeth]]$decision == "stop"){
-
-          out.final[[iMeth]] <- exportGSD(NA)
-     
-      }else{
-          currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmF, trace = FALSE)
-
-          out.final[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
-                                          export.statistic = TRUE,
-                                          export.ML = TRUE,
-                                          export.MUE = TRUE,
-                                          export.info = TRUE,
-                                          export.predinfo = FALSE,
-                                          export.boundary = TRUE,
-                                          export.decision = TRUE)
+    if(out.interim[[iMeth]]$decision == "stop"){
       
-      }
+      out.final[[iMeth]] <- exportGSD(NA)
+      
+    }else{
+      currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmF, trace = FALSE)
+      
+      out.final[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
+                                      export.statistic = TRUE,
+                                      export.ML = TRUE,
+                                      export.MUE = TRUE,
+                                      export.info = TRUE,
+                                      export.predinfo = FALSE,
+                                      export.boundary = TRUE,
+                                      export.decision = TRUE)
+      
+    }
   }
-                                        # }}}
+  # }}}
   
   stopComp <- Sys.time()
   # {{{ Save results
@@ -283,61 +266,27 @@ for(j in allj){ ## j <- 51 ## 5
   ## outMerge[outMerge$method==3,]
   
   out <- cbind(
-    ## results
-    outMerge,
-    ## simulation details
-    time.interim = rep(thets,each=3),
-    seed=myseedi,             
-    nX1.interim = rep(nX1.interim,each=3),
-    nX2.interim = rep(nX2.interim,each=3),
-    nX3.interim = rep(nX3.interim,each=3),
-    ## computation time
-    computation.time=as.double(round(difftime(stopComp,startComp,units="secs"),3))
+      ## results
+      outMerge,
+      ## simulation details
+      time.interim = rep(thets,each=3),
+      seed=myseedi,             
+      nX1.interim = rep(nX1.interim,each=3),
+      nX2.interim = rep(nX2.interim,each=3),
+      nX3.interim = rep(nX3.interim,each=3),
+      ## computation time
+      computation.time=as.double(round(difftime(stopComp,startComp,units="secs"),3))
   )
   ## names(out) <- myColNames
   RES <- rbind(RES,out)
-  #save(RES,file=paste0(path.res,name,"(tempo)-",nsim,".rda"))
+  if(j %in% round(quantile(allj, probs = (1:10)/10))){
+      save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"(tempo)_",nsim,".rda")))
+  }
   # }}}
 }
+
+## * Export
 rownames(RES) <- NULL
-filename <- paste0(name,"-",iter_sim,"_",nsim,".rda")
-cat("\n Export results to ",filename,"\n")
-save(RES,file=file.path(path.res,filename))
+save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rda")))
 
-## * Summary results
-if(FALSE){
-load(paste0(path.res,name,"-",nsim,".rda"))
 sessionInfo()
-summary(RES)
-
-res <- RES
-res$final.efficacy <- res$statistic >= res$uk | res$statistic >= res$ck
-res$final.efficacy[res$type%in%"interim"] <- NA
-
-res$final.futility <- res$statistic <= res$lk | res$statistic < res$ck
-res$final.futility[res$type%in%"interim"] <- NA
-
-nsim <- length(unique(res$seed))
-true_eff <- 0.6
-result <- NULL
-for(m in unique(res$method)){
-  res_temp <- res[res$method%in%m,]
-  result <- rbind(result,c("method"=m,
-                           "power_bnds"=sum(res_temp$final.efficacy,na.rm=T)/nsim,
-                           "power_pval"=sum(res_temp$p.value_MUE<0.025,na.rm=T)/nsim,
-                           "discrep_pval_bnds"=(sum(res_temp$p.value_MUE<0.025 & !res_temp$final.efficacy,na.rm=T)+sum(!res_temp$p.value_MUE<0.05 & res_temp$final.efficacy,na.rm=T))/nsim,
-                           "bias_MLE"=sum(res_temp$estimate_ML[res_temp$type%in%c("decision","final")],na.rm=T)/nsim-true_eff,
-                           "bias_MUE"=sum(res_temp$estimate_MUE[res_temp$type%in%c("decision","final")]>true_eff,na.rm=T)/nsim,
-                           "CI_coverage"=sum(true_eff>=res_temp$lower_MUE[res_temp$type%in%c("decision","final")] & true_eff<=res_temp$upper_MUE[res_temp$type%in%c("decision","final")],na.rm=T)/nsim
-  ))
-  #hist(res_temp$p.value_MUE)
-}
-
-discrep <- res[res$p.value_MUE>0.025 & !is.na(res$p.value_MUE),]
-discrep <- discrep[!is.na(discrep$final.efficacy),]
-dim(discrep)
-
-discrep <- res[res$p.value_MUE<0.025 & !is.na(res$p.value_MUE),]
-discrep <- discrep[is.na(discrep$final.efficacy),]
-dim(discrep)
-}
