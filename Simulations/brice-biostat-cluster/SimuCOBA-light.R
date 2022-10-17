@@ -8,7 +8,7 @@ rm(list=ls())
 ## * Settings
 name <- "Power_2_analyses" # To save the results
 if(system("whoami",intern=TRUE) %in% c("unicph\\hpl802","hpl802")){
-    path.res <- "Results"
+    path.res <- "Results\\SimuCOBA-light"
     }else{
     path.res <- "M:\\Research\\DelayedGSD\\Github\\DelayedGSD\\Simulations\\COBA\\"
 }
@@ -20,11 +20,11 @@ myseed <- 140786598
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
-informationRates <- c(0.58,1)  #planned  information rates
+informationRates <- c(0.482,1)  #planned  information rates
 rho_alpha <- 2  # rho parameter for alpha error spending function
 rho_beta <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
-Id <- 0.68  #(expected) information rate at each decision analysis
+Id <- 0.52  #(expected) information rate at each decision analysis
 binding <- TRUE
 #
 #---- to generate data -----------
@@ -41,6 +41,8 @@ Miss11 <- 0*5/104 # miss both V1 and V2
 Miss12 <- 0*1/104 # miss V1 and but not V2
 Miss21 <- 0*6/104 # do not miss V1 and but miss V2
 Miss22 <- 0*92/104 # miss none
+MyMissProb <- matrix(c(Miss11,Miss12,Miss21,Miss22),ncol=2,nrow=2,byrow=TRUE, # to additionnally remove 1 more because some FASFL=N
+                     dimnames = list(c("V1 missing","V1 not missing"), c("V2 missing","V2 not missing"))) 
 PropForInterim <- 0.5 # Decide to have interim analysiz when PropForInterim % of all subjects have had the chance to have one follow-up measuement recorded in the data to be available for analysis.
 theDelta.t <- 1.50001 # time lag to process the data and make them ready to analyze after collecting them (unit is time between two follow-up visits)
 TimeFactor <- 14 ## number of days between two visits
@@ -49,7 +51,7 @@ TimeFactor <- 14 ## number of days between two visits
 #
 #
 deltaPower <- delta[3] # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
-sdPower <- allsd[3]
+sdPower <- allsd[3]*sqrt(1-cor0j1^2)
 n <- ceiling(2*2*((sdPower/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
 # inflate SS as required for interim
 
@@ -58,11 +60,12 @@ n <- n/(1-(Miss11+Miss21))
 
 ## * Server interface
 ## ** BATCH loop
-## cd /projects/biostat01/people/hpl802/GPC/article-restricted/
-## for ITER in `seq 1 10`;
+## cd /projects/biostat01/people/hpl802/DelayedGSD/
+## for ITER in `seq 1 100`;
 ## do
-## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=10" SimuCOBA-light.R output/SimuCOBA-light-'$ITER'.Rout &'
+## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=100" SimuCOBA-light.R output/SimuCOBA-light/SimuCOBA-light-'$ITER'.Rout &'
 ## done
+## 2220690-2220814
 
 args <- commandArgs(TRUE) ## BATCH MODE
 if(length(args)>0){
@@ -73,9 +76,9 @@ if(length(args)>0){
     iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
     n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
 } ## interactive
-if(is.na(iter_sim)){iter_sim <- 3}
-if(is.na(n.iter_sim)){n.iter_sim <- 10}
-cat("BATCH ",iter_sim," over ",n.iter_sim,"\n",sep="")
+if(is.na(iter_sim)){iter_sim <- 1}
+if(is.na(n.iter_sim)){n.iter_sim <- 100}
+cat("BATCH ",iter_sim," over ",n.iter_sim," (sample size ",n,")\n",sep="")
 
 ## * Seed
 set.seed(140786598)
@@ -130,11 +133,6 @@ for(j in allj){ ## j <- 51 ## 5
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",which(j==allj)," out of ",nsim))
   # }}}
-  # {{{ Missing probabilities
-  MyMissProb <- matrix(c(Miss11,Miss12,Miss21,Miss22),ncol=2,nrow=2,byrow=TRUE) # to additionnally remove 1 more because some FASFL=N
-  colnames(MyMissProb) <- c("V2 missing","V2 not missing")
-  rownames(MyMissProb) <- c("V1 missing","V1 not missing")
-  # }}}
   
   # {{{ generate data
   ## ** simulate
@@ -179,7 +177,7 @@ for(j in allj){ ## j <- 51 ## 5
   nX3.interim <- vector()
   currentGSD <- vector(mode = "list", length = 3)
   out.interim <- vector(mode = "list", length = 3)
-  for(iMeth in method){ ## iMeth <- 1
+  for(iMeth in method){ ## iMeth <- 3
     # {{{ make data available at interim
     di <- SelectData(d,t=thets[iMeth])
     
@@ -187,10 +185,10 @@ for(j in allj){ ## j <- 51 ## 5
     nX2.interim[iMeth] = sum(!is.na(di$X2))
     nX3.interim[iMeth] = sum(!is.na(di$X3))
     
-    ## {{{ analyze data at at interim
-    ## ** interim
-    lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
-    ## lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
+      ## {{{ analyze data at at interim
+      ## ** interim
+      lmmI <- analyzeData(di, ddf = "nlme", data.decision = sum(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor), getinfo = TRUE, trace = TRUE)
+      ## lmmI <- analyzeData(di, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     
       currentGSD[[iMeth]] <- update(plannedB[[iMeth]], delta = lmmI, trace = FALSE)
     
@@ -302,7 +300,9 @@ for(j in allj){ ## j <- 51 ## 5
   # }}}
 }
 rownames(RES) <- NULL
-save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rda")))
+filename <- paste0(name,"-",iter_sim,"_",nsim,".rda")
+cat("\n Export results to ",filename,"\n")
+save(RES,file=file.path(path.res,filename))
 
 ## * Summary results
 if(FALSE){

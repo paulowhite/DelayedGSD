@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt  7 2022 (14:40) 
 ## Version: 
-## Last-Updated: okt  7 2022 (15:41) 
+## Last-Updated: okt 13 2022 (09:55) 
 ##           By: Brice Ozenne
-##     Update #: 42
+##     Update #: 46
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,8 +22,8 @@ exportGSD <- function(object,
                       export.info = TRUE,
                       export.predinfo = TRUE,
                       export.boundary = TRUE,
-                      export.decision = TRUE){
-
+                      export.decision = TRUE,
+                      export.sigma = TRUE){
 
     ## ** initialize
     out <- data.frame(statistic = NA,
@@ -44,7 +44,8 @@ exportGSD <- function(object,
                       lk = NA,
                       ck = NA,
                       decision = NA,
-                      reason = NA)
+                      reason = NA,
+                      sigma = NA)
     
     ## ** check user input
     if(identical(object,NA)){
@@ -125,6 +126,10 @@ exportGSD <- function(object,
     if(export.decision){
         out$decision <- object.decision["decision",NCOL(object.decision)]
         out$reason <- object.decision["comment",NCOL(object.decision)]
+    }
+    if(export.sigma){
+        index.lmm <- utils::tail(which(sapply(object$lmm,is.null)==FALSE),1)
+        out$sigma <- sigma(object$lmm[[index.lmm]]$fit)
     }
 
 
