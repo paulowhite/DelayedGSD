@@ -1,8 +1,3 @@
-##issue with seed 142895152 18 AUG 2022
-#Fejl i uniroot(function(x) { : 
-#    f() values at end points not of opposite sign
-
-
 rm(list=ls())
 
 name <- "Power_2_analyses" # To save the results
@@ -14,11 +9,11 @@ myseed <- 140786598
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
-informationRates <- c(0.58,1)  #planned  information rates
+informationRates <- c(0.57,1)  #planned  information rates
 rho_alpha <- 2  # rho parameter for alpha error spending function
 rho_beta <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
-Id <- 0.68  #(expected) information rate at each decision analysis
+Id <- 0.67  #(expected) information rate at each decision analysis
 binding <- TRUE
 #
 #---- to generate data -----------
@@ -92,7 +87,7 @@ allj <- 1:nsim
 for(j in allj){ ## j <- 51 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 955535360
+  #myseedi <- 189558800
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",which(j==allj)," out of ",nsim))
   # }}}
@@ -359,3 +354,11 @@ dim(discrep)
 discrep <- res[res$p.value_MUE<0.025 & !is.na(res$p.value_MUE),]
 discrep <- discrep[is.na(discrep$final.efficacy),]
 dim(discrep)
+
+
+
+#mean(res[res$method%in%1 & res$type%in%"interim","infoPC"])
+#mean(res[res$method%in%1 & res$type%in%"decision","infoPC"])
+#y <- cbind(res[res$method%in%1 & res$type%in%"interim",c("info","seed")],res[res$method%in%1 & res$type%in%"decision",c("info","seed")])
+#y[which(y[,1]>y[,3]),]
+
