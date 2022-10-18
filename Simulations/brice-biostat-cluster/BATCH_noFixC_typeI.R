@@ -10,7 +10,7 @@ if(length(args)>0){
     }
     ## for ITER in `seq 1 100`;
     ## do
-    ## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=100" BATCH_noFixC_type1.R output/noFixC_type1/noFixC_type1-'$ITER'.Rout &'
+    ## eval 'R CMD BATCH --vanilla "--args iter_sim='$ITER' n.iter_sim=100" BATCH_noFixC_typeI.R output/noFixC_typeI/noFixC_typeI-'$ITER'.Rout &'
     ## done
 }else{ ## SLUMR
     iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
@@ -21,11 +21,11 @@ if(is.na(n.iter_sim)){n.iter_sim <- 100}
 cat("BATCH ",iter_sim," over ",n.iter_sim,"\n",sep="")
 
 ## ** Path
-path.res <- file.path("Results","noFixC_type1")
+path.res <- file.path("Results","noFixC_typeI")
 if(dir.exists(path.res)==FALSE){
     dir.create(path.res)
 }
-path.output <- file.path("output","noFixC_type1")
+path.output <- file.path("output","noFixC_typeI")
 if(dir.exists(path.output)==FALSE){
     dir.create(path.output)
 }
@@ -84,7 +84,7 @@ n <- n/(1-(Miss11+Miss21))
 ## * Seed
 set.seed(140786598)
 nsimAll <- n.iter_sim * nsim
-allseeds <- sample.int(n = 1000000000, size = nsim, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
+allseeds <- sample.int(n = 1000000000, size = nsimAll, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
 
 ## * Planned boundaries
 plannedB <- vector(mode = "list", length = 3)
@@ -281,13 +281,15 @@ for(j in allj){ ## j <- 51 ## 5
   ## names(out) <- myColNames
   RES <- rbind(RES,out)
   if(j %in% round(quantile(allj, probs = (1:10)/10))){
-      save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"(tempo)_",nsim,".rda")))
+      ## save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"(tempo)_",nsim,".rda")))
+      saveRDS(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"(tempo)_",nsim,".rds")))
   }
   # }}}
 }
 
 ## * Export
 rownames(RES) <- NULL
-save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rda")))
+## save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rda")))
+saveRDS(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rds")))
 
 sessionInfo()

@@ -85,7 +85,7 @@ n <- n/(1-(Miss11+Miss21))
 ## * Seed
 set.seed(140786598)
 nsimAll <- n.iter_sim * nsim
-allseeds <- sample.int(n = 1000000000, size = nsim, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
+allseeds <- sample.int(n = 1000000000, size = nsimAll, replace=FALSE) #x=1:(.Machine$integer.max) seems to be maximal possible
 
 ## * Planned boundaries
 plannedB <- vector(mode = "list", length = 3)
@@ -282,13 +282,15 @@ for(j in allj){ ## j <- 51 ## 5
   ## names(out) <- myColNames
   RES <- rbind(RES,out)
   if(j %in% round(quantile(allj, probs = (1:10)/10))){
-      save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"(tempo)_",nsim,".rda")))
+      ## save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"(tempo)_",nsim,".rda")))
+      saveRDS(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"(tempo)_",nsim,".rds")))
   }
   # }}}
 }
 
 ## * Export
 rownames(RES) <- NULL
-save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rda")))
+## save(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rda")))
+saveRDS(RES,file=file.path(path.res,paste0(name,"-",iter_sim,"_",nsim,".rds")))
 
 sessionInfo()
