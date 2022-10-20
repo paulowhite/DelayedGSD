@@ -73,7 +73,7 @@ TimeFactor <- 14 ## number of days between two visits
 #
 #
 deltaPower <- delta[3] # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
-sdPower <- allsd[3]
+sdPower <- allsd[3]*sqrt(1-cor0j1^2)
 n <- ceiling(2*2*((sdPower/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
 # inflate SS as required for interim
 
