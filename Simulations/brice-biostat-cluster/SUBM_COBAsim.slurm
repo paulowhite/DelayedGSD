@@ -37,7 +37,7 @@ R CMD BATCH --vanilla BATCH_nonbinding_typeI.R output/nonbinding_typeI/R-$SLURM_
                       ## rm -r Results/nonbinding_typeI/*
 ## submission command ## sbatch SUBM_COBAsim.slurm
 
-## submission output  ## Submitted batch job 2380766 (time using C-c t: mandag 22-10-17 at 14:00) 
+## submission output  ## Submitted batch job 2388429 (time using C-c t: torsdag 22-10-20 at 15:59) 
 
 ## init               ## module module load gcc/11.2.0 R/4.1.2
                       ## cat .bash_profile (in the root directory on the server to visualize the current configuration)
