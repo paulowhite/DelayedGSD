@@ -4,6 +4,7 @@ rm(list=ls())
 ## cd /projects/biostat01/people/hpl802/DelayedGSD/
 args <- commandArgs(TRUE) ## BATCH MODE
 
+## arguments missing, binding, ... in BATCH model (e.g. when running on the server via slurm)
 iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
 n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
 if(length(args)>0){
@@ -11,13 +12,13 @@ if(length(args)>0){
         eval(parse(text=arg))
     }
 }
-if(is.na(iter_sim)){
+if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on the server via slurm, iter_sim will be NA)
     iter_sim <- 1
     n.iter_sim <- 100
 
-    if("missing" %in% ls() == FALSE){ missing <- TRUE }
+    if("missing" %in% ls() == FALSE){ missing <- FALSE }
     if("binding" %in% ls() == FALSE){ binding <- TRUE }
-    if("cNotBelowFixedc" %in% ls() == FALSE){ binding <- FALSE }
+    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 5 }
     if("delta.factor" %in% ls() == FALSE){ delta.factor <- 5 }
 }
@@ -48,7 +49,7 @@ cat("BATCH ",name,": ",iter_sim," over ",n.iter_sim,"\n",sep="")
 ## * Settings
 nsim <- 100 # number of simulations
 method <- 1:3 # methods used to compute the boundaries
-#--- to plan the trial ----
+                                        #--- to plan the trial ----
 kMax <- 2  #max number of analyses (including final)
 alpha <- 0.025  #type I error (one sided)
 beta <- 0.2  #type II error
@@ -57,9 +58,9 @@ rho_alpha <- 2  # rho parameter for alpha error spending function
 rho_beta <- 2  # rho parameter for beta error spending function
 ## deltaPower <- 0.75 # just to try another value when Id > Imax
 Id <- 0.68  #(expected) information rate at each decision analysis
-#
-#---- to generate data -----------
-#
+                                        #
+                                        #---- to generate data -----------
+                                        #
 block <- c(1,1,0,0) 
 allsd <- c(2.5,2.1,2.4) # sd, first from baseline measurement, then the two changes from baseline
 mean0 <- c(10,0,0) # mean placebo group (again, first is absolute value, then change from baseline)
@@ -68,26 +69,32 @@ ar <- (0.86*2)*2*ar.factor # orginial accrual rate from data from Corine is 0.86
 cor011 <- -0.15 # ~ from data from Corine
 corij1 <- 0.68  # ~ from data from Corine
 cor0j1 <- -0.27  # ~ from data from Corine
-Miss11 <- 5/104*missing # miss both V1 and V2
-Miss12 <- 1/104*missing # miss V1 and but not V2
-Miss21 <- 6/104*missing # do not miss V1 and but miss V2
-Miss22 <- 92/104*missing # miss none
-MyMissProb <- matrix(c(Miss11,Miss12,Miss21,Miss22),ncol=2,nrow=2,byrow=TRUE, # to additionnally remove 1 more because some FASFL=N
-                     dimnames = list(c("V1 missing","V1 not missing"), c("V2 missing","V2 not missing"))) 
+if(missing){
+    Miss11 <- 5/104 # miss both V1 and V2
+    Miss12 <- 1/104 # miss V1 and but not V2
+    Miss21 <- 6/104 # do not miss V1 and but miss V2
+    Miss22 <- 92/104 # miss none
+    MyMissProb <- matrix(c(Miss11,Miss12,Miss21,Miss22),ncol=2,nrow=2,byrow=TRUE, # to additionnally remove 1 more because some FASFL=N
+                         dimnames = list(c("V1 missing","V1 not missing"), c("V2 missing","V2 not missing")))
+}else{
+    MyMissProb <- NULL
+}
 PropForInterim <- 0.5 # Decide to have interim analysiz when PropForInterim % of all subjects have had the chance to have one follow-up measuement recorded in the data to be available for analysis.
 theDelta.t <- 1.50001 # time lag to process the data and make them ready to analyze after collecting them (unit is time between two follow-up visits)
 TimeFactor <- 14 ## number of days between two visits
-#
-#--- actually for both planing the trial  and generating data-----
-#
-#
+                                        #
+                                        #--- actually for both planing the trial  and generating data-----
+                                        #
+                                        #
 deltaPower <- 0.6 # effect (NOT Z-scale/unit, but outcome scale/unit!) that the study is powered for: should we choose ourselves or compute from other numbers above ???
 sdPower <- allsd[3]*sqrt(1-cor0j1^2)
 n <- ceiling(2*2*((sdPower/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 with Corine's data # should we choose ourselves or compute from the above numbers ???
-# inflate SS as required for interim
+                                        # inflate SS as required for interim
 
-#adjust for expected withdrawal
-n <- n/(1-(Miss11+Miss21))
+## adjust for expected withdrawal
+if(missing){
+    n <- n/(1-(Miss11+Miss21))
+}
 
 ## * Seed
 set.seed(140786598)
@@ -109,7 +116,7 @@ for(iMeth in method){ ## iMeth <- 1
                                       rho_alpha=rho_alpha,  
                                       rho_beta=rho_beta,  
                                       method=iMeth,  
-                                      cNotBelowFixedc=FALSE,
+                                      cNotBelowFixedc=cNotBelowFixedc,
                                       bindingFutility=binding,
                                       delta=deltaPower)
   ## summary(plannedB[[1]])
