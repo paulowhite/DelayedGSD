@@ -16,10 +16,10 @@ if(is.na(iter_sim)){
     n.iter_sim <- 100
 
     if("missing" %in% ls() == FALSE){ missing <- TRUE }
-	if("binding" %in% ls() == FALSE){ binding <- TRUE }
+    if("binding" %in% ls() == FALSE){ binding <- TRUE }
     if("cNotBelowFixedc" %in% ls() == FALSE){ binding <- FALSE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 5 }
-	if("delta.factor" %in% ls() == FALSE){ delta.factor <- 5 }
+    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 5 }
 }
 
 name <- ""

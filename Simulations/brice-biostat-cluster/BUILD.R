@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt  7 2022 (16:40) 
 ## Version: 
-## Last-Updated: okt 24 2022 (11:51) 
+## Last-Updated: okt 28 2022 (09:32) 
 ##           By: Brice Ozenne
-##     Update #: 59
+##     Update #: 62
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,7 +21,7 @@ library(ggplot2)
 path <- "x:/DelayedGSD"
 path.results <- file.path(path,"Results")
 path.Bresults <- file.path(path,"Results-built")
-export <- FALSE
+export <- TRUE
 
 ## * function used to collect the results from different files
 loadRes <- function(path, tempo.file = FALSE, type = NULL,
@@ -104,7 +104,8 @@ if(export){
     saveRDS(res2stage, file = file.path(path.Bresults,"res2stage.rds"))
 }
 
-unique(res2stage[,.N, by = c("scenario","method","type")]$N)
+## res2stage <- readRDS(file = file.path(path.Bresults,"res2stage.rds"))
+## unique(res2stage[,.N, by = c("scenario","method","type")]$N)
 ## [1] 10000
 
 ## * Analyse results (data.table)
