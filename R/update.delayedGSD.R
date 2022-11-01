@@ -50,8 +50,8 @@
 #'
 #' #### Analyse data at the first interim ####
 #' theInterimData <- SelectData(theData$d, t = tau.i)
-#' myLmm <- analyzeData(theInterimData)
-#' myInterim1 <- update(myBound0, data = theInterimData) ## k = 1, analysis = "interim"
+#' myLmmI <- analyzeData(theInterimData)
+#' myInterim1 <- update(myBound0, delta = myLmmI) ## k = 1, analysis = "interim"
 #' print(myInterim1)
 #' print(myInterim1, planned = FALSE)
 #' print(myInterim1, planned = "only")
@@ -61,8 +61,9 @@
 #' plot(myInterim1)
 #' 
 #' #### Analyse data at the final stage ####
-#' theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
-#' myFinal <- update(myInterim1, data = theFinalData) ## k = 2, analysis = "final"
+#' theFinalData <- SelectData(theData$d, t = 1e7) 
+#' myLmmF <- analyzeData(theFinalData)
+#' myFinal <- update(myInterim1, delta = myLmmF) ## k = 2, analysis = "final"
 #' myFinal
 #' print(myFinal, abreviated = FALSE)
 #' plot(myFinal)
@@ -182,8 +183,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     object$delta <- rbind(object$delta,
                           data.frame(method = "ML", stage = k, type = type.k,
                                      delta,
-                                     lower = delta$estimate + stats::qt(object$alpha/2, df = delta$df) * delta$se,
-                                     upper = delta$estimate + stats::qt(1-object$alpha/2, df = delta$df) * delta$se))
+                                     lower = delta$estimate + stats::qt((1-object$conf.level)/2, df = delta$df) * delta$se,
+                                     upper = delta$estimate + stats::qt(1-(1-object$conf.level)/2, df = delta$df) * delta$se))
     if(type.k == "interim"){
         object$Info.i[k] <- as.double(Info.i)
     }else if(type.k == "final"){
@@ -267,7 +268,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                              lk = lk[1:k],  
                              uk = uk[1:k],  
                              kMax = kMax, 
-                             alpha = object$alpha,  
+                             conf.level = object$conf.level,  
                              estimate = delta[1,"estimate"],
                              method = object$method,
                              bindingFutility = object$bindingFutility,

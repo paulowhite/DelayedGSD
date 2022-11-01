@@ -16,10 +16,13 @@
 #' @param alternative a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
 #' H0 \eqn{\theta=0} vs H1 \eqn{theta<0} (\code{"less"}) or theta > 0 (\code{"greater"}).
 #' Note that in Jennison and Turnbull's book chapter (2013) they consider greater.
+#' @param conf.level confidence level for the confidence intervals. By default the complement to 1 of twice the type 1 error.
 #' @param n planned sample size in each group. Optional argument.
 #' @param trace whether to print some messages
 #' @param PowerCorrection whether to correct the power for Method 1
 #'
+#' @details 
+#' 
 #' @examples
 #' myBound <- CalcBoundaries(kMax=2,
 #'               alpha=0.025,  
@@ -51,22 +54,23 @@
 
 ## * CalcBoundaries (code)
 #' @export
-CalcBoundaries <- function(kMax=2,  
-                           alpha=0.025, 
-                           beta=0.2,  
-                           InfoR.i=c(0.5,1),  
-                           rho_alpha=2,  
-                           rho_beta=2,  
-                           method=1, 
-                           cNotBelowFixedc=FALSE, 
-                           delta=1.5, 
-                           InfoR.d=0.55,   
-                           bindingFutility=TRUE,
+CalcBoundaries <- function(kMax = 2,  
+                           alpha = 0.025, 
+                           beta = 0.2,  
+                           InfoR.i = c(0.5,1),  
+                           rho_alpha = 2,  
+                           rho_beta = 2,  
+                           method = 1, 
+                           cNotBelowFixedc = FALSE, 
+                           delta = 1.5, 
+                           InfoR.d = 0.55,   
+                           bindingFutility = TRUE,
                            alternative = "greater",
-                           n=NA,
-                           trace=FALSE,
-                           mycoefMax=1.2,
-                           PowerCorrection=FALSE){  
+                           conf.level = 1-2*alpha,
+                           n = NA,
+                           trace = FALSE,
+                           mycoefMax = 1.2,
+                           PowerCorrection = FALSE){  
 
     requireNamespace("gsDesign")
 
@@ -105,7 +109,7 @@ CalcBoundaries <- function(kMax=2,
     }
     
     if(PowerCorrection & method!=1){
-      stop("PowerCorrection is only applicable for Method 1")
+        stop("PowerCorrection is only applicable for Method 1")
     }
 
     ## ** compute boundaries at decision and possibly update futility boundary at interim
@@ -174,6 +178,7 @@ CalcBoundaries <- function(kMax=2,
                 Info.d = rep(NA, kMax-1),                
                 lmm = vector(mode = "list", length = kMax),
                 alpha = alpha,
+                conf.level = conf.level,
                 alphaSpent = rep(NA, kMax),
                 kMax = kMax,
                 beta = beta,

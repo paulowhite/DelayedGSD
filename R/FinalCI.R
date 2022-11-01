@@ -7,7 +7,7 @@
 #' @param lk lower bounds up to stage where study was stopped
 #' @param uk upper bounds up to stage where study was stopped
 #' @param kMax maximum number of analyses
-#' @param alpha confidence level (to get a 100*(1-alpha)\% CI)
+#' @param conf.level confidence level (to get a 100*(1-alpha)\% CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
 #' @param optimizer the observed treatment estimate at decision
 #' @param method  method 1, 2 or 3
@@ -22,12 +22,14 @@ FinalCI <- function(Info.d,
                     lk,  
                     uk,  
                     kMax, 
-                    alpha=0.05,
+                    conf.level,
                     estimate,
                     optimizer = "optimise",
                     method,
                     bindingFutility,
                     cNotBelowFixedc){
+
+    alpha <- 1-conf.level
 
     f <- function(delta){
         FinalPvalue(Info.d=Info.d,
