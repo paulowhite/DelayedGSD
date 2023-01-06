@@ -215,18 +215,21 @@ for(j in allj){ ## j <- 51 ## 5
     dDecision <- d[which(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor),]
     lmmD <- analyzeData(dDecision, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     
-    if(out.interim[[iMeth]]$decision == "stop"){
-      currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, trace = FALSE)
-      ## plot(currentGSD[[iMeth]])
+      ## Non binding: never stop for futility when simulating under the null and always stop for futility when simulating under the alternative
+      ## (then the observed rejection rate should match the nominal type 1 or type 2 error)
+      if(out.interim[[iMeth]]$decision == "stop" && (out.interim[[iMeth]]$reason!="futility" || binding == TRUE || delta.factor > 0)){
+
+          currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, trace = FALSE)
+          ## plot(currentGSD[[iMeth]])
       
-      out.decision[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
-                                         export.statistic = TRUE,
-                                         export.ML = TRUE,
-                                         export.MUE = TRUE,
-                                         export.info = TRUE,
-                                         export.predinfo = FALSE,
-                                         export.boundary = TRUE,
-                                         export.decision = TRUE)
+          out.decision[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
+                                             export.statistic = TRUE,
+                                             export.ML = TRUE,
+                                             export.MUE = TRUE,
+                                             export.info = TRUE,
+                                             export.predinfo = FALSE,
+                                             export.boundary = TRUE,
+                                             export.decision = TRUE)
       
       
     }else{

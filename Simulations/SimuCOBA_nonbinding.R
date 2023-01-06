@@ -175,7 +175,7 @@ for(j in allj){ ## j <- 51 ## 5
                                         uk = iBoundary.interim[1,"Ebound"],
                                         lk = iBoundary.interim[1,"Fbound"],
                                         decision = iDecision.interim["decision","stage 1"],
-                                        reason = iDecision.interim["reason.interim","stage 1"])
+                                        reason = iDecision.interim["comment","stage 1"])
   }
   ## currentGSD[[1]]
   ## plot(currentGSD[[1]])

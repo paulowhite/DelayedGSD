@@ -243,7 +243,8 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       
     }
   }
-  return(list(uk=uk,
+
+    return(list(uk=uk,
               lk=lk,
               ck=max(cMin,ck.unrestricted),
               ck.unrestricted=ck.unrestricted,

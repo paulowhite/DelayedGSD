@@ -64,14 +64,14 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
     ## computation of the p-value  
     if(ddf=="nlme"){ ## with weird estimator of the degree of freedom from nlme::gls 
         out$delta$df <- as.double(m$dims$N - m$dims$p)
-        out$delta$p.value <- as.double(1-stats::pt(out$delta$statistic, df = out$delta$df))  #TO DO: this looks like a two-sided p-value, shouldn't it be one-sided?
-        #out$delta$p.value <- as.double(2*(1-stats::pt(out$delta$statistic, df = out$delta$df)))
+        out$delta$p.value <- as.double(1-stats::pt(out$delta$statistic, df = out$delta$df))  
+        #out$delta$p.value <- as.double(2*(1-stats::pt(out$delta$statistic, df = out$delta$df)))#TO DO: this looks like a two-sided p-value, shouldn't it be one-sided?
         ## summary(m)$tTable["Z1","p-value"]
     }else{ ## or using satterthwaite approximation
         requireNamespace("emmeans")
         
         groupTest <- suppressMessages(emmeans::emmeans(m, specs = ~Z|visit, data = long[!is.na(long$X),,drop=FALSE]))
-        e.satterthwaite <- summary(graphics::pairs(groupTest, reverse = TRUE), by = NULL, infer = TRUE, adjust = "none")
+        e.satterthwaite <- summary(graphics::pairs(groupTest, reverse = TRUE), by = NULL, infer = TRUE, adjust = "none", side = ">")
         index <- which(e.satterthwaite$visit==levels(long$visit)[1])
 
         if(abs(out$delta$estimate - e.satterthwaite$estimate[index])>1e-10){

@@ -226,7 +226,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         delta <- stats::confint(object)
         Info.i <- object$Info.i
         Info.d <- object$Info.d
-        if(method == 3){
+        if(object$method == 3){
             ck <- object$ck.unrestricted
         }else{
             ck <- object$ck
