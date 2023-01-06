@@ -65,7 +65,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
     if(type.k=="interim"){
       alphaSpent[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
       betaSpent[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
-      
+
       #efficacy boundary
       find.uk <- function(x){
         
@@ -76,7 +76,6 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                 sigma= sigmaZk2,
                 abseps = abseps) - alphaSpent[1]
       }
-      
       uk[1] <- uniroot(find.uk,lower=-10,upper=10)$root  #dirty solution to use -10 and 10 for bounds
       
       #futility boundary
@@ -96,37 +95,35 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
         
       }
       lk[1] <- uniroot(find.lk,lower=uk[1]-10,upper=uk[1])$root  #dirty solution to use -10 for lower bound
-      #ck <- cMin
+                                        #ck <- cMin
     }
+
       if(type.k%in%c("interim","decision")){
-      if(ImaxAnticipated){
-        alphaSpent[1] <- alpha  #spend all remaining alpha if study was stopped due to anticipation of Imax reached
-        ck <- qnorm(1-alpha) #if the first IA is skipped due to Max info reached, then there is only one analysis, using the usual critval
-      } else {
-        f <- function(x){pmvnorm(lower = c(uk[1],x),
-                                 upper = c(Inf,Inf),
-                                 mean=rep(0,2),
-                                 sigma= sigmaZk2,
-                                 abseps = abseps) - alphaSpent[1]}
-        if(f(cMin)<0){  #if we are already spending too little Type I error with cMin, the real ck will be smaller, in which case ck will be set to cMin, so no need to do root search
-          ck <- cMin
-        } else {
-          c_new <- try(uniroot(f,
-                           lower = lk[1],
-                           upper = uk[1],
-                           tol = abseps)$root,silent=T)
-          if(inherits(c_new,"try-error")){
-            c_new <- try(uniroot(f,
-                                 lower = lk[1]/2,
-                                 upper = uk[1]*2,
-                                 tol = abseps)$root,silent=T)
-            ck <- max(cMin,c_new)
+          if(ImaxAnticipated){
+              alphaSpent[1] <- alpha  #spend all remaining alpha if study was stopped due to anticipation of Imax reached
+              ck.unrestricted <- qnorm(1-alpha) #if the first IA is skipped due to Max info reached, then there is only one analysis, using the usual critval
           } else {
-            ck <- max(cMin,c_new)
+              f <- function(x){pmvnorm(lower = c(uk[1],x),
+                                       upper = c(Inf,Inf),
+                                       mean=rep(0,2),
+                                       sigma= sigmaZk2,
+                                       abseps = abseps) - alphaSpent[1]}
+
+              c_new <- try(uniroot(f,
+                                   lower = lk[1],
+                                   upper = uk[1],
+                                   tol = abseps)$root,silent=T)
+
+              if(inherits(c_new,"try-error")){
+                  c_new <- try(uniroot(f,
+                                       lower = lk[1]/2,
+                                       upper = uk[1]*2,
+                                       tol = abseps)$root,silent=T)
+              }
+
+              ck.unrestricted <- c_new              
           }
-        }
       }
-    }
 
   }else{
     
@@ -151,7 +148,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
     }
     
     if(type.k=="interim"){
-      
+
       ## ** Estimate uk
       alphaSpent[k] <- ErrorSpend(I=Info.i[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
       alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
@@ -189,49 +186,46 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
     }
     if(type.k %in% c("interim","decision")){
       
-      f <- function(x){pmvnorm(lower = c(TheLowerValues,uk[k],x),
-                               upper = c(uk[1:(k-1)],Inf,Inf),
-                               mean=rep(0,k+1),
-                               sigma= sigmaZk2,
-                               abseps = obj$abseps) - alphaSpentInc[k]}
-      if(f(cMin)<0){  #if we are already spending too little Type I error with cMin, the real ck will be smaller, in which case ck will be set to cMin, so no need to do root search
-        ck <- cMin
-      } else {
-        c_new <- try(uniroot(f,
-                             lower = lk[k-1],
-                             upper = uk[k-1],
-                             tol = abseps)$root,silent=T)
-        if(inherits(c_new,"try-error")){
-          c_new <- try(uniroot(f,
-                               lower = lk[k-1]/2,
-                               upper = uk[k-1]*2,
-                               tol = abseps)$root,silent=T)
-          ck <- max(cMin,c_new)
-        } else {
-          ck <- max(cMin,c_new)
-        }
-      }
-    }else if(type.k=="final"){
-      alphaSpent[k] <- alpha
-      alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
-      betaSpent[k] <- beta
-      betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
+        f <- function(x){pmvnorm(lower = c(TheLowerValues,uk[k],x),
+                                 upper = c(uk[1:(k-1)],Inf,Inf),
+                                 mean=rep(0,k+1),
+                                 sigma= sigmaZk2,
+                                 abseps = obj$abseps) - alphaSpentInc[k]}
+            c_new <- try(uniroot(f,
+                                 lower = lk[k-1],
+                                 upper = uk[k-1],
+                                 tol = abseps)$root,silent=T)
 
-      lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
-      upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
-      if(InfoR.i[k]>1){
-          lowerRoot <- -10
-          upperRoot <- 10
-      }
+        if(inherits(c_new,"try-error")){
+            c_new <- try(uniroot(f,
+                                 lower = lk[k-1]/2,
+                                 upper = uk[k-1]*2,
+                                 tol = abseps)$root,silent=T)
+        }
+
+        ck.unrestricted <- c_new
+
+    }else if(type.k=="final"){
+        alphaSpent[k] <- alpha
+        alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
+        betaSpent[k] <- beta
+        betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
+
+        lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
+        upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
+        if(InfoR.i[k]>1){
+            lowerRoot <- -10
+            upperRoot <- 10
+        }
             
-      uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
-                                           upper = c(uk[1:(k-1)],Inf),
-                                           mean=rep(0,k),
-                                           sigma= sigmaZk[1:k,1:k],
-                                           abseps = abseps) - alphaSpentInc[k]},
-                       lower = lowerRoot,
-                       upper = upperRoot,
-                       tol = abseps)$root
+        uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
+                                             upper = c(uk[1:(k-1)],Inf),
+                                             mean=rep(0,k),
+                                             sigma= sigmaZk[1:k,1:k],
+                                             abseps = abseps) - alphaSpentInc[k]},
+                         lower = lowerRoot,
+                         upper = upperRoot,
+                         tol = abseps)$root
       
       ## lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
       ##                                      upper = c(uk[1:(k-1)],x),
@@ -244,15 +238,15 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       
       lk[k] <- uk[k]
       
-      ck <- NA
+      ck.unrestricted <- NA
       
       
     }
   }
-  
   return(list(uk=uk,
               lk=lk,
-              ck=ck,
+              ck=max(cMin,ck.unrestricted),
+              ck.unrestricted=ck.unrestricted,
               alphaSpent=alphaSpent,
               betaSpent=betaSpent))
   

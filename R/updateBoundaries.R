@@ -184,7 +184,6 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            Trace = trace)
             }
             
-
             object$lk[k]  <- newBounds$lk[k]
             object$uk[k]  <- newBounds$uk[k]
             object$alphaSpent[k] <- newBounds$alphaSpent[k]
@@ -193,6 +192,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                 object$lk[(k+1):kMax]  <- NA
                 object$uk[(k+1):kMax]  <- NA
                 object$ck[k]  <- newBounds$ck
+                object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
                 if(k<kMax-1){
                     object$ck[(k+1):(kMax-1)]  <- NA                    
                 }
@@ -270,7 +270,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
             
 
             object$ck[k]  <- newBounds$ck
-
+            object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
             if(k<kMax-1){
                 object$ck[(k+1):(kMax-1)]  <- NA                    
             }
@@ -318,7 +318,6 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            cMin = object$cMin)
                 
             } else if(method==3){
-              
                 newBounds <- updateMethod3(rho_alpha = object$planned$rho_alpha,
                                            rho_beta = object$planned$rho_beta,
                                            alpha = object$alpha, alphaSpent = object$alphaSpent,
@@ -336,11 +335,12 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            Trace = trace)
             }
             
-                object$ck[k]  <- newBounds$ck
-                if(k<kMax-1){
-                    object$ck[(k+1):(kMax-1)]  <- NA                    
-                }
+            object$ck[k]  <- newBounds$ck
+            object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
+            if(k<kMax-1){
+                object$ck[(k+1):(kMax-1)]  <- NA                    
             }
+        }
     }
 
     

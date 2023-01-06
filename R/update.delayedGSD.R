@@ -117,7 +117,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
             cat("Update information and bound relative to the (skipped) decision analysis of stage ",k,". \n", sep = "")
         }
     }
-    
+
     ## ** update object with information and estimate
     ## skipped
     if(type.update=="information"){
@@ -226,7 +226,11 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         delta <- stats::confint(object)
         Info.i <- object$Info.i
         Info.d <- object$Info.d
-        ck <- object$ck
+        if(method == 3){
+            ck <- object$ck.unrestricted
+        }else{
+            ck <- object$ck
+        }
         lk <- object$lk
         uk <- object$uk
 
@@ -247,7 +251,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         if(p.value){
             resP <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
                                 Info.i = Info.i[1:k],
-                                ck = ck[1:min(k,kMax-1)],   
+                                ck = ck[1:min(k,kMax-1)],
                                 lk = lk[1:k],  
                                 uk = uk[1:k],  
                                 kMax = kMax, 
@@ -287,7 +291,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         if(estimate){
             delta.MUE[1,"estimate"] <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
                                                      Info.i = Info.i[1:k],
-                                                     ck = ck[1:min(k,kMax-1)],   
+                                                     ck = ck[1:min(k,kMax-1)],
                                                      lk = lk[1:k],  
                                                      uk = uk[1:k],  
                                                      kMax = kMax, 

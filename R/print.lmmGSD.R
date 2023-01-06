@@ -21,7 +21,7 @@ print.lmmGSD <- function(x, ...){
             sample.size <- x$sample.size[c("decision","total","interim","interim.cc")]
         }
         
-        cat("\n  Number of clusters \n")
+        cat("\n  Number of patients \n")
         print(sample.size)
         cat("\n  Estimated information \n")
         print(x$information)

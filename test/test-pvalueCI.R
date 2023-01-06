@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 27 2022 (09:32) 
 ## Version: 
-## Last-Updated: feb 17 2022 (16:50) 
+## Last-Updated: jan  6 2023 (14:29) 
 ##           By: Brice Ozenne
-##     Update #: 34
+##     Update #: 39
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -315,6 +315,41 @@ test_that("Check consistency between p-value and boundary",{
     expect_equal(as.double(test), 0.025, tol = 1e-3)
 
 })
+
+## * Consistency between using p-value or boundaries for rejection
+test_that("Check consistency p-value/boundaries for rejection ",{
+
+    ## Stop at interim and statistic precisely at boundary at decision
+    test <- FinalPvalue(Info.d = 12.58797814,  
+                        Info.i = c(10.60271846),
+                        ck = 1.897834,
+                        lk = c(0.22424864),  
+                        uk = c(2.52429353),  
+                        kMax = 2, 
+                        delta = 0,  
+                        estimate = 1.897834 / sqrt(12.58797814),
+                        method = 3,
+                        bindingFutility = TRUE,
+                        cNotBelowFixedc = FALSE)
+    GS <- ErrorSpend(I=10.60271846,rho=2,beta_or_alpha=0.025,Info.max=22.71478)
+    expect_equal(as.double(test), GS, tol = 1e-5)
+
+    ## Continue at interim and and statistic precisely at boundary at final
+    test <- FinalPvalue(Info.d = 12.58797814,  
+                        Info.i = c(10.60271846, 24.67092824),
+                        ck = 1.897834,
+                        lk = c(0.22424864, 1.99362293),  
+                        uk = c(2.52429353, 1.99362293),  
+                        kMax = 2, 
+                        delta = 0,  
+                        estimate = 1.99362293 / sqrt(24.67092824),
+                        method = 3,
+                        bindingFutility = TRUE,
+                        cNotBelowFixedc = FALSE)
+    expect_equal(as.double(test), 0.025, tol = 1e-5)
+
+})
+
 ##----------------------------------------------------------------------
 ### test-pvalueCI.R ends here
 
