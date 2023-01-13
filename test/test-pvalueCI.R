@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 27 2022 (09:32) 
 ## Version: 
-## Last-Updated: jan  6 2023 (14:29) 
+## Last-Updated: jan 13 2023 (14:41) 
 ##           By: Brice Ozenne
-##     Update #: 39
+##     Update #: 44
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -62,14 +62,28 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
     expect_equal(as.double(pval1 + pval2), 0.00625, tol = 1e-6)
  
     ## p-value using FinalPvalue
-    test.p <- FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 3, estimate = estimate,
-                          futility2efficacy = TRUE, bindingFutility = TRUE)
+    test.p <- FinalPvalue(Info.d = Info.var,
+                          Info.i = Info.var,
+                          ck = efficacyBound,
+                          lk = futilityBound,
+                          uk = efficacyBound,
+                          kMax = 3,
+                          estimate = estimate,
+                          futility2efficacy = TRUE,
+                          bindingFutility = TRUE)
     expect_equal(as.double(test.p), 0.00625)
     expect_equal(as.double(test.p), as.data.frame(ests)[2,"Final p-value"])
     
     ## confidence interval using FinalPvalue
-    test.ci <- FinalCI(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate,
-                       bindingFutility = TRUE,futility2efficacy=TRUE)
+    test.ci <- FinalCI(Info.d = Info.var,
+                       Info.i = Info.var,
+                       ck = efficacyBound,
+                       lk = futilityBound,
+                       uk = efficacyBound,
+                       kMax = 4,
+                       estimate = estimate,
+                       bindingFutility = TRUE,
+                       futility2efficacy=TRUE)
     expect_equal(as.double(test.ci), c(0.53413706, 1.99336202), tol = 1e-4)
     as.data.frame(ests)[2,"Final CI (lower)"] ## 0.2413634
     as.data.frame(ests)[2,"Final CI (upper)"] ## 2.000625
@@ -319,12 +333,28 @@ test_that("Check consistency between p-value and boundary",{
 ## * Consistency between using p-value or boundaries for rejection
 test_that("Check consistency p-value/boundaries for rejection ",{
 
-    ## Stop at interim and statistic precisely at boundary at decision
+    ## Stop at interim and statistic precisely at boundary at decision (method 1, cNotBelowFixedc)
+    ## same for method 2 (the calculation of the p-value is the same for both methods)
+    test <- FinalPvalue(Info.d = 2.6923896504288,
+                        Info.i = 2.45494676691245,
+                        ck = 1.69415016027832, 
+                        lk = 0.992173622977366,
+                        uk = 2.27907351772183,
+                        kMax = 2, 
+                        delta = 0,
+                        estimate = 1.69415016027832 / sqrt(2.6923896504288),## 1.64370753556795,
+                        method = 2,
+                        bindingFutility = TRUE, 
+                        cNotBelowFixedc = TRUE)
+    GS <- ErrorSpend(I=2.45494676691245,rho=2,beta_or_alpha=0.025,Info.max=3.646459)
+    expect_equal(as.double(test), GS, tol = 1e-5)
+    
+    ## Stop at interim and statistic precisely at boundary at decision (method 3)
     test <- FinalPvalue(Info.d = 12.58797814,  
-                        Info.i = c(10.60271846),
+                        Info.i = 10.60271846,
                         ck = 1.897834,
-                        lk = c(0.22424864),  
-                        uk = c(2.52429353),  
+                        lk = 0.22424864,  
+                        uk = 2.52429353,  
                         kMax = 2, 
                         delta = 0,  
                         estimate = 1.897834 / sqrt(12.58797814),
@@ -333,8 +363,23 @@ test_that("Check consistency p-value/boundaries for rejection ",{
                         cNotBelowFixedc = FALSE)
     GS <- ErrorSpend(I=10.60271846,rho=2,beta_or_alpha=0.025,Info.max=22.71478)
     expect_equal(as.double(test), GS, tol = 1e-5)
-
-    ## Continue at interim and and statistic precisely at boundary at final
+    
+    ## Continue at interim and and statistic precisely at boundary at final (method 1, cNotBelowFixedc)
+    ## same for method 2 (the calculation of the p-value is the same for both methods)
+    test <- FinalPvalue(Info.d = 2.75046695782793,
+                        Info.i = c(2.5589317424577, 4.30612228613852),
+                        ck = 1.7253424172699,
+                        lk = c(1.11127641794951, 2.01974814127831),
+                        uk = c(2.2459290489148, 2.01974814127831),
+                        kMax = 2,
+                        delta = 0, 
+                        estimate = 2.01974814127831 / sqrt(4.30612228613852),
+                        method = 1,
+                        bindingFutility = TRUE, 
+                        cNotBelowFixedc = TRUE)
+    expect_equal(as.double(test), 0.025, tol = 1e-5)
+    
+    ## Continue at interim and and statistic precisely at boundary at final (method 3)
     test <- FinalPvalue(Info.d = 12.58797814,  
                         Info.i = c(10.60271846, 24.67092824),
                         ck = 1.897834,
@@ -347,6 +392,8 @@ test_that("Check consistency p-value/boundaries for rejection ",{
                         bindingFutility = TRUE,
                         cNotBelowFixedc = FALSE)
     expect_equal(as.double(test), 0.025, tol = 1e-5)
+
+    
 
 })
 

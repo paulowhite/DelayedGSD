@@ -238,16 +238,16 @@ Method1 <- function(rho_alpha=2,
     uk[1] <- qnorm(p=1-IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
     lk[1] <- qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
 
-    ck[1] <- calc_ck(uk=uk[1],
-                     lk=lk[1],
-                     Info.i=Info.i[1],
-                     Info.d=Info.d[1],
-                     Info.max=Info.max,
-                     cMin=cMin,
-                     ImaxAnticipated=FALSE,
-                     rho_alpha=rho_alpha,
-                     alpha=alpha,
-                     bindingFutility = binding)
+    ck[1] <- max(calc_ck(uk=uk[1],
+                         lk=lk[1],
+                         Info.i=Info.i[1],
+                         Info.d=Info.d[1],
+                         Info.max=Info.max,
+                         ImaxAnticipated=FALSE,
+                         rho_alpha=rho_alpha,
+                         alpha=alpha,
+                         bindingFutility = binding),
+                 cMin)
                                         #------------
   
   thealpha[1] <- IncAlpha[1]   
@@ -321,16 +321,16 @@ Method1 <- function(rho_alpha=2,
                                    tol = abseps)$root, silent = TRUE)
             
               if(!inherits(lk[k], "try-error")){
-                  ck[k] <- calc_ck(uk=uk[1:k],
-                                   lk=lk[1:k],
-                                   Info.i=Info.i[1:k],
-                                   Info.d=Info.d[k],
-                                   Info.max=Info.max,
-                                   cMin=cMin,
-                                   ImaxAnticipated=FALSE,
-                                   rho_alpha=rho_alpha,
-                                   alpha=alpha,
-                                   bindingFutility = binding)
+                  ck[k] <- max(calc_ck(uk=uk[1:k],
+                                       lk=lk[1:k],
+                                       Info.i=Info.i[1:k],
+                                       Info.d=Info.d[k],
+                                       Info.max=Info.max,
+                                       ImaxAnticipated=FALSE,
+                                       rho_alpha=rho_alpha,
+                                       alpha=alpha,
+                                       bindingFutility = binding),
+                               cMin)
               } else {
                   lk[k] <- uk[k] # just to handle cases in which there is no root
                   if(inherits(lk[k],"try-error")){warning(paste0("try-error for calculation of lk[",k,"]"))}

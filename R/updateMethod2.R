@@ -101,16 +101,15 @@ updateMethod2 <- function(rho_alpha=2,
                                         #------------
             find.lk <- function(x){
                                         #calculate c corresponding to lk
-                ck <- calc_ck(uk=uk[1],
-                              lk=x,
-                              Info.i=Info.i[1],
-                              Info.d=Info.d[1],
-                              Info.max=Info.max,
-                              cMin=cMin,
-                              ImaxAnticipated=FALSE, ## Should not be here at interim with I>Imax because this case is handled in the parent function (updateBoundary)
-                              rho_alpha=rho_alpha,
-                              alpha=alpha,
-                              bindingFutility = binding)
+                ck <- max(calc_ck(uk=uk[1],
+                                  lk=x,
+                                  Info.i=Info.i[1],
+                                  Info.d=Info.d[1],
+                                  Info.max=Info.max,
+                                  ImaxAnticipated=FALSE, ## Should not be here at interim with I>Imax because this case is handled in the parent function (updateBoundary)
+                                  rho_alpha=rho_alpha,
+                                  alpha=alpha,
+                                  bindingFutility = binding), cMin)
     
                 ## information matrix for first interim and decision analysis
                 sigmaZk2 <- matrix(NA,ncol=2,nrow=2)
@@ -134,16 +133,15 @@ updateMethod2 <- function(rho_alpha=2,
             lk[1] <- uniroot(find.lk,lower=uk[1]-10,upper=uk[1])$root  #dirty solution to use -10 for lower bound
         }
 
-        ck <- calc_ck(uk=uk[1],
-                      lk=lk[1],
-                      Info.i=Info.i[1],
-                      Info.d=Info.d[1],
-                      Info.max=Info.max,
-                      cMin=cMin,
-                      ImaxAnticipated=ImaxAnticipated,
-                      rho_alpha=rho_alpha,  
-                      alpha=alpha,
-                      bindingFutility = binding)
+        ck.unrestricted <- calc_ck(uk=uk[1],
+                                   lk=lk[1],
+                                   Info.i=Info.i[1],
+                                   Info.d=Info.d[1],
+                                   Info.max=Info.max,
+                                   ImaxAnticipated=ImaxAnticipated,
+                                   rho_alpha=rho_alpha,  
+                                   alpha=alpha,
+                                   bindingFutility = binding)
                                         #------------
     }else{
         
@@ -180,16 +178,15 @@ updateMethod2 <- function(rho_alpha=2,
             ## ** Estimate lk
             find.lkk <- function(x){
                 ## calculate c corresponding to lk
-                ck <- calc_ck(uk=uk[1:k],
+                ck <- max(calc_ck(uk=uk[1:k],
                               lk=c(lk[1:(k-1)],x),
                               Info.i=Info.i[1:k],
                               Info.d=Info.d[k],
                               Info.max=Info.max,
-                              cMin=cMin,
                               ImaxAnticipated=FALSE, ## Should not be here at interim with I>Imax because this case is handled in the parent function (updateBoundary)
                               rho_alpha=rho_alpha,
                               alpha=alpha,
-                              bindingFutility = binding)
+                              bindingFutility = binding), cMin)
                 
                 ## information matrix for first interim and decision analysis
                 sigmaZk2 <- matrix(NA,ncol=k+1,nrow=k+1)
@@ -214,16 +211,15 @@ updateMethod2 <- function(rho_alpha=2,
             lk[k] <- uniroot(find.lkk,lower=uk[k]-10,upper=uk[k])$root
         }
         if(type.k %in% c("interim","decision")){
-            ck <- calc_ck(uk=uk[1:k],
-                          lk=lk[1:k],
-                          Info.i=Info.i[1:k],
-                          Info.d=Info.d[k],
-                          Info.max=Info.max,
-                          cMin=cMin,
-                          ImaxAnticipated=ImaxAnticipated,
-                          rho_alpha=rho_alpha,
-                          alpha=alpha,
-                          bindingFutility = binding)
+            ck.unrestricted <- calc_ck(uk=uk[1:k],
+                                       lk=lk[1:k],
+                                       Info.i=Info.i[1:k],
+                                       Info.d=Info.d[k],
+                                       Info.max=Info.max,
+                                       ImaxAnticipated=ImaxAnticipated,
+                                       rho_alpha=rho_alpha,
+                                       alpha=alpha,
+                                       bindingFutility = binding)
         }else if(type.k=="final"){
             alphaSpent[k] <- alpha
             alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
@@ -257,7 +253,7 @@ updateMethod2 <- function(rho_alpha=2,
             
             lk[k] <- uk[k]
 
-            ck <- NA
+            ck.unrestricted <- NA
                 
             
         }
@@ -265,7 +261,8 @@ updateMethod2 <- function(rho_alpha=2,
 
     return(list(uk=uk,
                 lk=lk,
-                ck=ck,
+                ck=max(ck.unrestricted,cMin),
+                ck.unrestricted=ck.unrestricted,
                 alphaSpent=alphaSpent,
                 betaSpent=betaSpent))
         

@@ -278,16 +278,16 @@ Method2 <- function(rho_alpha=2,
                         sigmaZk = sigmaZk, thetheta = thetheta, delta = delta, abseps = abseps, IncBeta = IncBeta)
     }, lower=uk[1]-10, upper=uk[1])$root  ## dirty solution to use -10 for lower bound
 
-    ck[1] <- calc_ck(uk=uk[1],
+    ck[1] <- max(calc_ck(uk=uk[1],
                      lk=lk[1],
                      Info.i=Info.i[1],
                      Info.d=Info.d[1],
                      Info.max=Info.max,
-                     cMin=cMin,
                      ImaxAnticipated=FALSE,
                      rho_alpha=rho_alpha, 
                      alpha=alpha,
-                     bindingFutility = binding)
+                     bindingFutility = binding),
+                 cMin)
   
     thealpha[1] <- IncAlpha[1]   
     thebeta[1] <- IncBeta[1]
@@ -338,16 +338,16 @@ Method2 <- function(rho_alpha=2,
                   }, lower=uk[k]-10,upper=uk[k])$root)
 
                   if(!inherits(lk[k], "try-error")){
-                      ck[k] <- calc_ck(uk=uk[1:k],
+                      ck[k] <- max(calc_ck(uk=uk[1:k],
                                        lk=lk[1:k],
                                        Info.i=Info.i[1:k],
                                        Info.d=Info.d[k],
                                        Info.max=Info.max,
-                                       cMin=cMin,
                                        ImaxAnticipated=FALSE,
                                        rho_alpha=rho_alpha,
                                        alpha=alpha,
-                                       bindingFutility = binding)
+                                       bindingFutility = binding),
+                                   cMin)
                   } else {
                       lk[k] <- uk[k] # just to handle cases in which there is no root
                       if(inherits(lk[k],"try-error")){warning(paste0("try-error for calculation of lk[",k,"]"))}
@@ -427,16 +427,16 @@ Method2 <- function(rho_alpha=2,
 find.lk_Method2 <- function(x,
                             uk, Info.i, Info.d, Info.max, cMin, rho_alpha, alpha, sigmaZk, thetheta, delta, abseps, IncBeta){
     ## calculate c corresponding to lk
-    ck <- calc_ck(uk=uk[1],
+    ck <- max(calc_ck(uk=uk[1],
                   lk=x,
                   Info.i=Info.i[1],
                   Info.d=Info.d[1],
                   Info.max=Info.max,
-                  cMin=cMin,
                   ImaxAnticipated=FALSE,
                   rho_alpha=rho_alpha,
                   alpha=alpha,
-                  bindingFutility = TRUE)
+                  bindingFutility = TRUE),
+              cMin)
     
     ## information matrix for first interim and decision analysis
     sigmaZk2 <- matrix(NA,ncol=2,nrow=2)
@@ -463,16 +463,16 @@ find.lk_Method2 <- function(x,
 find.lkk_Method2 <- function(x,
                              k, uk, lk, Info.i, Info.d, Info.max, cMin, rho_alpha, alpha, binding, sigmaZk, thetheta, delta, abseps, IncBeta){
     ## calculate c corresponding to lk
-    ck <- calc_ck(uk=uk[1:k],
+    ck <- max(calc_ck(uk=uk[1:k],
                   lk=c(lk[1:(k-1)],x),
                   Info.i=Info.i[1:k],
                   Info.d=Info.d[k],
                   Info.max=Info.max,
-                  cMin=cMin,
                   ImaxAnticipated=FALSE,
                   rho_alpha=rho_alpha,
                   alpha=alpha,
-                  bindingFutility = binding)
+                  bindingFutility = binding),
+              cMin)
                 
     ## information matrix for first interim and decision analysis
     sigmaZk2 <- matrix(NA,ncol=k+1,nrow=k+1)

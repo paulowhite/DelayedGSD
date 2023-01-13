@@ -13,14 +13,14 @@ if(length(args)>0){
     }
 }
 if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on the server via slurm, iter_sim will be NA)
-    iter_sim <- 1
+    iter_sim <- 59
     n.iter_sim <- 100
 
-    if("missing" %in% ls() == FALSE){ missing <- FALSE }
+    if("missing" %in% ls() == FALSE){ missing <- TRUE }
     if("binding" %in% ls() == FALSE){ binding <- TRUE }
-    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
-    if("ar.factor" %in% ls() == FALSE){ ar.factor <- 5 }
-    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 5 }
+    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- TRUE }
+    if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
+    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0 }
 }
 
 name <- ""
@@ -45,6 +45,13 @@ if(delta.factor>0){
 }
 
 cat("BATCH ",name,": ",iter_sim," over ",n.iter_sim,"\n",sep="")
+cat("Arguments:\n")
+print(data.frame(missing = missing,
+                 binding = binding,
+                 cNotBelowFixedc = cNotBelowFixedc,
+                 ar.factor = ar.factor,
+                 delta.factor = delta.factor), row.names = FALSE)
+cat("\n")
 
 ## * Settings
 nsim <- 100 # number of simulations
@@ -134,7 +141,7 @@ for(j in allj){ ## j <- 51 ## 5
   myseedi <- allseeds[j]
   #myseedi <- 955535360
   # {{{ TRACE info (e.g. to check the Rout)
-  print(paste0("seed ",myseedi," for ","j=",which(j==allj)," out of ",nsim))
+  print(paste0("seed ",myseedi," for ","j=",j," (index ",which(j==allj),") out of ",nsim))
   # }}}
   
   # {{{ generate data

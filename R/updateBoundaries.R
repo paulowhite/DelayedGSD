@@ -36,7 +36,7 @@
 #' #### Simulate data ####
 #' ## generate data with all data for in case trial completes
 #' set.seed(10)
-#' theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  
+#' theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)   
 #' 
 #' theAR <- 10  #accrual rate (pt per month)
 #' theDelay <- 0.7500001  #time in months to process data
@@ -60,8 +60,7 @@
 #' theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
 #' 
 #' myLMM <- analyzeData(theFinalData)
-#' myBound2 <- updateBoundaries(myBound1, lmm = myLMM, k = 2,
-#'                             type.k = "final", update.stage = TRUE)
+#' myBound2 <- update(myBound1, delta = myLMM)
 #' plot(myBound2)
 
 ## * updateBoundaries (code)
@@ -128,7 +127,6 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
             object$conclusion["reason.interim",k] <- "Imax reached"
             object$alphaSpent[k] <- object$alpha
             object$betaSpent[k] <- object$beta
-
         }else{
             ## usual evaluation
             if(method==1){
@@ -192,9 +190,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                 object$lk[(k+1):kMax]  <- NA
                 object$uk[(k+1):kMax]  <- NA
                 object$ck[k]  <- newBounds$ck
-                if(method==3){
-                    object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
-                }
+                object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
                 if(k<kMax-1){
                     object$ck[(k+1):(kMax-1)]  <- NA                    
                 }
@@ -272,7 +268,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
             
 
             object$ck[k]  <- newBounds$ck
-            if(method==3 && k<kMax){
+            if(k<kMax){
                 object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
             }
             if(k<kMax-1){
@@ -339,7 +335,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            Trace = trace)
             }
             object$ck[k]  <- newBounds$ck
-            if(method==3 && k<kMax){
+            if(k<kMax){
                 object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
             }
             if(k<kMax-1){

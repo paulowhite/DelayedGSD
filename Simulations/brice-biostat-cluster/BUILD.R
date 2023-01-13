@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt  7 2022 (16:40) 
 ## Version: 
-## Last-Updated: okt 28 2022 (09:32) 
+## Last-Updated: jan 13 2023 (13:39) 
 ##           By: Brice Ozenne
-##     Update #: 62
+##     Update #: 64
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -81,6 +81,36 @@ for(iDir in dir.2stage){ ## iDir <- dir.2stage[1]
         saveRDS(eval(parse(text=iName)), file = file.path(path.results,paste0(iName,".rds") ))
     }
 }
+
+
+## dt <- loadRes("x:/DelayedGSD/Results/2stage_missing_binding_ar10_power", tempo.file = TRUE)
+## dt[, .N, by = "file"]
+## length(unique(dt$file))
+## dt[file=="sim-2stage_missing_binding_ar10_power-1(tempo)_100.rds"]
+
+dt <- loadRes("x:/DelayedGSD/Results/2stage_missing_fixC_binding_ar10_typeI", tempo.file = TRUE)
+table(dt[,.N,by = "file"]$N)
+## 55:  sim-2stage_missing_fixC_binding_ar10_typeI-59(tempo)_100.rds 630
+
+
+length(unique(res2stage_missing_binding_ar10_power$file)) ## 99
+length(unique(res2stage_missing_binding_ar10_typeI$file))        ## 99
+## length(unique(res2stage_missing_binding_ar5_power$file))         
+## length(unique(res2stage_missing_binding_ar5_typeI$file))      
+length(unique(res2stage_missing_fixC_binding_ar10_power$file)) ## 98
+length(unique(res2stage_missing_fixC_binding_ar10_typeI$file))   ## 98
+## length(unique(res2stage_missing_fixC_binding_ar5_power$file))    
+## length(unique(res2stage_missing_fixC_binding_ar5_typeI$file))    
+length(unique(res2stage_missing_fixC_nonbinding_ar10_power$file)) ## 99
+length(unique(res2stage_missing_fixC_nonbinding_ar10_typeI$file)) ## 99
+## length(unique(res2stage_missing_fixC_nonbinding_ar5_power$file)) 
+## length(unique(res2stage_missing_fixC_nonbinding_ar5_typeI$file)) 
+## length(unique(res2stage_missing_nonbinding_ar10_power$file))     
+## length(unique(res2stage_missing_nonbinding_ar10_typeI$file))     
+## length(unique(res2stage_missing_nonbinding_ar5_power$file))      
+## length(unique(res2stage_missing_nonbinding_ar5_typeI$file))      
+## length(unique(res2stage_nomissing_binding_ar5_power$file))       
+## length(unique(res2stage_nomissing_binding_ar5_typeI$file))       
 
 ## ** Aggregate scenario and export 
 legend.2stage <- data.frame(name = name.2stage,

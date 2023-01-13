@@ -65,18 +65,17 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       lk[1] <- qnorm(p=betaSpent[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
     }
     
-      ck <- calc_ck(uk=uk[1],
-                    lk=lk[1],
-                    Info.i=Info.i[1],
-                    Info.d=Info.d[1],
-                    Info.max=Info.max,
-                    cMin=cMin,
-                    ImaxAnticipated=ImaxAnticipated,
-                    rho_alpha=rho_alpha, 
-                    alpha=alpha,
-                    bindingFutility = binding)
+        ck.unrestricted <- calc_ck(uk=uk[1],
+                                   lk=lk[1],
+                                   Info.i=Info.i[1],
+                                   Info.d=Info.d[1],
+                                   Info.max=Info.max,
+                                   ImaxAnticipated=ImaxAnticipated,
+                                   rho_alpha=rho_alpha, 
+                                   alpha=alpha,
+                                   bindingFutility = binding)
                                         #------------
-  }else{
+    }else{
     
     alphaSpentInc <- diff(c(0,alphaSpent))
     betaSpentInc <- diff(c(0,betaSpent))
@@ -125,40 +124,39 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                        ## upper = uk[k-1],
                        tol = abseps)$root
       
-      ## ** Estimate lk
-      lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
-                                               upper = c(uk[1:(k-1)],x),
-                                               mean=thetheta[1:k],
-                                               sigma= sigmaZk[1:k,1:k],
-                                               abseps = abseps) - betaSpentInc[k]},
-                           lower = lk[k-1], 
-                           upper = uk[k], 
-                           tol = abseps)$root
+        ## ** Estimate lk
+        lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
+                                             upper = c(uk[1:(k-1)],x),
+                                             mean=thetheta[1:k],
+                                             sigma= sigmaZk[1:k,1:k],
+                                             abseps = abseps) - betaSpentInc[k]},
+                         lower = lk[k-1], 
+                         upper = uk[k], 
+                         tol = abseps)$root
     }
-    if(type.k %in% c("interim","decision")){
-      ck <- calc_ck(uk=uk[1:k],
-                    lk=lk[1:k],
-                    Info.i=Info.i[1:k],
-                    Info.d=Info.d[k],
-                    Info.max=Info.max,
-                    cMin=cMin,
-                    ImaxAnticipated=ImaxAnticipated,
-                    rho_alpha=rho_alpha,
-                    alpha=alpha,
-                    bindingFutility = binding)
-    }else if(type.k=="final"){
-      alphaSpent[k] <- alpha
-      alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
-      betaSpent[k] <- beta
-      betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]
-      lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
-      upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
-      if(InfoR.i[k]>1){
-          lowerRoot <- -10
-          upperRoot <- 10
-      }
+        if(type.k %in% c("interim","decision")){
+            ck.unrestricted <- calc_ck(uk=uk[1:k],
+                                       lk=lk[1:k],
+                                       Info.i=Info.i[1:k],
+                                       Info.d=Info.d[k],
+                                       Info.max=Info.max,
+                                       ImaxAnticipated=ImaxAnticipated,
+                                       rho_alpha=rho_alpha,
+                                       alpha=alpha,
+                                       bindingFutility = binding)
+        }else if(type.k=="final"){
+            alphaSpent[k] <- alpha
+            alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
+            betaSpent[k] <- beta
+            betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]
+            lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
+            upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
+            if(InfoR.i[k]>1){
+                lowerRoot <- -10
+                upperRoot <- 10
+            }
 
-      uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
+            uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
                                            upper = c(uk[1:(k-1)],Inf),
                                            mean=rep(0,k),
                                            sigma= sigmaZk[1:k,1:k],
@@ -178,7 +176,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       
       lk[k] <- uk[k]
       
-      ck <- NA
+      ck.unrestricted <- NA
       
       
     }
@@ -186,7 +184,8 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
   
   return(list(uk=uk,
               lk=lk,
-              ck=ck,
+              ck=max(ck.unrestricted,cMin),
+              ck.unrestricted=ck.unrestricted,
               alphaSpent=alphaSpent,
               betaSpent=betaSpent))
   

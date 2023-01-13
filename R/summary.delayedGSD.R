@@ -24,7 +24,16 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
     type.k <- x$stage$type
     
     if(is.null(planned)){
-        planned <- unlist(list(TRUE,"only")[(type.k=="planning")+1])
+        if(type.k=="planning"){
+            planned <- "only"
+        }else{
+            planned <- FALSE
+        }
+        ## if(type.k == "interim" && x$conclusion["interim",k]!="stop"){
+        ##     planned <- TRUE            
+        ## }else{
+        ##     planned <- FALSE
+        ## }
     }else if(planned %in% c(TRUE,FALSE) == FALSE && planned != "only"){
         stop("Argument \'planned\' should be TRUE, FALSE, or \"only\". \n")
     }
@@ -113,7 +122,7 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
         df.printBound$statistic.decision <- round(df.printBound$statistic.decision, digits)
         df.printBound[["alpha-spent"]] <- round(x$alphaSpent, digits+2)
         df.printBound[["beta-spent"]] <- round(x$betaSpent, digits+2)
-        if(planned && type.k!="final"){
+        if(planned){
             df.printBound[["alpha-spent"]][(k+1):kMax] <- x$planned$alphaSpent[(k+1):kMax]
             df.printBound[["beta-spent"]][(k+1):kMax] <- x$planned$betaSpent[(k+1):kMax]
         }

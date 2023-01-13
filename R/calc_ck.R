@@ -6,7 +6,6 @@
 #' @param Info.i Information for all analyses up to and including current stage k
 #' @param Info.d Observed information at decision analysis k
 #' @param Info.max Maximum information
-#' @param cMin minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)
 #' @param ImaxAnticipated set to TRUE if c should be calculated according to Eq 15 in HJ because study was stopped early due to Imax reached
 #' @param rho_alpha value of rho used for type I error spending function
 #' @param alpha one-sided alpha level to be used for the study
@@ -18,7 +17,6 @@ calc_ck <- function(uk,
                     Info.i,
                     Info.d,
                     Info.max=NULL,
-                    cMin=-Inf,
                     ImaxAnticipated=FALSE,
                     rho_alpha=2, 
                     alpha=0.025, 
@@ -118,15 +116,15 @@ calc_ck <- function(uk,
       }
     }
     
-    c <- try(stats::uniroot(f,
-                            lower = lowerRoot,
-                            upper = upperRoot)$root,
-             silent=TRUE)
-    if(inherits(c,"try-error")){
+    ccc <- try(stats::uniroot(f,
+                              lower = lowerRoot,
+                              upper = upperRoot)$root,
+               silent=TRUE)
+    if(inherits(ccc,"try-error")){
         warning("uniroot produced an error, switching to dfsane")
-        c <- BB::dfsane(f,
-                        par = (upperRoot*1.1+lowerRoot)/2,
-                        control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
+        ccc <- BB::dfsane(f,
+                          par = (upperRoot*1.1+lowerRoot)/2,
+                          control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
     }
-    return(max(c,cMin))
+    return(ccc)
 }
