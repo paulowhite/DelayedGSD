@@ -17,6 +17,7 @@ CalcBoundaries(
   InfoR.d = 0.55,
   bindingFutility = TRUE,
   alternative = "greater",
+  conf.level = 1 - 2 * alpha,
   n = NA,
   trace = FALSE,
   mycoefMax = 1.2,
@@ -49,6 +50,8 @@ CalcBoundaries(
 \item{alternative}{a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
 H0 \eqn{\theta=0} vs H1 \eqn{theta<0} (\code{"less"}) or theta > 0 (\code{"greater"}).
 Note that in Jennison and Turnbull's book chapter (2013) they consider greater.}
+
+\item{conf.level}{confidence level for the confidence intervals. By default the complement to 1 of twice the type 1 error.}
 
 \item{n}{planned sample size in each group. Optional argument.}
 

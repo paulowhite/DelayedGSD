@@ -272,10 +272,10 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
             
 
             object$ck[k]  <- newBounds$ck
+            if(method==3 && k<kMax){
+                object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
+            }
             if(k<kMax-1){
-                if(method==3){
-                    object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
-                }
                 object$ck[(k+1):(kMax-1)]  <- NA                    
             }
             
@@ -338,12 +338,11 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            binding = bindingFutility,
                                            Trace = trace)
             }
-            
             object$ck[k]  <- newBounds$ck
+            if(method==3 && k<kMax){
+                object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
+            }
             if(k<kMax-1){
-                if(method==3){
-                    object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
-                }
                 object$ck[(k+1):(kMax-1)]  <- NA                    
             }
         }

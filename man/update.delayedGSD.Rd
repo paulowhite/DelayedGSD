@@ -79,8 +79,8 @@ tau.i <- theData$d$t3[theN + ceiling(theAR*theDelay)] #time point at which to do
 
 #### Analyse data at the first interim ####
 theInterimData <- SelectData(theData$d, t = tau.i)
-myLmm <- analyzeData(theInterimData)
-myInterim1 <- update(myBound0, data = theInterimData) ## k = 1, analysis = "interim"
+myLmmI <- analyzeData(theInterimData)
+myInterim1 <- update(myBound0, delta = myLmmI) ## k = 1, analysis = "interim"
 print(myInterim1)
 print(myInterim1, planned = FALSE)
 print(myInterim1, planned = "only")
@@ -90,8 +90,9 @@ plot(myInterim1, planned = "only")
 plot(myInterim1)
 
 #### Analyse data at the final stage ####
-theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
-myFinal <- update(myInterim1, data = theFinalData) ## k = 2, analysis = "final"
+theFinalData <- SelectData(theData$d, t = 1e7) 
+myLmmF <- analyzeData(theFinalData)
+myFinal <- update(myInterim1, delta = myLmmF) ## k = 2, analysis = "final"
 myFinal
 print(myFinal, abreviated = FALSE)
 plot(myFinal)

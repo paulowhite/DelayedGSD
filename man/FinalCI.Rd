@@ -11,7 +11,7 @@ FinalCI(
   lk,
   uk,
   kMax,
-  alpha = 0.05,
+  conf.level,
   estimate,
   optimizer = "optimise",
   method,
@@ -32,7 +32,7 @@ FinalCI(
 
 \item{kMax}{maximum number of analyses}
 
-\item{alpha}{confidence level (to get a 100*(1-alpha)\% CI)}
+\item{conf.level}{confidence level (to get a 100*(1-alpha)\% CI)}
 
 \item{estimate}{naive estimate (e.g. using  ML or REML).}
 

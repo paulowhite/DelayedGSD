@@ -120,7 +120,12 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
         df.printBound[is.na(df.printBound)] <- ""
         conclusion.interim.print <- .reformatInterimTxt(x$conclusion, kMax = kMax, abreviated = abreviated>0)
         conclusion.decision.print <- .reformatDecisionTxt(x$conclusion, kMax = kMax, abreviated = abreviated>0)
-
+        if(any(conclusion.interim.print=="S-Imax")){ ## when stopping at interim because we anticipate to reach Imax at decision put NA to boundaries
+            df.printBound$Fbound[conclusion.interim.print=="S-Imax"] <- as.character(NA)
+            df.printBound$Ebound[conclusion.interim.print=="S-Imax"] <- as.character(NA)
+            df.printBound$statistic.interim[conclusion.interim.print=="S-Imax"] <- as.character(NA)
+        }
+        
         df.printBound2 <- data.frame("stage" = df.printBound$stage,
                                      "Futility boundary" = df.printBound$Fbound,
                                      "Efficacy boundary" = df.printBound$Ebound,
@@ -165,9 +170,8 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
             names(df.printBound3)[index.name[1]] <- "Interim analysis"
             names(df.printBound3)[index.name[2]] <- "Decision analysis"
             names(df.printBound3)[index.name[3]] <- "Error spent"
-        }        
-
-
+        }
+        
         ## display
         cat("\n * Boundaries and observed statistics \n")
         print(df.printBound3, row.names = FALSE, quote = FALSE)

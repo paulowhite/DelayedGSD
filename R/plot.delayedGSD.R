@@ -218,8 +218,12 @@ plot.delayedGSD <- function(x,
         graphics::text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple", pos = 4)
         
     }
-                                        #---
-    graphics::text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=2)
+
+    x.decision <- coef(x, type = "decision")
+    if(x.decision["comment",k]!="Imax reached"){
+        graphics::text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=2)
+    }
+    
     if(planned == "only"){
         pos.l <- 1
         pos.u <- 3
