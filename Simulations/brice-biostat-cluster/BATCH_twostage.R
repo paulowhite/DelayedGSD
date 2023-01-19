@@ -262,7 +262,7 @@ for(j in allj){ ## j <- 51 ## 5
     dFinal <- d[1:nGSD[iMeth],]
     lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     
-    if(out.interim[[iMeth]]$decision == "stop"){
+    if(out.interim[[iMeth]]$decision == "stop" && (out.interim[[iMeth]]$reason!="futility" || binding == TRUE || delta.factor > 0)){
       
       out.final[[iMeth]] <- exportGSD(NA)
       

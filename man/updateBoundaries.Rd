@@ -57,7 +57,7 @@ myBound0 <- CalcBoundaries(kMax=theK,
 #### Simulate data ####
 ## generate data with all data for in case trial completes
 set.seed(10)
-theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)  
+theData <- GenData(n=theN*2,delta=theDelta*0.8,ar=5)   
 
 theAR <- 10  #accrual rate (pt per month)
 theDelay <- 0.7500001  #time in months to process data
@@ -81,7 +81,6 @@ plot(myBound1)
 theFinalData <- SelectData(theData$d, t = 1e7, Delta.t = theDelay) 
 
 myLMM <- analyzeData(theFinalData)
-myBound2 <- updateBoundaries(myBound1, lmm = myLMM, k = 2,
-                            type.k = "final", update.stage = TRUE)
+myBound2 <- update(myBound1, delta = myLMM)
 plot(myBound2)
 }

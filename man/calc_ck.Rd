@@ -10,7 +10,6 @@ calc_ck(
   Info.i,
   Info.d,
   Info.max = NULL,
-  cMin = -Inf,
   ImaxAnticipated = FALSE,
   rho_alpha = 2,
   alpha = 0.025,
@@ -27,8 +26,6 @@ calc_ck(
 \item{Info.d}{Observed information at decision analysis k}
 
 \item{Info.max}{Maximum information}
-
-\item{cMin}{minimun possible value c for the decision analysis, typically that for a fixed sample test (H & J page 10)}
 
 \item{ImaxAnticipated}{set to TRUE if c should be calculated according to Eq 15 in HJ because study was stopped early due to Imax reached}
 
