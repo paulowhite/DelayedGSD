@@ -16,11 +16,12 @@ if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on
     iter_sim <- 59
     n.iter_sim <- 100
 
+    ## scenario 5
     if("missing" %in% ls() == FALSE){ missing <- TRUE }
     if("binding" %in% ls() == FALSE){ binding <- TRUE }
     if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- TRUE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
-    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0 }
+    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
 }
 
 name <- ""

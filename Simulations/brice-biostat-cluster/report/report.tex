@@ -1,4 +1,4 @@
-% Created 2023-01-19 to 11:55
+% Created 2023-01-20 fr 17:31
 % Intended LaTeX compiler: pdflatex
 \documentclass[12pt]{article}
 
@@ -123,7 +123,7 @@ linkcolor=[rgb]{0,0,0.5},
 \maketitle
 
 \section{Rejection rate}
-\label{sec:org7d4f8cf}
+\label{sec:org9d1a00c}
 
 Power by method (columns) and scenario (rows): \hfill (nominal level 0.8)
 \begin{verbatim}
@@ -167,8 +167,16 @@ print(tablePrintH0, row.names = FALSE)
 
 \clearpage
 
+\begin{figure}[!h]
+\centering
+\includegraphics[trim={0 0 0 0},width=1\textwidth]{./figures/gg-pvalue-density.pdf}
+\caption{Naive and adjusted p-value distribution over all simulations. Each row correspond to a different scenario}
+\end{figure}
+
+\clearpage
+
 \section{Conclusion of the trial}
-\label{sec:org64690ee}
+\label{sec:org6b2572b}
 
 Relative frequency of stopping for efficacy/futility at decision/final
 
@@ -252,40 +260,67 @@ Method 3:
 
 \clearpage
 
-\section{Bias}
-\label{sec:orgfa2b78e}
+\section{Bias (True effect: 0.6 under the alternative)}
+\label{sec:org98258a3}
 
-True effect: 0.6
-Bias per estimator and method:
+\bigskip
+
+Bias \footnote{average difference between the estimate and the truth} per estimator and method:
 \begin{adjustwidth}{-1cm}{-1cm}
 \begin{verbatim}
      hypo missing binding  fixC ar biasMLE1 biasMLE2 biasMLE3 biasMUE1 biasMUE2 biasMUE3
- 1: power    TRUE    TRUE FALSE 10   0.0130   0.0131   0.0141  -0.0023  -0.0017  -0.0042
- 2: typeI    TRUE    TRUE FALSE 10  -0.0184  -0.0184  -0.0185   0.0002  -0.0013   0.0001
- 3: power    TRUE    TRUE FALSE  5   0.0224   0.0222   0.0234  -0.0030  -0.0016  -0.0018
- 4: typeI    TRUE    TRUE FALSE  5  -0.0304  -0.0308  -0.0306   0.0000  -0.0002   0.0001
- 5: power    TRUE    TRUE  TRUE 10   0.0116   0.0121   0.0130  -0.0053  -0.0061  -0.0080
- 6: typeI    TRUE    TRUE  TRUE 10  -0.0221  -0.0223  -0.0223  -0.0113  -0.0079  -0.0099
- 7: power    TRUE    TRUE  TRUE  5   0.0216   0.0220   0.0227  -0.0073  -0.0075  -0.0075
- 8: typeI    TRUE    TRUE  TRUE  5  -0.0339  -0.0344  -0.0341  -0.0105  -0.0081  -0.0105
- 9: power    TRUE   FALSE  TRUE 10   0.0150   0.0151   0.0163  -0.0025  -0.0044  -0.0036
-10: typeI    TRUE   FALSE  TRUE 10   0.1776   0.1740   0.1713   0.3606   0.3562   0.3487
-11: power    TRUE   FALSE  TRUE  5   0.0242   0.0242   0.0252  -0.0014  -0.0012  -0.0026
-12: typeI    TRUE   FALSE  TRUE  5   0.1722   0.1701   0.1700   0.3413   0.3432   0.3382
-13: power    TRUE   FALSE FALSE 10   0.0144   0.0141   0.0157  -0.0033  -0.0036   0.0012
-14: typeI    TRUE   FALSE FALSE 10   0.1803   0.1821   0.1736   0.3612   0.3628   0.3508
-15: power    TRUE   FALSE FALSE  5   0.0234   0.0233   0.0243  -0.0010  -0.0010  -0.0028
-16: typeI    TRUE   FALSE FALSE  5   0.1721   0.1720   0.1705   0.3455   0.3452   0.3416
-17: power   FALSE    TRUE FALSE  5   0.0228   0.0228   0.0238  -0.0026  -0.0008  -0.0038
-18: typeI   FALSE    TRUE FALSE  5  -0.0295  -0.0297  -0.0299   0.0044   0.0031   0.0035
+ 1: power    TRUE    TRUE FALSE 10   0.0130   0.0131   0.0141  0.00547  0.00556  0.00321
+ 2: typeI    TRUE    TRUE FALSE 10  -0.0184  -0.0184  -0.0185 -0.00426 -0.00433 -0.00472
+ 3: power    TRUE    TRUE FALSE  5   0.0224   0.0222   0.0234  0.01008  0.01016  0.00902
+ 4: typeI    TRUE    TRUE FALSE  5  -0.0304  -0.0308  -0.0306 -0.01176 -0.01214 -0.01214
+ 5: power    TRUE    TRUE  TRUE 10   0.0116   0.0121   0.0130  0.00457  0.00504  0.00306
+ 6: typeI    TRUE    TRUE  TRUE 10  -0.0221  -0.0223  -0.0223 -0.00817 -0.00830 -0.00816
+ 7: power    TRUE    TRUE  TRUE  5   0.0216   0.0220   0.0227  0.00990  0.01050  0.00875
+ 8: typeI    TRUE    TRUE  TRUE  5  -0.0339  -0.0344  -0.0341 -0.01450 -0.01457 -0.01499
+ 9: power    TRUE   FALSE  TRUE 10   0.0150   0.0151   0.0163  0.00371  0.00376  0.00221
+10: typeI    TRUE   FALSE  TRUE 10   0.1776   0.1740   0.1713  0.17905  0.17536  0.17171
+11: power    TRUE   FALSE  TRUE  5   0.0242   0.0242   0.0252  0.00864  0.00835  0.00797
+12: typeI    TRUE   FALSE  TRUE  5   0.1722   0.1701   0.1700  0.17292  0.17079  0.16962
+13: power    TRUE   FALSE FALSE 10   0.0144   0.0141   0.0157  0.00338  0.00297  0.00317
+14: typeI    TRUE   FALSE FALSE 10   0.1803   0.1821   0.1736  0.18129  0.18315  0.17484
+15: power    TRUE   FALSE FALSE  5   0.0234   0.0233   0.0243  0.00884  0.00883  0.00811
+16: typeI    TRUE   FALSE FALSE  5   0.1721   0.1720   0.1705  0.17225  0.17208  0.17059
+17: power   FALSE    TRUE FALSE  5   0.0228   0.0228   0.0238  0.01197  0.01208  0.01063
+18: typeI   FALSE    TRUE FALSE  5  -0.0295  -0.0297  -0.0299 -0.01105 -0.01139 -0.01161
 \end{verbatim}
 \end{adjustwidth}
 \Warning clear bias for non-binding scenarios under the null
 
+Median bias \footnote{Relative frequency at which the estimate is greater than the truth minus 0.5} per estimator and method:
+\begin{adjustwidth}{-1cm}{-1cm}
+\begin{verbatim}
+     hypo missing binding  fixC ar mbiasMLE1 mbiasMLE2 mbiasMLE3 mbiasMUE1 mbiasMUE2 mbiasMUE3
+ 1: power    TRUE    TRUE FALSE 10    0.0250    0.0240    0.0266   -0.0023   -0.0017   -0.0042
+ 2: typeI    TRUE    TRUE FALSE 10   -0.0193   -0.0198   -0.0223    0.0002   -0.0013    0.0001
+ 3: power    TRUE    TRUE FALSE  5    0.0387    0.0382    0.0406   -0.0030   -0.0016   -0.0018
+ 4: typeI    TRUE    TRUE FALSE  5   -0.0346   -0.0339   -0.0361    0.0000   -0.0002    0.0001
+ 5: power    TRUE    TRUE  TRUE 10    0.0164    0.0188    0.0179   -0.0053   -0.0061   -0.0080
+ 6: typeI    TRUE    TRUE  TRUE 10   -0.0327   -0.0314   -0.0347   -0.0113   -0.0079   -0.0099
+ 7: power    TRUE    TRUE  TRUE  5    0.0356    0.0369    0.0361   -0.0073   -0.0075   -0.0075
+ 8: typeI    TRUE    TRUE  TRUE  5   -0.0473   -0.0492   -0.0493   -0.0105   -0.0081   -0.0105
+ 9: power    TRUE   FALSE  TRUE 10    0.0328    0.0301    0.0345   -0.0025   -0.0044   -0.0036
+10: typeI    TRUE   FALSE  TRUE 10    0.3599    0.3555    0.3474    0.3606    0.3562    0.3487
+11: power    TRUE   FALSE  TRUE  5    0.0479    0.0459    0.0499   -0.0014   -0.0012   -0.0026
+12: typeI    TRUE   FALSE  TRUE  5    0.3413    0.3432    0.3379    0.3413    0.3432    0.3382
+13: power    TRUE   FALSE FALSE 10    0.0326    0.0324    0.0339   -0.0033   -0.0036    0.0012
+14: typeI    TRUE   FALSE FALSE 10    0.3605    0.3621    0.3482    0.3612    0.3628    0.3508
+15: power    TRUE   FALSE FALSE  5    0.0442    0.0442    0.0465   -0.0010   -0.0010   -0.0028
+16: typeI    TRUE   FALSE FALSE  5    0.3455    0.3452    0.3410    0.3455    0.3452    0.3416
+17: power   FALSE    TRUE FALSE  5    0.0383    0.0378    0.0400   -0.0026   -0.0008   -0.0038
+18: typeI   FALSE    TRUE FALSE  5   -0.0329   -0.0336   -0.0353    0.0044    0.0031    0.0035
+\end{verbatim}
+
+\end{adjustwidth}
+
 \clearpage
 
 \section{Distribution of the estimates}
-\label{sec:org99f8254}
+\label{sec:org0a985ba}
 
 Distribution of the estimates:
 \begin{figure}[!h]
@@ -312,7 +347,7 @@ Distribution of the median unbiased estimate conditional to the stage:
 \clearpage
 
 \section{Special cases}
-\label{sec:org92e8523}
+\label{sec:org3eb8c71}
 
 Reason for stopping (first 4) or continuing the trial (last):
 \begin{verbatim}
@@ -358,7 +393,7 @@ no boundary crossed    1               5580 2785 5770 2961 5581 2796 5755 3013
 \clearpage
 
 \section{Reversal probability}
-\label{sec:orgc86b9a8}
+\label{sec:org238ee19}
 
 Percentage of time we observe a reversal:
 \begin{adjustwidth}{-1cm}{-1cm}
@@ -390,7 +425,7 @@ Percentage of time we observe a reversal:
 \clearpage
 
 \section{Frequency mismatch p-value / boundaries}
-\label{sec:orgde56222}
+\label{sec:orga257f0b}
 
 When concluding for futility:
 \begin{verbatim}
@@ -441,7 +476,7 @@ When concluding for efficacy:
 \clearpage
 
 \section{Percentage of missing values}
-\label{sec:orgd26a39c}
+\label{sec:org2661dcd}
 
 Here only for method 1 - values are very similar between different
 methods:
@@ -472,4 +507,34 @@ but with intermediate outcome value and baseline.
 17:      1    TRUE 10 power FALSE   FALSE 10000 71.79364   13.168843    15.037522
 18:      1    TRUE 10 typeI FALSE   FALSE 10000 71.79364   13.168843    15.037522
 \end{verbatim}
+
+\clearpage
+
+\section{Information}
+\label{sec:orgd6ef13b}
+
+Percentage of information for method 1\footnote{average over the reached stages}:
+\begin{verbatim}
+ scenario missing binding  fixC ar  interim decision     final
+        1    TRUE    TRUE FALSE 10 54.56262 63.87624 102.43196
+        2    TRUE    TRUE FALSE 10 54.56262 68.44170 102.27378
+        3    TRUE    TRUE FALSE  5 53.19699 57.43534 102.53302
+        4    TRUE    TRUE FALSE  5 53.19699 60.05461 102.25032
+        5    TRUE    TRUE  TRUE 10 54.46422 63.55543 102.55590
+        6    TRUE    TRUE  TRUE 10 54.46422 68.38828 102.04570
+        7    TRUE    TRUE  TRUE  5 53.10347 57.19873 102.61372
+        8    TRUE    TRUE  TRUE  5 53.10347 59.95959 102.13328
+        9    TRUE   FALSE  TRUE 10 54.52041 63.81588 102.45701
+       10    TRUE   FALSE  TRUE 10 54.52041 68.36137 102.14337
+       11    TRUE   FALSE  TRUE  5 53.18289 57.37841 102.60304
+       12    TRUE   FALSE  TRUE  5 53.18289 60.00160 102.25444
+       13    TRUE   FALSE FALSE 10 54.50746 63.85073 102.45852
+       14    TRUE   FALSE FALSE 10 54.50746 68.22472 102.26402
+       15    TRUE   FALSE FALSE  5 53.16583 57.37762 102.59683
+       16    TRUE   FALSE FALSE  5 53.16583 59.91894 102.19314
+       17   FALSE    TRUE FALSE  5 51.99597 56.30990  99.79909
+       18   FALSE    TRUE FALSE  5 51.99597 59.23342  99.51892
+\end{verbatim}
+
+Similar results for other methods.
 \end{document}
