@@ -78,14 +78,14 @@ if(e.GSDD$conclusion["interim",1]=="continue"){
     seqC <- c(e.GSDF$ck.unrestricted, e.GSDF$uk[2])
     seqDelta <- unique(round(sort(c(seq(0,1.2, length.out = 10), confint(e.GSDF)[2,"lower"], confint(e.GSDF)[2,"upper"])),2))
     ## seqZ <- sort(c(qnorm(0.975),seq(-5,5, length.out = 4)))
-    seqZ <- sort(c(seqC, confint(e.GSDF)[1,"statistic"], qnorm(0.975),seq(-5,5, length.out = 25),
-                   seq(seqC[2],qnorm(0.975),length.out=4)))
+    seqZ <- unique(sort(c(seqC, confint(e.GSDF)[1,"statistic"], qnorm(0.975),seq(0,5, length.out = 10),
+                          seq(seqC[2],qnorm(0.975),length.out=4))))
 
 
     grid <- expand.grid(stage = 1:2,                        
                         z = seqZ,
                         delta = seqDelta)
-    grid$reject <- (grid$stage==1)*(grid$z>=seqC[1]) + (grid$stage==2)*(grid$z>=seqC[2])
+    grid$reject <- (grid$stage==1)*(grid$z>=max(seqC[1], qnorm(0.975))) + (grid$stage==2)*(grid$z>=max(seqC[2], qnorm(0.975)))
     grid$p.value <- as.numeric(NA)
     NROW(grid)
 
@@ -95,7 +95,7 @@ if(e.GSDD$conclusion["interim",1]=="continue"){
                   grid1[order(-grid1$stage,grid1$z),])
     n.grid <- NROW(grid)
 
-    for(iGrid in 1:n.grid){ ## iGrid <- 1
+    for(iGrid in 1:n.grid){ ## iGrid <- 386 375
         cat("*")
         ## which
         iStage <- grid[iGrid,"stage"] ## iStage <- 1
@@ -104,7 +104,7 @@ if(e.GSDD$conclusion["interim",1]=="continue"){
 
         if(iStage == 1){
             if(iZ >= seqC[1] && iZ < qnorm(0.975)){
-                iZ <- qnorm(0.975)
+                iZ <- seqC[1]
             }
             iEstimate <- iZ / sqrt(12.58797814)
             grid[iGrid,"p.value"] <- FinalPvalue(Info.d = c(12.58797814),  
@@ -119,6 +119,9 @@ if(e.GSDD$conclusion["interim",1]=="continue"){
                                                  bindingFutility = TRUE,
                                                  cNotBelowFixedc = TRUE)
         }else if(iStage == 2){
+            if(iZ >= seqC[2] && iZ < qnorm(0.975)){
+                iZ <- seqC[2]
+            }
             iEstimate <- iZ / sqrt(20.74866926) ## 1.9927 / sqrt(20.74866926)
             grid[iGrid,"p.value"] <- FinalPvalue(Info.d = c(12.58797814),  
                                                  Info.i = c(10.60271846, 20.74866926),
@@ -156,7 +159,7 @@ if(e.GSDD$conclusion["interim",1]=="continue"){
         axis(2, las = 2)
     }
     ## abline(v = which(UstageZ$stage==2)[1]-0.5, lty = 2)
-    nZ.D1 <- sum(seqZ<seqC[1])
+    nZ.D1 <- sum(seqZ<max(seqC[1],qnorm(0.975)))
     nZ.F2 <- nZ.D1 + length(seqZ)
     nZ.D2 <- NROW(UstageZ)
 
