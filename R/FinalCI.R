@@ -3,7 +3,8 @@
 #' 
 #' @param Info.d Information at all decision analyses up to stage where study was stopped
 #' @param Info.i Information at all interim analyses up to stage where study was stopped
-#' @param ck decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis)
+#' @param ck,ck.unrestricted decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis).
+#' ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted always without.
 #' @param lk lower bounds up to stage where study was stopped
 #' @param uk upper bounds up to stage where study was stopped
 #' @param kMax maximum number of analyses
@@ -19,6 +20,7 @@
 FinalCI <- function(Info.d,  
                     Info.i,  
                     ck,  
+                    ck.unrestricted,  
                     lk,  
                     uk,  
                     kMax, 
@@ -35,6 +37,7 @@ FinalCI <- function(Info.d,
         FinalPvalue(Info.d=Info.d,
                     Info.i=Info.i,
                     ck=ck,
+                    ck.unrestricted=ck.unrestricted,
                     lk=lk,
                     uk=uk,
                     kMax=kMax,
@@ -49,6 +52,7 @@ FinalCI <- function(Info.d,
         1-FinalPvalue(Info.d=Info.d,
                       Info.i=Info.i,
                       ck=ck,
+                      ck.unrestricted=ck.unrestricted,
                       lk=lk,
                       uk=uk,
                       kMax=kMax,

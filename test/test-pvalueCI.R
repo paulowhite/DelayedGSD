@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 27 2022 (09:32) 
 ## Version: 
-## Last-Updated: jan 13 2023 (14:41) 
+## Last-Updated: feb 17 2023 (15:50) 
 ##           By: Brice Ozenne
-##     Update #: 44
+##     Update #: 48
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -333,11 +333,11 @@ test_that("Check consistency between p-value and boundary",{
 ## * Consistency between using p-value or boundaries for rejection
 test_that("Check consistency p-value/boundaries for rejection ",{
 
-    ## Stop at interim and statistic precisely at boundary at decision (method 1, cNotBelowFixedc)
+    ## ** Stop at interim and statistic precisely at boundary at decision (method 1, cNotBelowFixedc)
     ## same for method 2 (the calculation of the p-value is the same for both methods)
     test <- FinalPvalue(Info.d = 2.6923896504288,
                         Info.i = 2.45494676691245,
-                        ck = 1.69415016027832, 
+                        ck = 1.69415016027832, ck.unrestricted = 1.69415016027832, 
                         lk = 0.992173622977366,
                         uk = 2.27907351772183,
                         kMax = 2, 
@@ -345,14 +345,52 @@ test_that("Check consistency p-value/boundaries for rejection ",{
                         estimate = 1.69415016027832 / sqrt(2.6923896504288),## 1.64370753556795,
                         method = 2,
                         bindingFutility = TRUE, 
-                        cNotBelowFixedc = TRUE)
+                        cNotBelowFixedc = FALSE)
     GS <- ErrorSpend(I=2.45494676691245,rho=2,beta_or_alpha=0.025,Info.max=3.646459)
     expect_equal(as.double(test), GS, tol = 1e-5)
+
+    ck.unrestricted <- 1.69415016027832
+    constraint <- qnorm(0.975)
+    vec.estimate <- c(constraint+0.01,constraint,(constraint+ck.unrestricted)/2,ck.unrestricted)
+    test <- rep(NA, length(vec.estimate))
+    for(iE in 1:length(vec.estimate)){ ## iE <- 2
+        test[iE] <- FinalPvalue(Info.d = 2.6923896504288,
+                                Info.i = 2.45494676691245,
+                                ck = constraint, ck.unrestricted = ck.unrestricted, 
+                                lk = 0.992173622977366,
+                                uk = 2.27907351772183,
+                                kMax = 2, 
+                                delta = 0,
+                                estimate = vec.estimate[iE] / sqrt(2.6923896504288),
+                                method = 2,
+                                bindingFutility = TRUE, 
+                                cNotBelowFixedc = TRUE)
+    }
+    GS <- ErrorSpend(I=2.45494676691245,rho=2,beta_or_alpha=0.025,Info.max=3.646459)
+
+    ## aa <- mvtnorm::pmvnorm(lower = c(2.279074,1.959964),  
+    ##                        upper = c(Inf,Inf),
+    ##                        mean = c(0,0),
+    ##                        sigma = cbind(c(1, 0.95488723), c(0.95488723, 1)))
+    ## bb <- mvtnorm::pmvnorm(lower = c(2.279074,ck.unrestricted),  
+    ##                        upper = c(Inf,Inf),
+    ##                        mean = c(0,0),
+    ##                        sigma = cbind(c(1, 0.95488723), c(0.95488723, 1)))
+    ## cc <- mvtnorm::pmvnorm(lower = c(-Inf,1.959964),  
+    ##                        upper = c(0.9921736,Inf),
+    ##                        mean = c(0,0),
+    ##                        sigma = cbind(c(1, 0.95488723), c(0.95488723, 1)))
+    ## dd <- mvtnorm::pmvnorm(lower = c(-Inf,ck.unrestricted),  
+    ##                        upper = c(0.9921736,Inf),
+    ##                        mean = c(0,0),
+    ##                        sigma = cbind(c(1, 0.95488723), c(0.95488723, 1)))
+    ## test[2]-GS
+    ## (aa-bb) + (cc-dd)
     
-    ## Stop at interim and statistic precisely at boundary at decision (method 3)
+    ## ** Stop at interim and statistic precisely at boundary at decision (method 3)
     test <- FinalPvalue(Info.d = 12.58797814,  
                         Info.i = 10.60271846,
-                        ck = 1.897834,
+                        ck = 1.897834, ck.unrestricted = 1.897834,
                         lk = 0.22424864,  
                         uk = 2.52429353,  
                         kMax = 2, 
@@ -364,11 +402,11 @@ test_that("Check consistency p-value/boundaries for rejection ",{
     GS <- ErrorSpend(I=10.60271846,rho=2,beta_or_alpha=0.025,Info.max=22.71478)
     expect_equal(as.double(test), GS, tol = 1e-5)
     
-    ## Continue at interim and and statistic precisely at boundary at final (method 1, cNotBelowFixedc)
+    ## ** Continue at interim and and statistic precisely at boundary at final (method 1, cNotBelowFixedc)
     ## same for method 2 (the calculation of the p-value is the same for both methods)
     test <- FinalPvalue(Info.d = 2.75046695782793,
                         Info.i = c(2.5589317424577, 4.30612228613852),
-                        ck = 1.7253424172699,
+                        ck = 1.7253424172699, ck.unrestricted = 1.7253424172699,
                         lk = c(1.11127641794951, 2.01974814127831),
                         uk = c(2.2459290489148, 2.01974814127831),
                         kMax = 2,
@@ -376,13 +414,29 @@ test_that("Check consistency p-value/boundaries for rejection ",{
                         estimate = 2.01974814127831 / sqrt(4.30612228613852),
                         method = 1,
                         bindingFutility = TRUE, 
-                        cNotBelowFixedc = TRUE)
+                        cNotBelowFixedc = FALSE)
     expect_equal(as.double(test), 0.025, tol = 1e-5)
     
-    ## Continue at interim and and statistic precisely at boundary at final (method 3)
+    vec.estimate <- 2.01974814127831 + c(-0.1,-0.01,0,0.01,0.1)
+    test <- rep(NA, length(vec.estimate))
+    for(iE in 1:length(vec.estimate)){ ## iE <- 2
+        test[iE] <- FinalPvalue(Info.d = 2.75046695782793,
+                                Info.i = c(2.5589317424577, 4.30612228613852),
+                                ck = 1.7253424172699, ck.unrestricted = qnorm(0.975), 
+                                lk = c(1.11127641794951, 2.01974814127831),
+                                uk = c(2.2459290489148, 2.01974814127831),
+                                kMax = 2, 
+                                delta = 0,
+                                estimate = vec.estimate[iE] / sqrt(4.30612228613852),
+                                method = 2,
+                                bindingFutility = TRUE, 
+                                cNotBelowFixedc = TRUE)
+    }
+
+    ## ** Continue at interim and and statistic precisely at boundary at final (method 3)
     test <- FinalPvalue(Info.d = 12.58797814,  
                         Info.i = c(10.60271846, 24.67092824),
-                        ck = 1.897834,
+                        ck = 1.897834, ck.unrestricted = 1.897834,
                         lk = c(0.22424864, 1.99362293),  
                         uk = c(2.52429353, 1.99362293),  
                         kMax = 2, 

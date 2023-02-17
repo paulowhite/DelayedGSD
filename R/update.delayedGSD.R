@@ -226,7 +226,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         delta <- stats::confint(object)
         Info.i <- object$Info.i
         Info.d <- object$Info.d
-        ck <- object$ck.unrestricted
+        ck <- object$ck
+        ck.unrestricted <- object$ck.unrestricted
         lk <- object$lk
         uk <- object$uk
 
@@ -236,6 +237,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
             Info.d <- Info.d[-index.skip]
             Info.i <- Info.i[-index.skip]
             ck <- ck[-index.skip]
+            ck.unrestricted <- ck.unrestricted[-index.skip]
             uk <- uk[-index.skip]
             lk <- lk[-index.skip]
             kMax <- kMax - length(index.skip)
@@ -248,6 +250,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
             resP <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
                                 Info.i = Info.i[1:k],
                                 ck = ck[1:min(k,kMax-1)],
+                                ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],
                                 lk = lk[1:k],  
                                 uk = uk[1:k],  
                                 kMax = kMax, 
@@ -265,6 +268,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
             resCI <- FinalCI(Info.d = Info.d[1:min(k,kMax-1)],  
                              Info.i = Info.i[1:k],
                              ck = ck[1:min(k,kMax-1)],   
+                             ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],   
                              lk = lk[1:k],  
                              uk = uk[1:k],  
                              kMax = kMax, 
@@ -288,6 +292,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
             delta.MUE[1,"estimate"] <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
                                                      Info.i = Info.i[1:k],
                                                      ck = ck[1:min(k,kMax-1)],
+                                                     ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],   
                                                      lk = lk[1:k],  
                                                      uk = uk[1:k],  
                                                      kMax = kMax, 
