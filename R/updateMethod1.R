@@ -147,7 +147,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
         }else if(type.k=="final"){
             alphaSpent[k] <- alpha
             alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
-            betaSpent[k] <- beta
+            betaSpent[k] <- beta ## ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
             betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]
             lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
             upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]

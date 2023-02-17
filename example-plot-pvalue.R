@@ -73,6 +73,7 @@ if(e.GSDD$conclusion["interim",1]=="continue"){
                           ddf = "nlme", getinfo = TRUE, trace = TRUE)
     e.GSDF <- update(e.GSDD, delta = e.lmmF, trace = FALSE)
     summary(e.GSDF)
+    plot(e.GSDF)
     ## confint(debug.GSD)
 
     seqC <- c(e.GSDF$ck.unrestricted, e.GSDF$uk[2])

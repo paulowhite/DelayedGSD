@@ -220,7 +220,7 @@ plot.delayedGSD <- function(x,
     }
 
     x.decision <- coef(x, type = "decision")
-    if(x.decision["comment",k]!="Imax reached"){
+    if(!is.na(x.decision["comment",k]) && x.decision["comment",k]!="Imax reached"){
         graphics::text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=2)
     }
     
