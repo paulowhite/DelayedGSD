@@ -15,6 +15,7 @@
   xlim = NULL,
   ylim = NULL,
   legend = TRUE,
+  legend.x = NULL,
   legend.ncol = 1,
   legend.cex = 1,
   add.arrow = FALSE,
@@ -47,6 +48,8 @@ Can also be \code{"only"} to only display planned boundaries.}
 \item{ylim}{range of the y axis}
 
 \item{legend}{should a caption be added?}
+
+\item{legend.x}{location of the legend on the plot.}
 
 \item{legend.ncol}{number of column in the caption}
 

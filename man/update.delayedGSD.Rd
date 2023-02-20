@@ -11,6 +11,7 @@
   Info.d,
   k = NULL,
   type.k = NULL,
+  overrule.futility = FALSE,
   p.value = TRUE,
   ci = TRUE,
   estimate = TRUE,

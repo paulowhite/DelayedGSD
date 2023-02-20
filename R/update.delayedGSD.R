@@ -71,11 +71,19 @@
 ## * update.delayedGSD (code)
 #' @export
 update.delayedGSD <- function(object, delta, Info.i, Info.d, 
-                              k = NULL, type.k = NULL,
+                              k = NULL, type.k = NULL, overrule.futility = FALSE,
                               p.value = TRUE, ci = TRUE, estimate = TRUE,
                               trace = TRUE, ...){
 
     
+    if(overrule.futility){        
+        if(any(names(match.call()[-1]) %in% c("object","overrule.futility") == FALSE)){
+            args.ignore <- names(match.call()[-1])[names(match.call()[-1]) %in% c("object","overrule.futility") == FALSE]
+            warning("Arguments \"",paste(args.ignore, collapse="\", \""),"\" are ignored when overruling the futility bound. \n")
+        }
+            
+        return(.overrrule(object))
+    }
 
     ## ** normalize user input
     kMax <- object$kMax
@@ -491,4 +499,23 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     return(list(k=k,
                 type.k = type.k,
                 type.update = type.update))
+}
+
+## * .overrrule
+.overrrule <- function(object){
+    kMax <- object$kMax
+    object.type.k <- object$stage$type
+    object.k <- object$stage$k
+
+    if(object.type.k != "interim"){
+        stop("Can only overrule a futility boundary at an interim analysis. \n")
+    }
+    if(object$conclusion["interim",object.k]=="continue"){
+        message("No need to overrule the futility bound as it has been decided to continue. \n")
+    }else{
+        object$conclusion["interim",object.k] <- "continue"
+        object$conclusion["reason.interim",object.k] <- "overrule futility"
+    }
+
+    return(object)
 }

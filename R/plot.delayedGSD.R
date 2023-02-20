@@ -12,6 +12,7 @@
 #' Can also be \code{"only"} to only display planned boundaries.
 #' @param predicted [logical] Should the predicted information/boundaries at decision based on interim data be output (when relevant).
 #' @param legend should a caption be added?
+#' @param legend.x location of the legend on the plot.
 #' @param legend.ncol number of column in the caption
 #' @param legend.cex character expansion factor for the text in the legend.
 #' @param add.arrow [logical] should arrows indicating the ordering of the space be added?
@@ -42,6 +43,7 @@ plot.delayedGSD <- function(x,
                             xlim = NULL, 
                             ylim = NULL, 
                             legend=TRUE,  
+                            legend.x=NULL,
                             legend.ncol=1,
                             legend.cex=1,
                             add.arrow=FALSE,
@@ -153,16 +155,22 @@ plot.delayedGSD <- function(x,
     yl <- lk[!is.na(lk) & !is.infinite(lk)]   
     yc <- ck[!is.na(ck) & !is.infinite(ck)]
     yh <- stats::qnorm(1-alpha)
-    whereleg <- "bottomright"
     ylab <- "Stopping boundary (Z-statistic)"
  
     if(type=="P"){
-        whereleg <- "topleft"
+        if(is.null(legend.x)){
+            legend.x <- "topleft"
+        }
         ylab <- "Stopping boundary (P-value)"
         yu <- 1-stats::pnorm(uk)
         yl <- 1-stats::pnorm(lk)
         yc <- 1-stats::pnorm(ck)
         yh <- alpha
+    }else{
+        if(is.null(legend.x)){
+            legend.x <- "bottomright"
+        }
+    
     }
     if(type=="E"){
         ylab <- "Stopping boundary (Effect estimate)"
@@ -283,7 +291,7 @@ plot.delayedGSD <- function(x,
             pt.bg.legend <- c(pt.bg.legend,"purple")
         }
         
-        graphics::legend(whereleg,
+        graphics::legend(x = legend.x,
                          legend = text.legend,
                          lty = lty.legend,
                          pch = pch.legend,

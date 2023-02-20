@@ -134,7 +134,6 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
             df.printBound$Ebound[conclusion.interim.print=="S-Imax"] <- as.character(NA)
             df.printBound$statistic.interim[conclusion.interim.print=="S-Imax"] <- as.character(NA)
         }
-        
         df.printBound2 <- data.frame("stage" = df.printBound$stage,
                                      "Futility boundary" = df.printBound$Fbound,
                                      "Efficacy boundary" = df.printBound$Ebound,
@@ -314,6 +313,12 @@ summary.delayedGSD <- function(x, planned = NULL, predicted = TRUE, digits = 5, 
                     return("C-Info")
                 }else{
                     return("continue (decreasing information)")
+                }
+            }else if(conclusion["reason.interim",iK]=="overrule futility"){
+                if(abreviated){
+                    return("C-OF")
+                }else{
+                    return("continue (overrule futility)")
                 }
             }
         }else if(conclusion["interim",iK]=="stop"){

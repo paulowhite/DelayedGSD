@@ -8,6 +8,7 @@ FinalPvalue(
   Info.d,
   Info.i,
   ck,
+  ck.unrestricted,
   lk,
   uk,
   kMax,
@@ -23,7 +24,8 @@ FinalPvalue(
 
 \item{Info.i}{Information at all interim analyses up to stage where study was stopped (should include the information at the final analysis if stopped at final analysis)}
 
-\item{ck}{decision boundaries for all decision analyses up to stage where study was stopped (excepted the final analysis)}
+\item{ck, ck.unrestricted}{decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis).
+ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted always without.}
 
 \item{lk}{lower bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)}
 
