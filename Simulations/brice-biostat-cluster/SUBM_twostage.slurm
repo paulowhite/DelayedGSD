@@ -33,7 +33,7 @@ R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar
                       ## cd /projects/biostat01/people/hpl802/DelayedGSD/
 
 ## clean outputs      ## rm -r output/slurm/*;
-                      ## rm -r output/2stage_nomissing_binding_ar5_power/*;rm -r output/2stage_nomissing_binding_ar5_type1/*;
+                      ## rm -r output/2stage_nomissing_binding_ar5_power/*;rm -r output/2stage_nomissing_binding_ar5_typeI/*;
                       ## rm -r output/2stage_missing_binding_ar5_power/*;rm -r output/2stage_missing_binding_ar5_typeI/*;
                       ## rm -r output/2stage_missing_binding_ar10_power/*;rm -r output/2stage_missing_binding_ar10_typeI/*;
                       ## rm -r output/2stage_missing_nonbinding_ar5_power/*;rm -r output/2stage_missing_nonbinding_ar5_typeI/*;
@@ -45,7 +45,7 @@ R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar
 
 
 ## clean results      ## 
-                      ## rm -r Results/2stage_nomissing_binding_ar5_power/*;rm -r Results/2stage_nomissing_binding_ar5_type1/*;
+                      ## rm -r Results/2stage_nomissing_binding_ar5_power/*;rm -r Results/2stage_nomissing_binding_ar5_typeI/*;
                       ## rm -r Results/2stage_missing_binding_ar5_power/*;rm -r Results/2stage_missing_binding_ar5_typeI/*;
                       ## rm -r Results/2stage_missing_binding_ar10_power/*;rm -r Results/2stage_missing_binding_ar10_typeI/*;
                       ## rm -r Results/2stage_missing_nonbinding_ar5_power/*;rm -r Results/2stage_missing_nonbinding_ar5_typeI/*;
@@ -56,7 +56,7 @@ R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar
                       ## rm -r Results/2stage_missing_fixC_nonbinding_ar10_power/*;rm -r Results/2stage_missing_fixC_nonbinding_ar10_typeI/*;
 
 ## submission command ## sbatch SUBM_twostage.slurm
-## submission output  ## Submitted batch job 3145819 (time using C-c t: fredag 23-01-13 at 15:12) 
+## submission output  ## Submitted batch job 3223086 (time using C-c t: mandag 23-02-20 at 19:17) 
 
 ## init               ## module module load gcc/11.2.0 R/4.1.2
                       ## cat .bash_profile (in the root directory on the server to visualize the current configuration)

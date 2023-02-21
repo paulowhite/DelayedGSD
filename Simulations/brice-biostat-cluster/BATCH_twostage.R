@@ -13,15 +13,14 @@ if(length(args)>0){
     }
 }
 if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on the server via slurm, iter_sim will be NA)
-    iter_sim <- 59
+    iter_sim <- 1
     n.iter_sim <- 100
 
-    ## scenario 5
     if("missing" %in% ls() == FALSE){ missing <- TRUE }
-    if("binding" %in% ls() == FALSE){ binding <- TRUE }
+    if("binding" %in% ls() == FALSE){ binding <- FALSE }
     if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- TRUE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
-    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
+    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0 }
 }
 
 name <- ""
@@ -137,7 +136,7 @@ RES <- NULL
 ## * Loop
 allj <- seq(1+(iter_sim-1)*nsim, iter_sim*nsim, by = 1)
 #allj <- 572:1000
-for(j in allj){ ## j <- 51 ## 5
+for(j in allj){ ## j <- 1 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
   #myseedi <- 955535360
@@ -213,7 +212,7 @@ for(j in allj){ ## j <- 51 ## 5
                                       export.decision = TRUE)
   }
   ## currentGSD[[1]]
-  ## plot(currentGSD[[1]])
+  ## plot(currentGSD[[1]], legend.x = "bottomleft")
   
   
   out.decision <- vector(mode = "list", length = 3)
@@ -240,22 +239,25 @@ for(j in allj){ ## j <- 51 ## 5
                                              export.decision = TRUE)
       
       
-    }else{
-      ## update information
-      currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, k = 1, type.k = "decision", trace = FALSE)
+      }else{
+          if(out.interim[[iMeth]]$decision == "stop"){ ## overrule futility boundary
+              currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], overrule.futility = TRUE)
+          }
+          ## update information
+          currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, k = 1, type.k = "decision", trace = FALSE)
       
-      out.decision[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
-                                         export.statistic = FALSE,
-                                         export.ML = FALSE,
-                                         export.MUE = FALSE,
-                                         export.info = TRUE,
-                                         export.predinfo = FALSE,
-                                         export.boundary = TRUE,
-                                         export.decision = FALSE)
-    }
+          out.decision[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
+                                             export.statistic = FALSE,
+                                             export.ML = FALSE,
+                                             export.MUE = FALSE,
+                                             export.info = TRUE,
+                                             export.predinfo = FALSE,
+                                             export.boundary = TRUE,
+                                             export.decision = FALSE)
+      }
   }
-  # }}}
-  # {{{ Analyze data at decision
+                                        # }}}
+                                        # {{{ Analyze data at decision
   
   ## ** finale
   out.final <- vector(mode = "list", length = 3)
@@ -263,7 +265,7 @@ for(j in allj){ ## j <- 51 ## 5
     dFinal <- d[1:nGSD[iMeth],]
     lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     
-    if(out.interim[[iMeth]]$decision == "stop" && (out.interim[[iMeth]]$reason!="futility" || binding == TRUE || delta.factor > 0)){
+    if(currentGSD[[iMeth]]$stage[,"type"]=="decision"){
       
       out.final[[iMeth]] <- exportGSD(NA)
       

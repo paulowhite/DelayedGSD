@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt  7 2022 (16:40) 
 ## Version: 
-## Last-Updated: jan 19 2023 (11:56) 
+## Last-Updated: feb 20 2023 (14:27) 
 ##           By: Brice Ozenne
-##     Update #: 66
+##     Update #: 71
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -25,7 +25,7 @@ export <- TRUE
 
 ## * function used to collect the results from different files
 loadRes <- function(path, tempo.file = FALSE, type = NULL,
-                    export.attribute = NULL, trace = TRUE){
+                    export.attribute = NULL, trace = 2, space = "     "){
     all.files <- list.files(path)
     file.tempo <- grep("(tempo)",all.files,value = TRUE)
     file.final <- setdiff(all.files, file.tempo)
@@ -40,7 +40,12 @@ loadRes <- function(path, tempo.file = FALSE, type = NULL,
     }
 
     n.file <- length(file.read)
-
+    if(n.file==0){
+        if(trace>1){
+            cat(space,"No file found in ",path,". \n\n",sep="")
+        }
+        return(NULL)
+    }
     myApply <- switch(as.character(as.logical(trace)),
                       "TRUE" = pbapply::pblapply,
                       "FALSE" = lapply)
@@ -64,7 +69,15 @@ loadRes <- function(path, tempo.file = FALSE, type = NULL,
             return(iOut)
         }
     }))
+
     out <- do.call(rbind, ls.out)
+
+    Urow <- unique(sapply(ls.out, NROW))
+    if(length(Urow)==1){
+        cat(space,length(ls.out)," files with ",Urow," lines \n\n",sep="")
+    }else{
+        cat(space,length(ls.out)," files, with from ",min(Urow)," to ",max(Urow)," lines \n\n",sep="")
+    }
     return(out)
 }
 
@@ -78,7 +91,6 @@ for(iDir in dir.2stage){ ## iDir <- dir.2stage[1]
     cat(which(iDir == dir.2stage),") read \'",iDir,"\' \n",
         "     save in \'",iName,"\' \n", sep = "")
     assign(x = iName, value = loadRes(iDir))
-    cat("     ",length(unique(get(iName)$file))," files, with from ",min(get(iName)[,.N,by="file"][["N"]])," to ",min(get(iName)[,.N,by="file"][["N"]])," lines \n\n",sep="")
     if(export){
         saveRDS(eval(parse(text=iName)), file = file.path(path.results,paste0(iName,".rds") ))
     }
