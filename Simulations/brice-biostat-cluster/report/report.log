@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (MiKTeX 21.8) (preloaded format=pdflatex 2021.8.26)  20 JAN 2023 17:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (MiKTeX 21.8) (preloaded format=pdflatex 2021.8.26)  21 FEB 2023 17:32
 entering extended mode
 **./report.tex
 (report.tex
@@ -1287,81 +1287,69 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <8> on input line 141.
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <6> on input line 141.
-
-(C:\Program Files\MiKTeX 2.9\tex/latex/listings\lstlang1.sty
-File: lstlang1.sty 2020/03/24 1.8d listings language file
-)
-(C:\Program Files\MiKTeX 2.9\tex/latex/listings\lstlang2.sty
-File: lstlang2.sty 2020/03/24 1.8d listings language file
-)
-(C:\Program Files\MiKTeX 2.9\tex/latex/listings\lstlang3.sty
-File: lstlang3.sty 2020/03/24 1.8d listings language file
-)
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 149.
  [1
 
 {C:/Users/hpl802/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
+<./figures/gg-pvalue-density.pdf, id=53, 867.24pt x 722.7pt>
+File: ./figures/gg-pvalue-density.pdf Graphic file (type pdf)
+<use ./figures/gg-pvalue-density.pdf>
+Package pdftex.def Info: ./figures/gg-pvalue-density.pdf  used on input line 16
+4.
+(pdftex.def)             Requested size: 430.00462pt x 358.3386pt.
+<./figures/gg-pvalue2-density.pdf, id=54, 867.24pt x 722.7pt>
+File: ./figures/gg-pvalue2-density.pdf Graphic file (type pdf)
+<use ./figures/gg-pvalue2-density.pdf>
+Package pdftex.def Info: ./figures/gg-pvalue2-density.pdf  used on input line 1
+70.
+(pdftex.def)             Requested size: 430.00462pt x 358.3386pt.
 
-LaTeX Warning: File `./figures/gg-pvalue-density.pdf' not found on input line 1
-72.
 
-
-! Package pdftex.def Error: File `./figures/gg-pvalue-density.pdf' not found: u
-sing draft setting.
-
-See the pdftex.def package documentation for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.172 ...xtwidth]{./figures/gg-pvalue-density.pdf}
-                                                  
-Try typing  <return>  to proceed.
-If that doesn't work, type  X <return>  to quit.
+LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 [2
 
-]
+ <./figures/gg-pvalue-density.pdf>] [3 <./figures/gg-pvalue2-density.pdf>]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
-84.
- (C:\Program Files\MiKTeX 2.9\tex/latex/lm\ts1lmr.fd
-File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-) [3
+82.
 
-] [4
+(C:\Program Files\MiKTeX 2.9\tex/latex/lm\ts1lmr.fd
+File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+) [4
 
 ] [5
 
-]
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 268.
- [6
+] [6
 
 ]
-[7]
-<./figures/gg-estimate-density.pdf, id=93, 867.24pt x 722.7pt>
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <5> on input line 262.
+ [7
+
+]
+<./figures/gg-estimate-density.pdf, id=106, 867.24pt x 722.7pt>
 File: ./figures/gg-estimate-density.pdf Graphic file (type pdf)
 <use ./figures/gg-estimate-density.pdf>
 Package pdftex.def Info: ./figures/gg-estimate-density.pdf  used on input line 
-328.
+321.
 (pdftex.def)             Requested size: 430.00462pt x 358.3386pt.
-<./figures/gg-estimate-density-scenario1.pdf, id=94, 963.6pt x 448.67625pt>
+<./figures/gg-estimate-density-scenario1.pdf, id=107, 963.6pt x 448.67625pt>
 File: ./figures/gg-estimate-density-scenario1.pdf Graphic file (type pdf)
 <use ./figures/gg-estimate-density-scenario1.pdf>
 Package pdftex.def Info: ./figures/gg-estimate-density-scenario1.pdf  used on i
-nput line 334.
+nput line 327.
 (pdftex.def)             Requested size: 344.005pt x 160.1746pt.
  [8
 
  <./figures/gg-estimate-density.pdf> <./figures/gg-estimate-density-scenario1.p
 df>]
-<./figures/gg-estimateC-density.pdf, id=117, 867.24pt x 722.7pt>
+<./figures/gg-estimateC-density.pdf, id=130, 867.24pt x 722.7pt>
 File: ./figures/gg-estimateC-density.pdf Graphic file (type pdf)
 <use ./figures/gg-estimateC-density.pdf>
 Package pdftex.def Info: ./figures/gg-estimateC-density.pdf  used on input line
- 343.
+ 336.
 (pdftex.def)             Requested size: 430.00462pt x 358.3386pt.
- [9
+
+[9
 
  <./figures/gg-estimateC-density.pdf>] [10
 
@@ -1378,21 +1366,20 @@ Package pdftex.def Info: ./figures/gg-estimateC-density.pdf  used on input line
 \tf@loc=\write7
 \openout7 = `report.loc'.
 
-
-[14
+ [14
 
 ] (report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: B2DE86249B949892048DF5A03BC36C65;1569.
  ) 
 Here is how much of TeX's memory you used:
- 28807 strings out of 478868
- 504425 string characters out of 2856724
- 1094961 words of memory out of 3000000
- 46066 multiletter control sequences out of 15000+600000
- 471590 words of font info for 87 fonts, out of 8000000 for 9000
+ 27721 strings out of 478868
+ 492834 string characters out of 2856724
+ 819227 words of memory out of 3000000
+ 45007 multiletter control sequences out of 15000+600000
+ 467896 words of font info for 83 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 114i,8n,117p,493b,1921s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 114i,8n,117p,493b,362s stack positions out of 5000i,500n,10000p,200000b,80000s
 pdfTeX warning (dest): name{Hfootnote.3} has been referenced but does not exi
 st, replaced by a fixed one
 
@@ -1413,9 +1400,9 @@ ram Files/MiKTeX 2.9/fonts/type1/public/lm/lmr8.pfb><C:/Program Files/MiKTeX 2.
 9/fonts/type1/public/lm/lmsy10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/pub
 lic/lm/lmtt10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmtt12.pfb
 >
-Output written on report.pdf (14 pages, 894641 bytes).
+Output written on report.pdf (14 pages, 1260992 bytes).
 PDF statistics:
- 210 PDF objects out of 1000 (max. 8388607)
- 36 named destinations out of 1000 (max. 500000)
- 100 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 224 PDF objects out of 1000 (max. 8388607)
+ 32 named destinations out of 1000 (max. 500000)
+ 110 words of extra memory for PDF output out of 10000 (max. 10000000)
 

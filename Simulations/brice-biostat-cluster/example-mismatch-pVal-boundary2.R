@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 20 2023 (17:36) 
 ## Version: 
-## Last-Updated: jan 27 2023 (14:14) 
+## Last-Updated: feb 21 2023 (17:54) 
 ##           By: Brice Ozenne
-##     Update #: 6
+##     Update #: 7
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,98 +15,172 @@
 ## 
 ### Code:
 
+library(DelayedGSD)
+source("FCT.R")
+
+## * example with crazy p-value
+ar <- 10
+binding <- FALSE
+fixC <- FALSE
+delta.factor <- switch("power",
+                       "power" = 0.6,
+                       "typeI" = 0)
+
+method <- 1
+seed <- 520254210
+n <- ceiling(2*2*((2.310865/0.6)^2)*(qnorm(1-0.2)-qnorm(0.025))^2)/(1-(0.04807692+0.05769231))
+
+debug.plannedB <- CalcBoundaries(kMax = 2,  
+                                 alpha = 0.025, 
+                                 beta = 0.2,  
+                                 InfoR.i = c(0.58, 1.00),  
+                                 InfoR.d = c(0.68,1),  
+                                 rho_alpha = 2,  
+                                 rho_beta = 2,  
+                                 method = method,  
+                                 cNotBelowFixedc = fixC,
+                                 bindingFutility= binding,
+                                 delta = 0.6)
+inflationFactor <- debug.plannedB$planned$InflationFactor
+nGSD <- ceiling(n*inflationFactor)
+
+df.sim <- GenData(n = nGSD, 
+                  N.fw = 2,
+                  rand.block = c(1,1,0,0),
+                  allsd = c(2.5,2.1,2.4),
+                  mean0 = c(10,0,0),
+                  delta = c(0,0.5,1)*delta.factor,
+                  ar = (0.86*2)*2*ar,
+                  cor.01.1 = -0.15,
+                  cor.ij.1 = 0.68,
+                  cor.0j.1 = -0.27,
+                  seed = seed,
+                  MissProb = matrix(c(0.04807692, 0.05769231, 0.00961538, 0.88461538), 
+                                    nrow = 2, 
+                                    ncol = 2, 
+                                    dimnames = list(c("V1 missing", "V1 not missing"),c("V2 missing", "V2 not missing")) 
+                                    ),
+                  DigitsOutcome = 2,
+                  TimeFactor = 14,
+                  DigitsTime = 0)$d
+thets <- c(218,218,218)
+nGSD <- c(486,486,486)
+
+## ** interim
+SelectData(df.sim,t=thets[method])
+
+debug.lmmI <- analyzeData(SelectData(df.sim,t=thets[method]),
+                          ddf = "nlme", data.decision = sum(df.sim$t1 <= thets[method] + 1.50001*14), getinfo = TRUE, trace = TRUE)
+debug.GSD <- update(debug.plannedB, delta = debug.lmmI, trace = TRUE)
+
+## ** decision
+debug.lmmD <- analyzeData(df.sim[which(df.sim$t1 <= thets[method] + 1.50001*14),],
+                          ddf = "nlme", getinfo = TRUE, trace = TRUE)
+debug.GSD <- update(debug.GSD, delta = debug.lmmD, trace = FALSE)
+summary(debug.GSD)
+
 ## * example where concluding for futility but with significant p-value
-CalcBoundaries(kMax = 2,
-               alpha = 0.025,
-               beta = 0.2,
-               InfoR.i = c(0.58, 1),
-               InfoR.d = c(0.68, 1),
-               rho_alpha = 2,
-               rho_beta = 2,
-               method = 1, 
-               cNotBelowFixedc = TRUE,
-               bindingFutility = TRUE,
-               delta = 0.6)
+ar <- 10
+binding <- FALSE
+fixC <- FALSE
+delta.factor <- switch("power",
+                       "power" = 0.6,
+                       "typeI" = 0)
 
-d <- GenData(n = 553,
-             N.fw = 2,
-             rand.block = c(1, 1, 0, 0),
-             allsd = c(2.5, 2.1, 2.4),
-             mean0 = c(10, 0, 0),
-             delta = c(0, 0.3, 0.6),
-             ar = 34.4, 
-             cor.01.1 = -0.15,
-             cor.ij.1 = 0.68,
-             cor.0j.1 = -0.27,
-             seed = 490137693, 
-             MissProb = structure(c(0.0480769230769231, 0.0576923076923077, 
-                                    0.00961538461538462, 0.884615384615385),
-                                  dim = c(2L, 2L), dimnames = list(c("V1 missing", "V1 not missing"), c("V2 missing", "V2 not missing"))),
-             DigitsOutcome = 2,
-             TimeFactor = 14,
-             DigitsTime = 0)$d
+method <- 1
+seed <- 520254210
+n <- ceiling(2*2*((2.310865/0.6)^2)*(qnorm(1-0.2)-qnorm(0.025))^2)/(1-(0.04807692+0.05769231))
 
-myBound0 <- CalcBoundaries(kMax=theK,
-                           alpha=theAlpha,
-                           beta=theBeta,
-                           InfoR.i=c(0.5,1),
-                           rho_alpha=2,
-                           rho_beta=2,
-                           method=1,
-                           delta=theDelta,
-                           InfoR.d=0.55,
-                           cNotBelowFixedc=TRUE)
-myBound0
-    
-theAR <- 10  #accrual rate (pt per month)
-theDelay <- 0.7500001  #time in months to process data
-tau.i <- theData$t3[theN + ceiling(theAR*theDelay)] #time point at which to do IA
+debug.plannedB <- CalcBoundaries(kMax = 2,  
+                                 alpha = 0.025, 
+                                 beta = 0.2,  
+                                 InfoR.i = c(0.58, 1.00),  
+                                 InfoR.d = c(0.68,1),  
+                                 rho_alpha = 2,  
+                                 rho_beta = 2,  
+                                 method = method,  
+                                 cNotBelowFixedc = fixC,
+                                 bindingFutility= binding,
+                                 delta = 0.6)
+inflationFactor <- debug.plannedB$planned$InflationFactor
+nGSD <- ceiling(n*inflationFactor)
 
-#### Analyse data at the first interim ####
-theInterimData <- SelectData(theData, t = 0.5*tau.i)
-myLmmI <- analyzeData(theInterimData)
-myInterim1 <- update(myBound0, delta = myLmmI, trace = FALSE) ## k = 1, analysis = "interim"
-myInterim1
+df.sim <- GenData(n = nGSD, 
+                  N.fw = 2,
+                  rand.block = c(1,1,0,0),
+                  allsd = c(2.5,2.1,2.4),
+                  mean0 = c(10,0,0),
+                  delta = c(0,0.5,1)*delta.factor,
+                  ar = (0.86*2)*2*ar,
+                  cor.01.1 = -0.15,
+                  cor.ij.1 = 0.68,
+                  cor.0j.1 = -0.27,
+                  seed = seed,
+                  MissProb = matrix(c(0.04807692, 0.05769231, 0.00961538, 0.88461538), 
+                                    nrow = 2, 
+                                    ncol = 2, 
+                                    dimnames = list(c("V1 missing", "V1 not missing"),c("V2 missing", "V2 not missing")) 
+                                    ),
+                  DigitsOutcome = 2,
+                  TimeFactor = 14,
+                  DigitsTime = 0)$d
+thets <- c(218,218,218)
+nGSD <- c(486,486,486)
 
-#### Analyse data at the final stage ####
-theFinalData <- theData[theData$id %in% c(theInterimData$id,max(theInterimData$id)+1:2),]
-myLmmF <- analyzeData(theFinalData)
-myFinal <- update(myInterim1, delta = myLmmF, trace = FALSE) ## k = 2, analysis = "final"
+## ** interim
+SelectData(df.sim,t=thets[method])
 
-## decreasing information
-myLmmF$information - myLmmI$information
+debug.lmmI <- analyzeData(SelectData(df.sim,t=thets[method]),
+                          ddf = "nlme", data.decision = sum(df.sim$t1 <= thets[method] + 1.50001*14), getinfo = TRUE, trace = TRUE)
+debug.GSD <- update(debug.plannedB, delta = debug.lmmI, trace = TRUE)
 
-## issue with the calculation in updateMethod1:
+## ** decision
+debug.lmmD <- analyzeData(df.sim[which(df.sim$t1 <= thets[method] + 1.50001*14),],
+                          ddf = "nlme", getinfo = TRUE, trace = TRUE)
+if(debug.GSD$conclusion["interim",1]=="stop"){
+    debug.GSD <- update(debug.GSD, delta = debug.lmmD, trace = FALSE)
+}else{
+    debug.GSD <- update(debug.GSD, delta = debug.lmmD, k = 1, type.k = "decision", trace = FALSE)
+}
+debug.GSD$ck
+debug.GSD$ck.unrestricted
 
-sigmaZk.debug <- matrix(c(1,sqrt(myInterim1$Info.i[1]/myLmmF$information[1]),sqrt(myInterim1$Info.i[1]/myLmmF$information[1]),1),2,2)
-sigmaZk.debug
+## ** final
+if(debug.GSD$conclusion["interim",1]=="continue"){
+    debug.lmmF <- analyzeData(df.sim[1:nGSD[method],],
+                              ddf = "nlme", getinfo = TRUE, trace = TRUE)
+    debugF.GSD <- update(debug.GSD, delta = debug.lmmF, trace = FALSE)
+    summary(debugF.GSD)
+    ## confint(debug.GSD)
 
-uniroot(function(x){pmvnorm(lower = c(1.336678,x),
-                            upper = c(2.172381,Inf),
-                            mean=rep(0,2),
-                            sigma= sigmaZk.debug,
-                            abseps = 1e-06) - 0.01008653},
-        lower = 1.336678,
-        upper = 2.172381,
-        tol = 1e-06)$root
-
+}    
 
 ## * how to get there
-## xxx <- res2stage[decision=="futility" & p.value_MUE<0.025,
-##                  .(scenario,missing,binding,fixC,ar,hypo,method,stage,type,statistic,p.value_ML,p.value_MUE,
-##                    ck,decision,reason,seed)]
-## xxx[,.N,by=c("seed","scenario")][which.max(N)]
-## res2stage[seed == 490137693 & scenario == 5, .SD, .SDcols = names(xxx)]
-## ##    scenario missing binding fixC ar  hypo method stage     type statistic p.value_ML p.value_MUE       ck decision   reason      seed
-## ## 1:        5    TRUE    TRUE TRUE 10 power      1     1  interim  2.542933         NA          NA       NA     stop efficacy 490137693
-## ## 2:        5    TRUE    TRUE TRUE 10 power      1     1 decision  1.918589 0.02771629 0.005601226 1.959964 futility     <NA> 490137693
-## ## 3:        5    TRUE    TRUE TRUE 10 power      1     2    final        NA         NA          NA       NA     <NA>     <NA> 490137693
-## ## 4:        5    TRUE    TRUE TRUE 10 power      2     1  interim  2.542933         NA          NA       NA     stop efficacy 490137693
-## ## 5:        5    TRUE    TRUE TRUE 10 power      2     1 decision  1.918589 0.02771629 0.005502683 1.959964 futility     <NA> 490137693
-## ## 6:        5    TRUE    TRUE TRUE 10 power      2     2    final        NA         NA          NA       NA     <NA>     <NA> 490137693
-## ## 7:        5    TRUE    TRUE TRUE 10 power      3     1  interim  2.542933         NA          NA       NA     stop efficacy 490137693
-## ## 8:        5    TRUE    TRUE TRUE 10 power      3     1 decision  1.918589 0.02771629 0.006722260 1.959964 futility     <NA> 490137693
-## ## 9:        5    TRUE    TRUE TRUE 10 power      3     2    final        NA         NA          NA       NA     <NA>     <NA> 490137693
+if(FALSE){
+    library(data.table)
+    res2stage <- readRDS("c:/Users/hpl802/Documents/Github/DelayedGSD/Simulations/brice-biostat-cluster/Results-built/res2stage.rds")
+    xxx <- res2stage[decision=="futility" & fixC==FALSE & p.value_MUE<0.025,
+                     .(scenario,missing,binding,fixC,ar,hypo,method,stage,type,statistic,p.value_ML,p.value_MUE,
+                       ck,decision,reason,seed)]
+    xxx[,.N,by=c("seed","scenario")][which.max(N)]
+    res2stage[seed == 520254210 & scenario == 13 & method == 1, .SD, .SDcols = names(xxx)]
+    ##    scenario missing binding  fixC ar  hypo method stage     type statistic p.value_ML p.value_MUE       ck decision              reason      seed
+    ## 1:       13    TRUE   FALSE FALSE 10 power      1     1  interim  1.313436         NA          NA       NA continue no boundary crossed 520254210
+    ## 2:       13    TRUE   FALSE FALSE 10 power      1     1 decision        NA         NA          NA       NA     <NA>                <NA> 520254210
+    ## 3:       13    TRUE   FALSE FALSE 10 power      1     2    final  2.019077 0.02187061  0.02472083 2.038263 futility                <NA> 520254210
 
+
+    res2stage[seed == 490137693 & scenario == 5, .SD, .SDcols = names(xxx)]
+    ##    scenario missing binding fixC ar  hypo method stage     type statistic p.value_ML p.value_MUE       ck decision   reason      seed
+    ## 1:        5    TRUE    TRUE TRUE 10 power      1     1  interim  2.542933         NA          NA       NA     stop efficacy 490137693
+    ## 2:        5    TRUE    TRUE TRUE 10 power      1     1 decision  1.918589 0.02771629 0.005601226 1.959964 futility     <NA> 490137693
+    ## 3:        5    TRUE    TRUE TRUE 10 power      1     2    final        NA         NA          NA       NA     <NA>     <NA> 490137693
+    ## 4:        5    TRUE    TRUE TRUE 10 power      2     1  interim  2.542933         NA          NA       NA     stop efficacy 490137693
+    ## 5:        5    TRUE    TRUE TRUE 10 power      2     1 decision  1.918589 0.02771629 0.005502683 1.959964 futility     <NA> 490137693
+    ## 6:        5    TRUE    TRUE TRUE 10 power      2     2    final        NA         NA          NA       NA     <NA>     <NA> 490137693
+    ## 7:        5    TRUE    TRUE TRUE 10 power      3     1  interim  2.542933         NA          NA       NA     stop efficacy 490137693
+    ## 8:        5    TRUE    TRUE TRUE 10 power      3     1 decision  1.918589 0.02771629 0.006722260 1.959964 futility     <NA> 490137693
+    ## 9:        5    TRUE    TRUE TRUE 10 power      3     2    final        NA         NA          NA       NA     <NA>     <NA> 490137693
+}
 ##----------------------------------------------------------------------
 ### example-mismatch-pVal-boundary2.R ends here

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 27 2022 (09:32) 
 ## Version: 
-## Last-Updated: feb 17 2023 (15:50) 
+## Last-Updated: mar  8 2023 (19:18) 
 ##           By: Brice Ozenne
-##     Update #: 48
+##     Update #: 54
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -64,34 +64,49 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
     ## p-value using FinalPvalue
     test.p <- FinalPvalue(Info.d = Info.var,
                           Info.i = Info.var,
-                          ck = efficacyBound,
+                          ck = efficacyBound[2],
+                          ck.unrestricted = efficacyBound[2],
                           lk = futilityBound,
                           uk = efficacyBound,
                           kMax = 3,
                           estimate = estimate,
-                          futility2efficacy = TRUE,
-                          bindingFutility = TRUE)
+                          method = 1,
+                          bindingFutility = TRUE,
+                          cNotBelowFixedc = FALSE)
     expect_equal(as.double(test.p), 0.00625)
-    expect_equal(as.double(test.p), as.data.frame(ests)[2,"Final p-value"])
+    expect_equal(as.double(test.p), as.data.frame(ests)[2,"finalPValues"])
     
     ## confidence interval using FinalPvalue
     test.ci <- FinalCI(Info.d = Info.var,
                        Info.i = Info.var,
-                       ck = efficacyBound,
+                       ck = efficacyBound[2],
+                       ck.unrestricted = efficacyBound[2],
                        lk = futilityBound,
                        uk = efficacyBound,
-                       kMax = 4,
+                       kMax = 3,
+                       conf.level = 0.95,
                        estimate = estimate,
+                       method = 1,
                        bindingFutility = TRUE,
-                       futility2efficacy=TRUE)
+                       cNotBelowFixedc = FALSE)
     expect_equal(as.double(test.ci), c(0.53413706, 1.99336202), tol = 1e-4)
-    as.data.frame(ests)[2,"Final CI (lower)"] ## 0.2413634
-    as.data.frame(ests)[2,"Final CI (upper)"] ## 2.000625
+    as.data.frame(ests)[2,"finalConfidenceIntervalLowerBounds"] ## 0.2413634
+    as.data.frame(ests)[2,"finalConfidenceIntervalUpperBounds"] ## 2.000625
 
     ## median unbiased estimate
-    test.beta <- FinalEstimate(Info.d = Info.var, Info.i = Info.var, ck = efficacyBound, lk = futilityBound, uk = efficacyBound, kMax = 4, estimate = estimate, bindingFutility = TRUE, futility2efficacy=TRUE)
+    test.beta <- FinalEstimate(Info.d = Info.var,
+                               Info.i = Info.var,
+                               ck = efficacyBound[2],
+                               ck.unrestricted = efficacyBound[2],
+                               lk = futilityBound,
+                               uk = efficacyBound,
+                               kMax = 3,
+                               estimate = estimate,
+                               method = 1,
+                               bindingFutility = TRUE,
+                               cNotBelowFixedc = FALSE)
     expect_equal(as.double(test.beta), 1.26709147, tol = 1e-6)
-    as.data.frame(ests)[2,"Median unbiased estimate"] ## 1.121087
+    as.data.frame(ests)[2,"medianUnbiasedEstimates"] ## 1.121087
 }) 
 
 ## * Wassmer 2016 (Group sequential and confirmatory adaptive designs in clinical trials, section 4.1, page 87-88)
@@ -128,16 +143,46 @@ test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
  expect_equal(round(as.double(pval1.Obrien + pval2.Obrien),4), 0.0014)
  
  ## p-value using FinalPvalue
- pval.Obrien <- FinalPvalue(Info.d = Info.var, Info.i = Info.var,
-                            ck = ck.Obrien, lk = lk.Obrien, uk = uk.Obrien, kMax = 4, estimate = estimate, bindingFutility = TRUE, futility2efficacy = TRUE)
+ pval.Obrien <- FinalPvalue(Info.d = Info.var,
+                            Info.i = Info.var,
+                            ck = ck.Obrien[2],
+                            ck.unrestricted = ck.Obrien[2],
+                            lk = lk.Obrien,
+                            uk = uk.Obrien,
+                            kMax = 4,
+                            estimate = estimate[2],
+                            method = 1,
+                            bindingFutility = TRUE,
+                            cNotBelowFixedc = FALSE)
  expect_equal(as.double(pval.Obrien), 0.001362486, tol = 1e-6)
  
  ## confidence interval using FinalPvalue
- CI.Obrien <- FinalCI(Info.d = Info.var, Info.i = Info.var, ck = ck.Obrien, lk = lk.Obrien, uk = uk.Obrien, kMax = 4, estimate = estimate, bindingFutility = TRUE, futility2efficacy = TRUE)
- expect_equal(round(as.double(CI.Obrien),3), c(0.157, 0.748), tol = 1e-3)
+ CI.Obrien <- FinalCI(Info.d = Info.var,
+                      Info.i = Info.var,
+                      ck = ck.Obrien[2],
+                      ck.unrestricted = ck.Obrien[2],
+                      lk = lk.Obrien,
+                      uk = uk.Obrien,
+                      kMax = 4,
+                      estimate = estimate[2],
+                      method = 1,
+                      conf.level = 0.95,
+                      bindingFutility = TRUE,
+                      cNotBelowFixedc = FALSE)
+ expect_equal(as.double(CI.Obrien), c(0.1565499,0.7470000), tol = 1e-3) ## FROM THE BOOK: c(0.157, 0.748)
 
  ## median unbiased estimate
- estimate.Obrien <- FinalEstimate(Info.d = Info.var, Info.i = Info.var, ck = ck.Obrien, lk = lk.Obrien, uk = uk.Obrien, kMax = 4, estimate = estimate, bindingFutility = TRUE, futility2efficacy = TRUE)
+ estimate.Obrien <- FinalEstimate(Info.d = Info.var,
+                                  Info.i = Info.var,
+                                  ck = ck.Obrien[2],
+                                  ck.unrestricted = ck.Obrien[2],
+                                  lk = lk.Obrien,
+                                  uk = uk.Obrien,
+                                  kMax = 4,
+                                  estimate = estimate[2],
+                                  method = 1,
+                                  bindingFutility = TRUE,
+                                  cNotBelowFixedc = FALSE)
  expect_equal(round(as.double(estimate.Obrien),3), 0.452, tol = 1e-3)
 
  ## ** Pocock case
@@ -154,187 +199,54 @@ test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
  expect_equal(round(as.double(pval1.Pocock + pval2.Pocock),4), 0.0098)
  
  ## p-value using FinalPvalue
- pval.Pocock <- FinalPvalue(Info.d = Info.var, Info.i = Info.var, ck = ck.Pocock, lk = lk.Pocock, uk = uk.Pocock, kMax = 4, estimate = estimate, bindingFutility = TRUE, futility2efficacy = TRUE)
+ pval.Pocock <- FinalPvalue(Info.d = Info.var,
+                            Info.i = Info.var,
+                            ck = ck.Pocock[2],
+                            ck.unrestricted = ck.Pocock[2],
+                            lk = lk.Pocock,
+                            uk = uk.Pocock,
+                            kMax = 4,
+                            estimate = estimate[2],
+                            method = 1,
+                            bindingFutility = TRUE,
+                            cNotBelowFixedc = FALSE)
  expect_equal(as.double(pval.Pocock), 0.009819342, tol = 1e-6) 
  
  ## confidence interval using FinalPvalue
- CI.Pocock <- FinalCI(Info.d = Info.var, Info.i = Info.var, ck = ck.Pocock, lk = lk.Pocock, uk = uk.Pocock, kMax = 4, estimate = estimate, bindingFutility = TRUE, futility2efficacy = TRUE)
+ CI.Pocock <- FinalCI(Info.d = Info.var,
+                      Info.i = Info.var,
+                      ck = ck.Pocock[2],
+                      ck.unrestricted = ck.Pocock[2],
+                      lk = lk.Pocock,
+                      uk = uk.Pocock,
+                      kMax = 4,
+                      estimate = estimate[2],
+                      method = 1,
+                      bindingFutility = TRUE,
+                      cNotBelowFixedc = FALSE,
+                      conf.level = 0.95)
  expect_equal(round(as.double(CI.Pocock),3), c(0.074, 0.729), tol = 1e-3)
 
  ## median unbiased estimate
- estimate.Pocock <- FinalEstimate(Info.d = Info.var, Info.i = Info.var, ck = ck.Pocock, lk = lk.Pocock, uk = uk.Pocock, kMax = 4, estimate = estimate, bindingFutility = TRUE, futility2efficacy = TRUE)
+ estimate.Pocock <- FinalEstimate(Info.d = Info.var,
+                      Info.i = Info.var,
+                      ck = ck.Pocock[2],
+                      ck.unrestricted = ck.Pocock[2],
+                      lk = lk.Pocock,
+                      uk = uk.Pocock,
+                      kMax = 4,
+                      estimate = estimate[2],
+                      method = 1,
+                      bindingFutility = TRUE,
+                      cNotBelowFixedc = FALSE)
  expect_equal(round(as.double(estimate.Pocock),3), 0.419, tol = 1e-3)
 })
 
-## * Paul's binding test
-test_that("Check consistency between p-value and boundary",{
+## * P-value when at boundary value
+test_that("Check consistency between p-value and boundary (1 interim analysis)",{
 
-    ## Method 1
-    ## for binding futility rule
-    myBound <- CalcBoundaries(kMax=3,
-                              alpha=0.025, 
-                              beta=0.1, 
-                              InfoR.i=c(3.5,6.75,12)/12,
-                              rho_alpha=1.345,
-                              rho_beta=1.345,
-                              method=1, ## has been changed from 2 to 1
-                              cNotBelowFixedc=FALSE,
-                              bindingFutility=TRUE,
-                              delta=1,
-                              InfoR.d=c(5.5,8.75)/12)
-
-            
-    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
-                        Info.i = myBound$planned$Info.i,
-                        ck = myBound$planned$ck,
-                        lk = myBound$planned$lk,
-                        uk = myBound$planned$uk,
-                        kMax = myBound$kMax,
-                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
-                        futility2efficacy = TRUE,
-                        bindingFutility = TRUE)
-
-    expect_equal(as.double(test), 0.025, tol = 1e-3)
-
-    #for non-binding futility rule
-    myBound <- CalcBoundaries(kMax=3,
-                              alpha=0.025, 
-                              beta=0.1, 
-                              InfoR.i=c(3.5,6.75,12)/12,
-                              rho_alpha=1.345,
-                              rho_beta=1.345,
-                              method=1, 
-                              cNotBelowFixedc=FALSE,
-                              bindingFutility=FALSE,
-                              delta=1,
-                              InfoR.d=c(5.5,8.75)/12)
-
-            
-    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
-                        Info.i = myBound$planned$Info.i,
-                        ck = myBound$planned$ck,
-                        lk = myBound$planned$lk,
-                        uk = myBound$planned$uk,
-                        kMax = myBound$kMax,
-                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
-                        futility2efficacy = TRUE,
-                        bindingFutility = FALSE)
-
-    expect_equal(as.double(test), 0.025, tol = 1e-3)
-    
-    ## Method 2
-    ## for binding futility rule
-    myBound <- suppressWarnings(CalcBoundaries(kMax=3,
-                                               alpha=0.025, 
-                                               beta=0.1, 
-                                               InfoR.i=c(3.5,6.75,12)/12,
-                                               rho_alpha=1.345,
-                                               rho_beta=1.345,
-                                               method=2, ## has been changed from 2 to 1
-                                               cNotBelowFixedc=FALSE,
-                                               bindingFutility=TRUE,
-                                               delta=1,
-                                               InfoR.d=c(5.5,8.75)/12))
-    
-    
-    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
-                        Info.i = myBound$planned$Info.i,
-                        ck = myBound$planned$ck,
-                        lk = myBound$planned$lk,
-                        uk = myBound$planned$uk,
-                        kMax = myBound$kMax,
-                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
-                        futility2efficacy = TRUE,
-                        bindingFutility = TRUE)
-    
-    expect_equal(as.double(test), 0.025, tol = 1e-3)
-    
-    #for non-binding futility rule
-    myBound <- CalcBoundaries(kMax=3,
-                              alpha=0.025, 
-                              beta=0.1, 
-                              InfoR.i=c(3.5,6.75,12)/12,
-                              rho_alpha=1.345,
-                              rho_beta=1.345,
-                              method=2, 
-                              cNotBelowFixedc=FALSE,
-                              bindingFutility=FALSE,
-                              delta=1,
-                              InfoR.d=c(5.5,8.75)/12)
-    
-    
-    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
-                        Info.i = myBound$planned$Info.i,
-                        ck = myBound$planned$ck,
-                        lk = myBound$planned$lk,
-                        uk = myBound$planned$uk,
-                        kMax = myBound$kMax,
-                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
-                        futility2efficacy = TRUE,
-                        bindingFutility = FALSE)
-    
-    expect_equal(as.double(test), 0.025, tol = 1e-3)
-    
-    ## Method 3
-    ## for binding futility rule
-    myBound <- CalcBoundaries(kMax=3,
-                              alpha=0.025, 
-                              beta=0.1, 
-                              InfoR.i=c(3.5,6.75,12)/12,
-                              rho_alpha=1.345,
-                              rho_beta=1.345,
-                              method=3, 
-                              cNotBelowFixedc=TRUE,
-                              bindingFutility=TRUE,
-                              delta=1,
-                              InfoR.d=c(5.5,8.75)/12)
-    
-    
-    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
-                        Info.i = myBound$planned$Info.i,
-                        ck = myBound$planned$ck,
-                        lk = myBound$planned$lk,
-                        uk = myBound$planned$uk,
-                        kMax = myBound$kMax,
-                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
-                        futility2efficacy = FALSE,
-                        bindingFutility = TRUE)
-    
-    expect_equal(as.double(test), 0.025, tol = 1e-3)
-    
-    ## for non-binding futility rule
-    myBound <- CalcBoundaries(kMax=3,
-                              alpha=0.025, 
-                              beta=0.1, 
-                              InfoR.i=c(3.5,6.75,12)/12,
-                              rho_alpha=1.345,
-                              rho_beta=1.345,
-                              method=3, 
-                              cNotBelowFixedc=TRUE,
-                              bindingFutility=FALSE,
-                              delta=1,
-                              InfoR.d=c(5.5,8.75)/12)
-    
-    
-    test <- FinalPvalue(Info.d = myBound$planned$Info.d,
-                        Info.i = myBound$planned$Info.i,
-                        ck = myBound$planned$ck,
-                        lk = myBound$planned$lk,
-                        uk = myBound$planned$uk,
-                        kMax = myBound$kMax,
-                        estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
-                        futility2efficacy = FALSE,
-                        bindingFutility = FALSE)
-    
-    expect_equal(as.double(test), 0.025, tol = 1e-3)
-
-})
-
-## * Consistency between using p-value or boundaries for rejection
-test_that("Check consistency p-value/boundaries for rejection ",{
-
-    ## ** Stop at interim and statistic precisely at boundary at decision (method 1, cNotBelowFixedc)
-    ## same for method 2 (the calculation of the p-value is the same for both methods)
+    ## ** Stop at interim and statistic precisely at boundary at decision
+    ## method 1 or 2 (the calculation of the p-value is the same for both methods)
     test <- FinalPvalue(Info.d = 2.6923896504288,
                         Info.i = 2.45494676691245,
                         ck = 1.69415016027832, ck.unrestricted = 1.69415016027832, 
@@ -348,46 +260,8 @@ test_that("Check consistency p-value/boundaries for rejection ",{
                         cNotBelowFixedc = FALSE)
     GS <- ErrorSpend(I=2.45494676691245,rho=2,beta_or_alpha=0.025,Info.max=3.646459)
     expect_equal(as.double(test), GS, tol = 1e-5)
-
-    ck.unrestricted <- 1.69415016027832
-    constraint <- qnorm(0.975)
-    vec.estimate <- c(constraint+0.01,constraint,(constraint+ck.unrestricted)/2,ck.unrestricted)
-    test <- rep(NA, length(vec.estimate))
-    for(iE in 1:length(vec.estimate)){ ## iE <- 2
-        test[iE] <- FinalPvalue(Info.d = 2.6923896504288,
-                                Info.i = 2.45494676691245,
-                                ck = constraint, ck.unrestricted = ck.unrestricted, 
-                                lk = 0.992173622977366,
-                                uk = 2.27907351772183,
-                                kMax = 2, 
-                                delta = 0,
-                                estimate = vec.estimate[iE] / sqrt(2.6923896504288),
-                                method = 2,
-                                bindingFutility = TRUE, 
-                                cNotBelowFixedc = TRUE)
-    }
-    GS <- ErrorSpend(I=2.45494676691245,rho=2,beta_or_alpha=0.025,Info.max=3.646459)
-
-    ## aa <- mvtnorm::pmvnorm(lower = c(2.279074,1.959964),  
-    ##                        upper = c(Inf,Inf),
-    ##                        mean = c(0,0),
-    ##                        sigma = cbind(c(1, 0.95488723), c(0.95488723, 1)))
-    ## bb <- mvtnorm::pmvnorm(lower = c(2.279074,ck.unrestricted),  
-    ##                        upper = c(Inf,Inf),
-    ##                        mean = c(0,0),
-    ##                        sigma = cbind(c(1, 0.95488723), c(0.95488723, 1)))
-    ## cc <- mvtnorm::pmvnorm(lower = c(-Inf,1.959964),  
-    ##                        upper = c(0.9921736,Inf),
-    ##                        mean = c(0,0),
-    ##                        sigma = cbind(c(1, 0.95488723), c(0.95488723, 1)))
-    ## dd <- mvtnorm::pmvnorm(lower = c(-Inf,ck.unrestricted),  
-    ##                        upper = c(0.9921736,Inf),
-    ##                        mean = c(0,0),
-    ##                        sigma = cbind(c(1, 0.95488723), c(0.95488723, 1)))
-    ## test[2]-GS
-    ## (aa-bb) + (cc-dd)
     
-    ## ** Stop at interim and statistic precisely at boundary at decision (method 3)
+    ## method 3
     test <- FinalPvalue(Info.d = 12.58797814,  
                         Info.i = 10.60271846,
                         ck = 1.897834, ck.unrestricted = 1.897834,
@@ -403,7 +277,7 @@ test_that("Check consistency p-value/boundaries for rejection ",{
     expect_equal(as.double(test), GS, tol = 1e-5)
     
     ## ** Continue at interim and and statistic precisely at boundary at final (method 1, cNotBelowFixedc)
-    ## same for method 2 (the calculation of the p-value is the same for both methods)
+    ## method 1 or 2 (the calculation of the p-value is the same for both methods)
     test <- FinalPvalue(Info.d = 2.75046695782793,
                         Info.i = c(2.5589317424577, 4.30612228613852),
                         ck = 1.7253424172699, ck.unrestricted = 1.7253424172699,
@@ -417,23 +291,7 @@ test_that("Check consistency p-value/boundaries for rejection ",{
                         cNotBelowFixedc = FALSE)
     expect_equal(as.double(test), 0.025, tol = 1e-5)
     
-    vec.estimate <- 2.01974814127831 + c(-0.1,-0.01,0,0.01,0.1)
-    test <- rep(NA, length(vec.estimate))
-    for(iE in 1:length(vec.estimate)){ ## iE <- 2
-        test[iE] <- FinalPvalue(Info.d = 2.75046695782793,
-                                Info.i = c(2.5589317424577, 4.30612228613852),
-                                ck = 1.7253424172699, ck.unrestricted = qnorm(0.975), 
-                                lk = c(1.11127641794951, 2.01974814127831),
-                                uk = c(2.2459290489148, 2.01974814127831),
-                                kMax = 2, 
-                                delta = 0,
-                                estimate = vec.estimate[iE] / sqrt(4.30612228613852),
-                                method = 2,
-                                bindingFutility = TRUE, 
-                                cNotBelowFixedc = TRUE)
-    }
-
-    ## ** Continue at interim and and statistic precisely at boundary at final (method 3)
+    ## method 3
     test <- FinalPvalue(Info.d = 12.58797814,  
                         Info.i = c(10.60271846, 24.67092824),
                         ck = 1.897834, ck.unrestricted = 1.897834,
@@ -447,7 +305,70 @@ test_that("Check consistency p-value/boundaries for rejection ",{
                         cNotBelowFixedc = FALSE)
     expect_equal(as.double(test), 0.025, tol = 1e-5)
 
+    ## ** Increasing p-value
     
+
+})
+
+test_that("Check consistency between p-value and boundary (1 interim analysis)",{
+
+    for(iMethod in 1:3){ ## iMethod <- 2
+        ## for binding futility rule
+        myBound <- suppressWarnings(CalcBoundaries(kMax = 3,
+                                                   alpha = 0.025, 
+                                                   beta = 0.1, 
+                                                   InfoR.i = c(3.5,6.75,12)/12,
+                                                   rho_alpha = 1.345,
+                                                   rho_beta = 1.345,
+                                                   method = iMethod, ## has been changed from 2 to 1
+                                                   cNotBelowFixedc = FALSE,
+                                                   bindingFutility = TRUE,
+                                                   delta = 1,
+                                                   InfoR.d = c(5.5,8.75)/12))
+
+            
+        test <- FinalPvalue(Info.d = myBound$planned$Info.d,
+                            Info.i = myBound$planned$Info.i,
+                            ck = myBound$planned$ck,
+                            ck.unrestricted = myBound$planned$ck,
+                            lk = myBound$planned$lk,
+                            uk = myBound$planned$uk,
+                            kMax = myBound$kMax,
+                            estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
+                            method = iMethod,
+                            bindingFutility = TRUE,
+                            cNotBelowFixedc = FALSE)
+
+        expect_equal(as.double(test), 0.025, tol = 1e-3)
+
+        ## for non-binding futility rule
+        myBound <- suppressWarnings(CalcBoundaries(kMax = 3,
+                                                   alpha = 0.025, 
+                                                   beta = 0.1, 
+                                                   InfoR.i = c(3.5,6.75,12)/12,
+                                                   rho_alpha = 1.345,
+                                                   rho_beta = 1.345,
+                                                   method = iMethod, 
+                                                   cNotBelowFixedc = FALSE,
+                                                   bindingFutility = FALSE,
+                                                   delta = 1,
+                                                   InfoR.d = c(5.5,8.75)/12))
+
+            
+        test <- FinalPvalue(Info.d = myBound$planned$Info.d,
+                            Info.i = myBound$planned$Info.i,
+                            ck = myBound$planned$ck,
+                            ck.unrestricted = myBound$planned$ck.unrestricted,
+                            lk = myBound$planned$lk,
+                            uk = myBound$planned$uk,
+                            kMax = myBound$kMax,
+                            estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
+                            method = iMethod,
+                            bindingFutility = FALSE,
+                            cNotBelowFixedc = FALSE)
+
+        expect_equal(as.double(test), 0.025, tol = 1e-3)
+    }
 
 })
 

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt 13 2022 (14:49) 
 ## Version: 
-## Last-Updated: jan  6 2023 (14:46) 
+## Last-Updated: mar  8 2023 (15:05) 
 ##           By: Brice Ozenne
-##     Update #: 14
+##     Update #: 15
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -78,56 +78,36 @@ debug.GSD <- update(debug.plannedB, delta = debug.lmmI, trace = TRUE)
 ## ** decision
 debug.lmmD <- analyzeData(df.sim[which(df.sim$t1 <= thets[method] + 1.50001*14),],
                           ddf = "nlme", getinfo = TRUE, trace = TRUE)
-if(debug.GSD$conclusion["interim",1]=="stop"){
-    debug.GSD <- update(debug.GSD, delta = debug.lmmD, trace = FALSE)
-}else{
-    debug.GSD <- update(debug.GSD, delta = debug.lmmD, k = 1, type.k = "decision", trace = FALSE)
-}
+##    debug.GSD <- update(debug.GSD, delta = debug.lmmD, trace = FALSE)
+debug.GSD <- update(debug.GSD, delta = debug.lmmD, k = 1, type.k = "decision", trace = FALSE)
 debug.GSD$ck
 debug.GSD$ck.unrestricted
 
 ## ** final
-if(debug.GSD$conclusion["interim",1]=="continue"){
-    debug.lmmF <- analyzeData(df.sim[1:nGSD[method],],
-                              ddf = "nlme", getinfo = TRUE, trace = TRUE)
-    debugF.GSD <- update(debug.GSD, delta = debug.lmmF, trace = FALSE)
-    summary(debugF.GSD)
-    ## confint(debug.GSD)
-
-    df.sim2 <- df.sim[1:100,]
-    df.sim2$id <- paste0("A",df.sim2$id)
-    debug.lmmF <- analyzeData(rbind(df.sim[1:nGSD[method],], df.sim2),
-                              ddf = "nlme", getinfo = TRUE, trace = TRUE)
-    debugF.GSD <- update(debug.GSD, delta = debug.lmmF, trace = FALSE)
-
-    debugF.GSD$ck
-    
-    ## alternative calculation of the p-value (Paul's version)
-    term1 <- debugF.GSD$alphaSpent[1]
-    term2 <- pmvnorm(lower = c(0.22425, 2.25911),
-                     upper = c(2.52429353,Inf),
-                     mean=c(0,0),
-                     sigma= matrix(c(1,sqrt(10.60271846/24.67093),sqrt(10.60271846/24.67093),1),2,2))
-    term1 + term2 - confint(debugF.GSD)[2,"p.value"]
-
-}    
-
+debug.lmmF <- analyzeData(df.sim[1:nGSD[method],],
+                          ddf = "nlme", getinfo = TRUE, trace = TRUE)
+debugF.GSD <- update(debug.GSD, delta = debug.lmmF, trace = FALSE)
+summary(debugF.GSD)
+## confint(debug.GSD)
 
 ## * By hand
-Info.d <- 12.58798
-Info.i <- c(10.60272, 20.74867)
-ck <- 1.959964
-lk <- c(0.2242486, 1.9939758) 
-uk <-  c(2.524294, 1.993976)  
-thetaHat <- 0.4374693
-alphaSpent <- debug.GSD$alphaSpent[1]
+Info.d <- debugF.GSD$Info.d ## Info.d <- 12.58798
+Info.i <- debugF.GSD$Info.i ## Info.i <- c(10.60272, 20.74867)
+ck <- debugF.GSD$ck ## ck <- 1.959964
+ck.unrestricted <- debugF.GSD$ck.unrestricted ## ck.unrestricted <- 1.897834
+lk <- debugF.GSD$lk ## lk <- c(0.2242486, 1.9939758) 
+uk <- debugF.GSD$uk ## uk <-  c(2.524294, 1.993976)  
+thetaHat <- coef(debugF.GSD)["ML"] ## thetaHat <- 0.4374693
+alphaSpent <- debug.GSD$alphaSpent[1] ## alphaSpent <- 0.005446999
 
 sigmaZm <- diag(1,3,3)
 sigmaZm[1,2] <- sigmaZm[2,1] <- sqrt(Info.i[1]/Info.d)
 sigmaZm[1,3] <- sigmaZm[3,1] <- sqrt(Info.i[1]/Info.i[2])
 sigmaZm[2,3] <- sigmaZm[3,2] <- sqrt(Info.d/Info.i[2])
 
-corrected.ck <- uniroot(function(x){
+## ** Compute boundary
+## ck.unrestricted
+uniroot(function(x){
     pmvnorm(lower = c(uk[1],x),
             upper = c(Inf,Inf),
             mean=rep(0,2),
@@ -137,8 +117,7 @@ corrected.ck <- uniroot(function(x){
     upper = 3,
     tol = 1e-6)$root
 
-    
-## ** Compute boundary
+## uk=lk
 uniroot(function(x){pmvnorm(lower = c(lk[1],x),
                             upper = c(uk[1],Inf),
                             mean=rep(0,2),
@@ -164,15 +143,15 @@ resP <- FinalPvalue(Info.d = Info.d,
                     kMax = 2, 
                     delta = 0,  
                     estimate = thetaHat,
-                    method = 3,
-                    bindingFutility = TRUE,
+                    method = 1,
+                    bindingFutility = binding,
                     cNotBelowFixedc = FALSE)
 resP < 0.025
 thetaHat*sqrt(Info.i[2]) > lk[2]
 
 FinalPvalue(Info.d = Info.d,  
             Info.i = Info.i,
-            ck = corrected.ck, 
+            ck = ck.unrestricted, 
             lk = lk,  
             uk = uk,  
             kMax = 2, 

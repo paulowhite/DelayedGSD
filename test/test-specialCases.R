@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan  7 2022 (15:00) 
 ## Version: 
-## Last-Updated: okt  7 2022 (14:13) 
+## Last-Updated: mar  7 2023 (09:54) 
 ##           By: Brice Ozenne
-##     Update #: 23
+##     Update #: 25
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -63,10 +63,10 @@ test_that("I(1st interim)>Imax, I(1st decison)>Imax",{
 
     ## test
     GS <- data.frame("Stage" = c(1, 2, 3), 
-                     "Fbound" = c(0.07782464, NA, NA), 
-                     "Ebound" = c(2.61973824, NA, NA), 
-                     "statistic.interim" = c(2.35222215, NA, NA), 
-                     "Cbound" = c(1.36968504, NA, NA), 
+                     "Fbound" = c(-Inf, NA, NA), 
+                     "Ebound" = c(Inf, NA, NA), 
+                     "statistic.interim" = c(3.499914, NA, NA), 
+                     "Cbound" = as.numeric(c(NA, NA, NA)),
                      "statistic.decision" = c(NA, NA, NA))
     expect_equivalent(GS, coef(GSD.interim1, type = "boundary"), tol = 1e-5)
 

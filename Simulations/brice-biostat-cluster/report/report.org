@@ -39,7 +39,7 @@ res2stageS.rejection <- res2stage.rejection[,.(N = .N, rejectionRate = 100*mean(
 
 #+RESULTS:
 
-Power by method (columns) and scenario (rows): \hfill (nominal level 0.8)
+Power by method (columns) and scenario (rows): \hfill (nominal level 80%)
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
 tablePrintH1 <- dcast(res2stageS.rejection[hypo=="power"],
                       scenario + N + missing + binding + fixC + ar ~ method.char,
@@ -64,7 +64,7 @@ print(tablePrintH1, row.names = FALSE)
 
 \bigskip
 
-Type 1 error by method (columns) and scenario (rows): \hfill (nominal level 0.025)
+Type 1 error by method (columns) and scenario (rows): \hfill (nominal level 2.5%)
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
 tablePrintH0 <- dcast(res2stageS.rejection[hypo=="typeI"],
                     scenario + N + missing + binding + fixC + ar ~ method.char,

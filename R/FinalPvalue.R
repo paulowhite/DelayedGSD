@@ -196,7 +196,6 @@ FinalPvalue <- function(Info.d,
         index_infoDecr <- which(Info.d < Info.i) #find decision information levels that are lower than corresponding interim information levels
         Info.d[index_infoDecr] <- Info.i[index_infoDecr]+Info.i[index_infoDecr]/10000 #set decision analysis information levels to interim information levels in case of decreasing information
     }
-
     lk_orig <- lk  #need to store original bounds, even in non-binding case to account for probability of switching from futility to efficacy at decision analysis k
     
     if(!bindingFutility){
@@ -345,12 +344,12 @@ FinalPvalue <- function(Info.d,
               iIndex <- c(index_interim[1:i], index_decision[i])
               
               pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[i],-Inf), #prob to stop for eff at analysis i and switch to fut
-                                              upper = c(iUk,Inf,ck[i]),
+                                              upper = c(iUk,Inf,ck.unrestricted[i]),
                                               mean = theta[iIndex],
                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
               if(method%in%c(1,2) & bindingFutility){  #in case of non-binding rule we will ignore the option to stop for futility, so this part should not be added
                 pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis i and conclude fut
-                                                upper = c(iUk,lk_orig[i],ck[i]),
+                                                upper = c(iUk,lk_orig[i],ck.unrestricted[i]),
                                                 mean = theta[iIndex],
                                                 sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
               } else if(method%in%3 & bindingFutility){
