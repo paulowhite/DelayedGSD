@@ -13,12 +13,12 @@ if(length(args)>0){
     }
 }
 if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on the server via slurm, iter_sim will be NA)
-    iter_sim <- 1
+    iter_sim <- 61
     n.iter_sim <- 100
 
     if("missing" %in% ls() == FALSE){ missing <- TRUE }
     if("binding" %in% ls() == FALSE){ binding <- FALSE }
-    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
+    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- TRUE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
     if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
 }
@@ -139,7 +139,7 @@ allj <- seq(1+(iter_sim-1)*nsim, iter_sim*nsim, by = 1)
 for(j in allj){ ## j <- 1 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 955535360
+  #myseedi <- 905686708
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",j," (index ",which(j==allj),") out of ",nsim))
   # }}}
@@ -157,8 +157,7 @@ for(j in allj){ ## j <- 1 ## 5
                  cor.ij.1=corij1,
                  cor.0j.1=cor0j1,
                  seed=myseedi,
-                 MissProb=
-MyMissProb,
+                 MissProb=MyMissProb,
                  DigitsOutcome=2,
                  TimeFactor=TimeFactor,
                  DigitsTime=0

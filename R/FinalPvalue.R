@@ -13,6 +13,8 @@
 #' @param method  method 1, 2 or 3
 #' @param bindingFutility [logical] whether the futility stopping rule is binding.
 #' @param cNotBelowFixedc [logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
+#' @param continuity.correction [logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
+#' When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.
 #'
 #' @examples
 #' library(mvtnorm)
@@ -148,7 +150,8 @@ FinalPvalue <- function(Info.d,
                         estimate,
                         method,  
                         bindingFutility,
-                        cNotBelowFixedc){
+                        cNotBelowFixedc,
+                        continuity.correction = TRUE){
     
   
   
@@ -202,16 +205,17 @@ FinalPvalue <- function(Info.d,
         lk[1:min(k,kMax-1)] <- -Inf
     }
     pval <- 0
-    if(statistic >= critval){  #In case efficacy is concluded, only efficacious results at earlier IA are more extreme
+    if(statistic >= critval || k==kMax){  #In case efficacy is concluded or we reach the last stage, only efficacious results at earlier IA are more extreme
+
         for(i in 1:k){ ## i <- 1
 
-          if(i==1){
-              iLk <- NULL
-              iUk <- NULL
-          }else{
-              iLk <- lk[1:(i-1)]
-              iUk <- uk[1:(i-1)]
-          }
+            if(i==1){
+                iLk <- NULL
+                iUk <- NULL
+            }else{
+                iLk <- lk[1:(i-1)]
+                iUk <- uk[1:(i-1)]
+            }
             if(i==k){
                 if(i==kMax){ ## is it the final analysis (interim 1:(k-1), final)
                     iIndex <- c(index_interim, index_final)
@@ -221,27 +225,50 @@ FinalPvalue <- function(Info.d,
                                                     mean = theta[iIndex],
                                                     sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
                 }else{ ## or a decision analysis (interim 1:i, decision i)
-                  iIndex <- c(index_interim[1:i], index_decision[i])  
-                  
-                  if(method%in%c(1,2)){
+                    iIndex <- c(index_interim[1:i], index_decision[i])  
+
+                    if(method%in%c(1,2)){
 
                       ## prob to stop for eff at analysis k and conclude more extreme result
                       pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[i],statistic),  
-                                                       upper = c(iUk,Inf,Inf),
-                                                       mean = theta[iIndex],
-                                                       sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+                                                      upper = c(iUk,Inf,Inf),
+                                                      mean = theta[iIndex],
+                                                      sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
 
                       ## prob to stop for fut at analysis k and switch to eff with more extreme result
                       pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic),   
                                                       upper = c(iUk,lk_orig[i],Inf),
                                                       mean = theta[iIndex],
                                                       sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+
+                      if(ck!=ck.unrestricted && continuity.correction){
+
+                          correction <- mvtnorm::pmvnorm(lower = c(iLk,uk[i],ck.unrestricted),  
+                                                         upper = c(iUk,Inf,ck),
+                                                         mean = theta[iIndex],
+                                                         sigma = sigmaZm[iIndex,iIndex,drop=FALSE]) + mvtnorm::pmvnorm(lower = c(iLk,-Inf,ck.unrestricted),  
+                                                                                                                       upper = c(iUk,lk_orig[i],ck),
+                                                                                                                       mean = theta[iIndex],
+                                                                                                                       sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+                          pval <- pval + correction
+                          attr(pval,"correction") <- correction
+                      }
+                      
                     } else if (method%in%3){
                       ## prob to stop for eff at analysis k and conclude more extreme result
                       pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i],statistic),  
                                                        upper = c(iUk,Inf,Inf),
                                                        mean = theta[iIndex],
                                                        sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+
+                        if(ck!=ck.unrestricted && continuity.correction){
+                            correction <- mvtnorm::pmvnorm(lower = c(iLk,uk[i],ck.unrestricted),  
+                                                           upper = c(iUk,Inf,ck),
+                                                           mean = theta[iIndex],
+                                                           sigma = sigmaZm[iIndex,iIndex,drop=FALSE])                         
+                            pval <- pval + correction
+                            attr(pval,"correction") <- correction
+                        }
                     }
                     
                  
@@ -282,10 +309,10 @@ FinalPvalue <- function(Info.d,
                   iIndex <- c(index_interim[1:i])
                   
                   ## prob to stop for eff at analysis i
-                  pval <- pval +  mvtnorm::pmvnorm(lower = c(iLk,uk[i]),  
-                                                   upper = c(iUk,Inf),
-                                                   mean = theta[iIndex],
-                                                   sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                  pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[i]),  
+                                                  upper = c(iUk,Inf),
+                                                  mean = theta[iIndex],
+                                                  sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
                   
                 }
               } else if(method%in%3){
@@ -310,24 +337,17 @@ FinalPvalue <- function(Info.d,
               iUk <- uk[1:(i-1)]
           }
 
-            if(i==k){
-                if (i==kMax){## is it the final analysis (interim 1:(k-1), final)
-                    iIndex <- c(index_interim, index_final)
-                    pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf),  #prob to continue until final analysis and obtain a lower result than the observed
-                                                    upper = c(iUk,statistic),
-                                                    mean = theta[iIndex],
-                                                    sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-                }else{## or the decision analysis (interim 1:i, decision i)
-                    iIndex <- c(index_interim[1:i], index_decision[i])
-                    pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[i],-Inf),  #prob to stop for eff at analysis k and conclude less extreme result
-                                                    upper = c(iUk,Inf,statistic),
-                                                    mean = theta[iIndex],
-                                                    sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-                    pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis k and conclude less extreme result
-                                                    upper = c(iUk,lk_orig[i],statistic),
-                                                    mean = theta[iIndex],
-                                                    sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-                }
+            if(i==k){ ## can only be before kMax (otherwise would have be dealt with earlier in the if, as an efficacy)
+                ##  decision analysis (interim 1:i, decision i)
+                iIndex <- c(index_interim[1:i], index_decision[i])
+                pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[i],-Inf),  #prob to stop for eff at analysis k and conclude less extreme result
+                                                upper = c(iUk,Inf,statistic),
+                                                mean = theta[iIndex],
+                                                sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+                pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis k and conclude less extreme result
+                                                upper = c(iUk,lk_orig[i],statistic),
+                                                mean = theta[iIndex],
+                                                sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
             } else if (i %in% index_infoPB){ #results for larger information levels are always more extreme if observed result < c
                                         #i cannot be kMax in this case, since Info.d[k] would be Info.d[kMax] in the definition of the index
                 next
@@ -342,11 +362,12 @@ FinalPvalue <- function(Info.d,
                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
             } else {
               iIndex <- c(index_interim[1:i], index_decision[i])
-              
+
               pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[i],-Inf), #prob to stop for eff at analysis i and switch to fut
                                               upper = c(iUk,Inf,ck.unrestricted[i]),
                                               mean = theta[iIndex],
                                               sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+
               if(method%in%c(1,2) & bindingFutility){  #in case of non-binding rule we will ignore the option to stop for futility, so this part should not be added
                 pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,-Inf), #prob to stop for fut at analysis i and conclude fut
                                                 upper = c(iUk,lk_orig[i],ck.unrestricted[i]),
@@ -366,7 +387,6 @@ FinalPvalue <- function(Info.d,
         }
         pval <- 1-pval
     }
-  
-  return(pval)
+  return(unname(pval))
 }
 

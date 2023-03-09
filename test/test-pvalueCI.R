@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 27 2022 (09:32) 
 ## Version: 
-## Last-Updated: mar  8 2023 (19:18) 
+## Last-Updated: mar  9 2023 (11:33) 
 ##           By: Brice Ozenne
-##     Update #: 54
+##     Update #: 60
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -242,7 +242,7 @@ test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
  expect_equal(round(as.double(estimate.Pocock),3), 0.419, tol = 1e-3)
 })
 
-## * P-value when at boundary value
+## * P-value when at boundary value 
 test_that("Check consistency between p-value and boundary (1 interim analysis)",{
 
     ## ** Stop at interim and statistic precisely at boundary at decision
@@ -304,15 +304,11 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
                         bindingFutility = TRUE,
                         cNotBelowFixedc = FALSE)
     expect_equal(as.double(test), 0.025, tol = 1e-5)
-
-    ## ** Increasing p-value
-    
-
 })
 
-test_that("Check consistency between p-value and boundary (1 interim analysis)",{
+test_that("Check consistency between p-value and boundary (2 interim analysis)",{
 
-    for(iMethod in 1:3){ ## iMethod <- 2
+    for(iMethod in 1:3){ ## iMethod <- 1
         ## for binding futility rule
         myBound <- suppressWarnings(CalcBoundaries(kMax = 3,
                                                    alpha = 0.025, 
@@ -369,6 +365,101 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
 
         expect_equal(as.double(test), 0.025, tol = 1e-3)
     }
+
+})
+
+## * P-value over the space
+test_that("Check ordering and continuity of p-values (1 interim analysis)",{
+
+    ## ** binding and no fix C
+    calcP_2stage <- function(z, k){
+        if(k==1){
+            FinalPvalue(Info.d = 2.75046695782793,
+                        Info.i = 2.5589317424577,
+                        ck = 1.7253424172699, ck.unrestricted = 1.7253424172699,
+                        lk = 1.11127641794951,
+                        uk = 2.2459290489148,
+                        kMax = 2, 
+                        delta = 0,
+                        estimate = z / sqrt(2.75046695782793),
+                        method = 1,
+                        bindingFutility = TRUE, 
+                        cNotBelowFixedc = FALSE)
+        }else if(k==2){
+            FinalPvalue(Info.d = 2.75046695782793,
+                        Info.i = c(2.5589317424577, 4.30612228613852),
+                        ck = 1.7253424172699, ck.unrestricted = 1.7253424172699,
+                        lk = c(1.11127641794951, 2.01974814127831),
+                        uk = c(2.2459290489148, 2.01974814127831),
+                        kMax = 2,
+                        delta = 0, 
+                        estimate = z / sqrt(4.30612228613852),
+                        method = 1,
+                        bindingFutility = TRUE, 
+                        cNotBelowFixedc = FALSE)
+        }
+    }
+
+    vecP <- c(fut.1_1 = calcP_2stage(z = -3, k = 1),
+              fut.1_2 = calcP_2stage(z = 1, k = 1),
+              fut.1_B = calcP_2stage(z = 1.725, k = 1),
+              fut.2_1 = calcP_2stage(z = -3, k = 2),
+              fut.2_2 = calcP_2stage(z = 1, k = 2),
+              fut.2_3 = calcP_2stage(z = 2, k = 2),
+              eff.2_B = calcP_2stage(z = 2.01974814127831, k = 2),
+              eff.2_1 = calcP_2stage(z = 3, k = 2),
+              eff.2_2 = calcP_2stage(z = 10, k = 2),
+              eff.1_B = calcP_2stage(z = 1.72534241727, k = 1),
+              eff.1_1 = calcP_2stage(z = 1.73, k = 1),
+              eff.1_2 = calcP_2stage(z = 5, k = 1)
+              )
+    expect_true(all(round(diff(vecP),5)<=0))
+
+    ## ** binding and fix C
+    calcP_2stage <- function(z, k){
+        if(k==1){
+            FinalPvalue(Info.d = 12.58797814,
+                        Info.i = 10.60271846,
+                        ck = 1.959964, ck.unrestricted = 1.49772992,
+                        lk = 0.24335814,
+                        uk = 2.5458844,
+                        kMax = 2, 
+                        delta = 0,
+                        estimate = z / sqrt(12.58797814),
+                        method = 1,
+                        bindingFutility = TRUE, 
+                        cNotBelowFixedc = TRUE)
+        }else if(k==2){
+            FinalPvalue(Info.d = 12.58797814,
+                        Info.i = c(10.60271846, 20.74866926),
+                        ck = 1.959964, ck.unrestricted = 1.49772992,
+                        lk = c(0.24335814, 1.9961649),
+                        uk = c(2.5458844, 1.9961649),
+                        kMax = 2,
+                        delta = 0, 
+                        estimate = z / sqrt(20.74866926),
+                        method = 1,
+                        bindingFutility = TRUE, 
+                        cNotBelowFixedc = TRUE)
+        }
+    }
+
+    vecP <- c(fut.1_1 = calcP_2stage(z = -3, k = 1),
+              fut.1_2 = calcP_2stage(z = 1, k = 1),
+              fut.1_Bl = calcP_2stage(z = 1.49772992, k = 1),
+              fut.1_Bu = calcP_2stage(z = 1.95, k = 1),
+              fut.2_1 = calcP_2stage(z = -3, k = 2),
+              fut.2_2 = calcP_2stage(z = 1, k = 2),
+              fut.2_3 = calcP_2stage(z = 1.99, k = 2),
+              eff.2_B = calcP_2stage(z = 1.9961650, k = 2),
+              eff.2_1 = calcP_2stage(z = 3, k = 2),
+              eff.2_2 = calcP_2stage(z = 10, k = 2),
+              eff.1_B = calcP_2stage(z = 1.96, k = 1),
+              eff.1_1 = calcP_2stage(z = 2, k = 1),
+              eff.1_2 = calcP_2stage(z = 5, k = 1)
+              )
+
+    expect_true(all(round(diff(vecP),5)<=0))
 
 })
 
