@@ -1,4 +1,4 @@
-% Created 2023-03-17 fr 15:10
+% Created 2023-03-22 on 19:00
 % Intended LaTeX compiler: pdflatex
 \documentclass[12pt]{article}
 
@@ -123,7 +123,7 @@ linkcolor=[rgb]{0,0,0.5},
 \maketitle
 
 \section{Rejection rate}
-\label{sec:orge7abcfb}
+\label{sec:orge2b902a}
 
 Power by method (columns) and scenario (rows): \hfill (nominal level 80\%)
 \begin{verbatim}
@@ -174,7 +174,7 @@ Type 1 error slightly below nominal level when fixC is TRUE (as expected?)
 \clearpage
 
 \section{Conclusion of the trial}
-\label{sec:org08ef01f}
+\label{sec:org510934e}
 
 Relative frequency of stopping for efficacy/futility at decision/final
 
@@ -256,7 +256,7 @@ Method 3:
 \clearpage
 
 \section{Bias (True effect: 0.6 under the alternative)}
-\label{sec:orgb253994}
+\label{sec:orgb9f9246}
 
 Bias per estimator and method\footnote{e.g. \texttt{biasMLE1} mixed model
 estimator (treatment effect), method 1 (boundaries)}:
@@ -313,7 +313,7 @@ Median bias \footnote{Relative frequency at which the estimate is greater than t
 \clearpage
 
 \section{Distribution of the estimates}
-\label{sec:org739ac20}
+\label{sec:org7bfc4f5}
 
 Distribution of the estimates:
 \begin{figure}[!h]
@@ -340,7 +340,7 @@ Distribution of the median unbiased estimate conditional to the stage:
 \clearpage
 
 \section{Special cases}
-\label{sec:org2bc044e}
+\label{sec:org3580cf7}
 
 Reason for stopping (first 4) or continuing the trial (last):
 \begin{verbatim}
@@ -386,7 +386,7 @@ no boundary crossed    1               5580 2785 5770 2961 5581 2796 5755 3013
 \clearpage
 
 \section{Reversal probability}
-\label{sec:org7975a08}
+\label{sec:orga5bc828}
 
 Percentage of time we observe a reversal:
 \begin{adjustwidth}{-1cm}{-1cm}
@@ -418,10 +418,10 @@ Percentage of time we observe a reversal:
 \clearpage
 
 \section{Frequency mismatch}
-\label{sec:org49bce0d}
+\label{sec:orgc9c9aca}
 
 \subsection{p-value / boundaries}
-\label{sec:orgd89305d}
+\label{sec:orgf752fd4}
 
 When concluding for futility:
 \begin{verbatim}
@@ -472,7 +472,7 @@ When concluding for efficacy:
 \clearpage
 
 \subsection{confidence intervals}
-\label{sec:orgad7b21f}
+\label{sec:org68589e6}
 
 When concluding for futility:
 \begin{verbatim}
@@ -486,16 +486,36 @@ When concluding for futility:
  7: power    TRUE 10   FALSE  TRUE 0.05128205 0.05221932 0.05238345
  8: power    TRUE 10    TRUE FALSE 0.05263158 0.05205622 0.05115090
  9: power    TRUE 10    TRUE  TRUE 0.00000000 0.00000000 0.00000000
-10: typeI   FALSE  5    TRUE FALSE 2.46052901 2.41902419 2.46027678
-11: typeI    TRUE  5   FALSE FALSE 2.54385065 2.54358974 1.89899405
-12: typeI    TRUE  5   FALSE  TRUE 2.63211798 2.63184844 1.92583487
-13: typeI    TRUE  5    TRUE FALSE 2.94117647 2.87939338 2.94057377
-14: typeI    TRUE  5    TRUE  TRUE 2.58249641 2.42802991 2.58461538
-15: typeI    TRUE 10   FALSE FALSE 2.54202542 2.54202542 1.26257442
-16: typeI    TRUE 10   FALSE  TRUE 2.62673753 2.62727459 1.23861194
-17: typeI    TRUE 10    TRUE FALSE 2.73733853 2.71878527 2.73565574
-18: typeI    TRUE 10    TRUE  TRUE 2.47570332 2.51662404 2.48077909
+10: typeI   FALSE  5    TRUE FALSE 0.00000000 0.00000000 0.00000000
+11: typeI    TRUE  5   FALSE FALSE 0.00000000 0.00000000 0.00000000
+12: typeI    TRUE  5   FALSE  TRUE 0.00000000 0.00000000 0.00000000
+13: typeI    TRUE  5    TRUE FALSE 0.01024800 0.01024695 0.01024590
+14: typeI    TRUE  5    TRUE  TRUE 0.00000000 0.00000000 0.00000000
+15: typeI    TRUE 10   FALSE FALSE 0.00000000 0.00000000 0.00000000
+16: typeI    TRUE 10   FALSE  TRUE 0.00000000 0.00000000 0.00000000
+17: typeI    TRUE 10    TRUE FALSE 0.00000000 0.00000000 0.00000000
+18: typeI    TRUE 10    TRUE  TRUE 0.00000000 0.00000000 0.00000000
 \end{verbatim}
+
+I think the issues arise du to special cases, e.g. decreasing
+information:
+\begin{verbatim}
+    scenario method stage     type    infoPC statistic p.value_ML p.value_MUE                 reason
+ 1:        1      1     1 decision 0.9551434 1.7322474 0.04182771           1                   <NA>
+ 2:        1      2     1 decision 0.9559423 1.7322474 0.04182771           1                   <NA>
+ 3:        1      3     1 decision 0.9538148 1.7322474 0.04182771           1                   <NA>
+ 4:        4      1     1 decision 0.6270978 0.3678716 0.35654991           1 decreasing information
+ 5:        4      2     1 decision 0.6276223 0.3678716 0.35654991           1 decreasing information
+ 6:        4      3     1 decision 0.6262255 0.3678716 0.35654991           1 decreasing information
+ 7:        9      1     1 decision 0.9267393 1.8635206 0.03139115           1                   <NA>
+ 8:        9      2     1 decision 0.9219480 1.7901042 0.03692049           1                   <NA>
+ 9:        9      3     1 decision 0.9269087 1.8635206 0.03139115           1                   <NA>
+10:       11      1     1 decision 0.8045784 1.7609106 0.03937283           1 decreasing information
+11:       11      2     1 decision 0.7881215 1.5699238 0.05846867           1 decreasing information
+12:       11      3     1 decision 0.8047255 1.7609106 0.03937283           1 decreasing information
+\end{verbatim}
+
+\clearpage
 
 When concluding for efficacy:
 \begin{verbatim}
@@ -520,21 +540,34 @@ When concluding for efficacy:
 18: typeI    TRUE 10    TRUE  TRUE        0        0        0
 \end{verbatim}
 
+\clearpage
+
 \section{Coverage}
-\label{sec:orgfe83495}
+\label{sec:orgb2557ce}
 
-Average width of the confidence intervals
-\lstset{language=r,label= ,caption= ,captionpos=b,numbers=none}
-\begin{lstlisting}
-res2stage.width <- res2stage[decision %in% c("futility","efficacy"),
-                             .(N = .N,
-                               width.naive = mean(upper_ML-lower_ML),
-                               width.MUE = mean(upper_MUE-lower_MUE)),
-                             by = c("method.char","missing","binding","fixC","ar","hypo")]
-res2stage.width[, width.ratio := width.MUE/width.naive]
-dcast(res2stage.width, hypo + missing + ar + binding + fixC ~ method.char, value.var = "width.ratio")
-\end{lstlisting}
+\begin{verbatim}
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE    94.79    94.82    94.92
+ 2: power    TRUE  5   FALSE FALSE    93.60    93.61    93.93
+ 3: power    TRUE  5   FALSE  TRUE    94.21    94.22    94.28
+ 4: power    TRUE  5    TRUE FALSE    94.76    94.59    94.89
+ 5: power    TRUE  5    TRUE  TRUE    95.44    95.38    95.22
+ 6: power    TRUE 10   FALSE FALSE    93.38    93.36    94.14
+ 7: power    TRUE 10   FALSE  TRUE    94.24    94.15    94.53
+ 8: power    TRUE 10    TRUE FALSE    94.75    94.73    94.98
+ 9: power    TRUE 10    TRUE  TRUE    95.97    95.91    95.46
+10: typeI   FALSE  5    TRUE FALSE    95.14    95.20    95.15
+11: typeI    TRUE  5   FALSE FALSE    95.01    95.02    95.57
+12: typeI    TRUE  5   FALSE  TRUE    95.07    95.08    95.74
+13: typeI    TRUE  5    TRUE FALSE    94.71    94.78    94.73
+14: typeI    TRUE  5    TRUE  TRUE    95.06    95.24    94.98
+15: typeI    TRUE 10   FALSE FALSE    95.08    95.08    96.19
+16: typeI    TRUE 10   FALSE  TRUE    95.27    95.25    96.48
+17: typeI    TRUE 10    TRUE FALSE    94.87    94.82    94.93
+18: typeI    TRUE 10    TRUE  TRUE    95.33    95.29    95.13
+\end{verbatim}
 
+Average width of the confidence intervals (ratio width(MUE) and width(ML))
 \begin{verbatim}
      hypo missing ar binding  fixC  method 1  method 2 method 3
  1: power   FALSE  5    TRUE FALSE 1.0517981 1.0518767 1.053589
@@ -558,7 +591,7 @@ dcast(res2stage.width, hypo + missing + ar + binding + fixC ~ method.char, value
 \end{verbatim}
 
 \section{Percentage of missing values}
-\label{sec:orga0e8a8d}
+\label{sec:org4cba011}
 
 Here only for method 1 - values are very similar between different
 methods:
@@ -593,7 +626,7 @@ but with intermediate outcome value and baseline.
 \clearpage
 
 \section{Information}
-\label{sec:org4033c5b}
+\label{sec:org8ec6aaf}
 
 Percentage of information for method 1\footnote{average over the reached stages}:
 \begin{verbatim}

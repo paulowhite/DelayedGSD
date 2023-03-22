@@ -15,6 +15,15 @@ library(ggplot2)
 #+END_SRC
 
 #+RESULTS:
+: 
+: Vedhæfter pakke: 'ggplot2'
+: 
+: Det følgende objekt er maskeret fra 'package:BuyseTest':
+: 
+:     vars
+: 
+: Advarselsbesked:
+: pakke 'ggplot2' blev bygget under R version 4.2.2
 
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
@@ -628,66 +637,30 @@ dcast(res2stage.mismatchFU, hypo + missing + ar + binding + fixC ~ method.char, 
 18: typeI    TRUE 10    TRUE  TRUE 0.00000000 0.00000000 0.00000000
 #+end_example
 
-#+BEGIN_SRC R :exports none :results output :session *R* :cache no
-res2stage[decision=="futility" & lower_MUE>0,]
+I think the issues arise du to special cases, e.g. decreasing
+information:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res2stage[decision=="futility" & lower_MUE>0,.(scenario,method,stage,type,infoPC,statistic,p.value_ML,p.value_MUE,reason)]
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-    scenario missing binding  fixC ar  hypo method stage     type statistic estimate_ML      se_ML p.value_ML
- 1:        1    TRUE    TRUE FALSE 10 power      1     1 decision 1.7322474  0.37016505 0.37016505 0.04182771
- 2:        1    TRUE    TRUE FALSE 10 power      2     1 decision 1.7322474  0.37016505 0.37016505 0.04182771
- 3:        1    TRUE    TRUE FALSE 10 power      3     1 decision 1.7322474  0.37016505 0.37016505 0.04182771
- 4:        4    TRUE    TRUE FALSE  5 typeI      1     1 decision 0.3678716  0.09701712 0.09701712 0.35654991
- 5:        4    TRUE    TRUE FALSE  5 typeI      2     1 decision 0.3678716  0.09701712 0.09701712 0.35654991
- 6:        4    TRUE    TRUE FALSE  5 typeI      3     1 decision 0.3678716  0.09701712 0.09701712 0.35654991
- 7:        9    TRUE   FALSE  TRUE 10 power      1     1 decision 1.8635206  0.40111963 0.40111963 0.03139115
- 8:        9    TRUE   FALSE  TRUE 10 power      2     1 decision 1.7901042  0.38489437 0.38489437 0.03692049
- 9:        9    TRUE   FALSE  TRUE 10 power      3     1 decision 1.8635206  0.40111963 0.40111963 0.03139115
-10:       11    TRUE   FALSE  TRUE  5 power      1     1 decision 1.7609106  0.40679129 0.40679129 0.03937283
-11:       11    TRUE   FALSE  TRUE  5 power      2     1 decision 1.5699238  0.36508873 0.36508873 0.05846867
-12:       11    TRUE   FALSE  TRUE  5 power      3     1 decision 1.7609106  0.40679129 0.40679129 0.03937283
-       lower_ML  upper_ML estimate_MUE p.value_MUE lower_MUE upper_MUE     info    infoPC info.pred
- 1: -0.04936225 0.7896923    0.7974956           1 0.4770104  1.224928 21.89924 0.9551434        NA
- 2: -0.04936225 0.7896923    0.7974956           1 0.4770104  1.224928 21.89924 0.9559423        NA
- 3: -0.04936225 0.7896923    0.7974956           1 0.4770104  1.224928 21.89924 0.9538148        NA
- 4: -0.42092898 0.6149632    0.6243984           1 0.2288799  1.151919 14.37791 0.6270978        NA
- 5: -0.42092898 0.6149632    0.6243984           1 0.2288799  1.151919 14.37791 0.6276223        NA
- 6: -0.42092898 0.6149632    0.6243984           1 0.2288799  1.151919 14.37791 0.6262255        NA
- 7: -0.02144578 0.8236850    0.8315648           1 0.5087438  1.262113 21.58343 0.9267393        NA
- 8: -0.03720402 0.8069927    0.8148676           1 0.4924005  1.244943 21.63085 0.9219480        NA
- 9: -0.02144578 0.8236850    0.8315648           1 0.5087438  1.262113 21.58343 0.9269087        NA
-10: -0.04686787 0.8604505    0.8687569           1 0.5222972  1.330839 18.73835 0.8045784        NA
-11: -0.09158612 0.8217636    0.8301337           1 0.4813647  1.295296 18.49100 0.7881215        NA
-12: -0.04686787 0.8604505    0.8687569           1 0.5222972  1.330839 18.73835 0.8047255        NA
-    infoPC.pred uk lk       ck decision                 reason time.interim      seed nX1.interim nX2.interim
- 1:          NA NA NA 1.959964 futility                   <NA>          140 187033903         345         284
- 2:          NA NA NA 1.959964 futility                   <NA>          140 187033903         345         284
- 3:          NA NA NA 1.959964 futility                   <NA>          140 187033903         345         284
- 4:          NA NA NA 1.874799 futility decreasing information          247 151594999         309         273
- 5:          NA NA NA 1.875929 futility decreasing information          245 151594999         306         270
- 6:          NA NA NA 2.310378 futility decreasing information          247 151594999         309         273
- 7:          NA NA NA 1.959964 futility                   <NA>          138 187033903         356         298
- 8:          NA NA NA 1.959964 futility                   <NA>          139 187033903         359         301
- 9:          NA NA NA 1.959964 futility                   <NA>          138 187033903         356         298
-10:          NA NA NA 1.959964 futility decreasing information          247 187033903         312         279
-11:          NA NA NA 1.959964 futility decreasing information          249 187033903         315         282
-12:          NA NA NA 2.121270 futility decreasing information          247 187033903         312         279
-    nX3.interim method.char stage.char truth
- 1:         242    method 1    interim   0.6
- 2:         242    method 2    interim   0.6
- 3:         242    method 3    interim   0.6
- 4:         245    method 1    interim   0.0
- 5:         244    method 2    interim   0.0
- 6:         245    method 3    interim   0.0
- 7:         253    method 1    interim   0.6
- 8:         255    method 2    interim   0.6
- 9:         253    method 3    interim   0.6
-10:         252    method 1    interim   0.6
-11:         254    method 2    interim   0.6
-12:         252    method 3    interim   0.6
+    scenario method stage     type    infoPC statistic p.value_ML p.value_MUE                 reason
+ 1:        1      1     1 decision 0.9551434 1.7322474 0.04182771           1                   <NA>
+ 2:        1      2     1 decision 0.9559423 1.7322474 0.04182771           1                   <NA>
+ 3:        1      3     1 decision 0.9538148 1.7322474 0.04182771           1                   <NA>
+ 4:        4      1     1 decision 0.6270978 0.3678716 0.35654991           1 decreasing information
+ 5:        4      2     1 decision 0.6276223 0.3678716 0.35654991           1 decreasing information
+ 6:        4      3     1 decision 0.6262255 0.3678716 0.35654991           1 decreasing information
+ 7:        9      1     1 decision 0.9267393 1.8635206 0.03139115           1                   <NA>
+ 8:        9      2     1 decision 0.9219480 1.7901042 0.03692049           1                   <NA>
+ 9:        9      3     1 decision 0.9269087 1.8635206 0.03139115           1                   <NA>
+10:       11      1     1 decision 0.8045784 1.7609106 0.03937283           1 decreasing information
+11:       11      2     1 decision 0.7881215 1.5699238 0.05846867           1 decreasing information
+12:       11      3     1 decision 0.8047255 1.7609106 0.03937283           1 decreasing information
 #+end_example
 
+\clearpage
 
 When concluding for efficacy:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
@@ -719,9 +692,11 @@ dcast(res2stage.mismatchEFF, hypo + missing + ar + binding + fixC ~ method.char,
 18: typeI    TRUE 10    TRUE  TRUE        0        0        0
 #+end_example
 
+\clearpage
+
 * Coverage
 
-#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
 res2stage.coverage <- res2stage[decision %in% c("futility","efficacy"),
                                 .(N = .N,
                                   coverage = 100*mean( (lower_MUE <= truth) & (truth <= upper_MUE) )),
@@ -752,8 +727,8 @@ dcast(res2stage.coverage, hypo + missing + ar + binding + fixC ~ method.char, va
 18: typeI    TRUE 10    TRUE  TRUE    95.33    95.29    95.13
 #+end_example
 
-Average width of the confidence intervals
-#+BEGIN_SRC R :exports both :results output :session *R* :cache no
+Average width of the confidence intervals (ratio width(MUE) and width(ML))
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
 res2stage.width <- res2stage[decision %in% c("futility","efficacy"),
                              .(N = .N,
                                width.naive = mean(upper_ML-lower_ML),

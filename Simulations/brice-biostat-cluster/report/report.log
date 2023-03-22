@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (MiKTeX 21.8) (preloaded format=pdflatex 2021.8.26)  17 MAR 2023 15:10
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (MiKTeX 21.8) (preloaded format=pdflatex 2021.8.26)  22 MAR 2023 19:01
 entering extended mode
 **./report.tex
 (report.tex
@@ -1360,42 +1360,34 @@ Package pdftex.def Info: ./figures/gg-estimateC-density.pdf  used on input line
 
 ] [13
 
-]
-(C:\Program Files\MiKTeX 2.9\tex/latex/listings\lstlang1.sty
-File: lstlang1.sty 2020/03/24 1.8d listings language file
-)
-(C:\Program Files\MiKTeX 2.9\tex/latex/listings\lstlang2.sty
-File: lstlang2.sty 2020/03/24 1.8d listings language file
-)
-(C:\Program Files\MiKTeX 2.9\tex/latex/listings\lstlang3.sty
-File: lstlang3.sty 2020/03/24 1.8d listings language file
-) [14
+] [14
 
 ]
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 535.
- [15]
-[16]
+[15
+
+] [16
+
+] [17]
 \Changes@OutFile=\write6
 \openout6 = `report.soc'.
 
 \tf@loc=\write7
 \openout7 = `report.loc'.
 
- [17
+ [18
 
 ] (report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: D781247FFAF3C7C7EEB040E77FD89000;1865.
  ) 
 Here is how much of TeX's memory you used:
- 28806 strings out of 478868
- 503923 string characters out of 2856724
- 1164744 words of memory out of 3000000
- 46068 multiletter control sequences out of 15000+600000
- 474907 words of font info for 89 fonts, out of 8000000 for 9000
+ 27735 strings out of 478868
+ 493008 string characters out of 2856724
+ 819347 words of memory out of 3000000
+ 45014 multiletter control sequences out of 15000+600000
+ 470894 words of font info for 84 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 114i,8n,117p,493b,1923s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 114i,8n,117p,493b,424s stack positions out of 5000i,500n,10000p,200000b,80000s
 pdfTeX warning (dest): name{Hfootnote.3} has been referenced but does not exi
 st, replaced by a fixed one
 
@@ -1416,9 +1408,9 @@ ram Files/MiKTeX 2.9/fonts/type1/public/lm/lmr8.pfb><C:/Program Files/MiKTeX 2.
 9/fonts/type1/public/lm/lmsy10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/pub
 lic/lm/lmtt10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmtt12.pfb
 >
-Output written on report.pdf (17 pages, 1268406 bytes).
+Output written on report.pdf (18 pages, 1266953 bytes).
 PDF statistics:
- 260 PDF objects out of 1000 (max. 8388607)
- 46 named destinations out of 1000 (max. 500000)
+ 255 PDF objects out of 1000 (max. 8388607)
+ 39 named destinations out of 1000 (max. 500000)
  134 words of extra memory for PDF output out of 10000 (max. 10000000)
 
