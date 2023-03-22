@@ -190,11 +190,11 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                                  upper = c(uk[1:(k-1)],Inf,Inf),
                                  mean=rep(0,k+1),
                                  sigma= sigmaZk2,
-                                 abseps = obj$abseps) - alphaSpentInc[k]}
-            c_new <- try(uniroot(f,
-                                 lower = lk[k-1],
-                                 upper = uk[k-1],
-                                 tol = abseps)$root,silent=T)
+                                 abseps = abseps) - alphaSpentInc[k]}
+        c_new <- try(uniroot(f,
+                             lower = lk[k-1],
+                             upper = uk[k-1],
+                             tol = abseps)$root,silent=T)
 
         if(inherits(c_new,"try-error")){
             c_new <- try(uniroot(f,
@@ -243,12 +243,11 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       
     }
   }
-
     return(list(uk=uk,
-              lk=lk,
-              ck=max(cMin,ck.unrestricted),
-              ck.unrestricted=ck.unrestricted,
-              alphaSpent=alphaSpent,
-              betaSpent=betaSpent))
+                lk=lk,
+                ck=max(cMin,ck.unrestricted),
+                ck.unrestricted=ck.unrestricted,
+                alphaSpent=alphaSpent,
+                betaSpent=betaSpent))
   
 }

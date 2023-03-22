@@ -126,6 +126,10 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
         attr(out,"Info.max") <- Info.max
     }else if(type == "decision"){
 
+        if(resStage$k==0){
+            return(NULL)
+        }
+        
         out <- object$conclusion[c("interim","reason.interim"),1:resStage$k,drop=FALSE]
         rownames(out) <- c("decision","comment")
         colnames(out) <- paste0("stage ",1:resStage$k)

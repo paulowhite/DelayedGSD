@@ -17,8 +17,8 @@ if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on
     n.iter_sim <- 100
 
     if("missing" %in% ls() == FALSE){ missing <- TRUE }
-    if("binding" %in% ls() == FALSE){ binding <- FALSE }
-    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- TRUE }
+    if("binding" %in% ls() == FALSE){ binding <- TRUE }
+    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
     if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
 }
@@ -133,15 +133,17 @@ inflationFactor <- unlist(lapply(plannedB,function(iP){iP$planned$InflationFacto
 nGSD <- ceiling(n*inflationFactor)
 RES <- NULL
 
+cat("Sample size: ",paste(nGSD, collapse = ", "),"\n",sep="")
+
 ## * Loop
 allj <- seq(1+(iter_sim-1)*nsim, iter_sim*nsim, by = 1)
 #allj <- 572:1000
 for(j in allj){ ## j <- 1 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 905686708
+  #myseedi <- 187033903
   # {{{ TRACE info (e.g. to check the Rout)
-  print(paste0("seed ",myseedi," for ","j=",j," (index ",which(j==allj),") out of ",nsim))
+  cat("seed ",myseedi," for ","j=",j," (index ",which(j==allj),") out of ",nsim,": ", sep="")
   # }}}
   
   # {{{ generate data
@@ -176,6 +178,7 @@ for(j in allj){ ## j <- 1 ## 5
   # Here we stop inclusion data collection for the interim analysis as soon as
   # half of the participants have completed (or had the opportunity to complete) the follow-up 
   thets <- d$t3[ceiling(nGSD*PropForInterim)]
+  cat("time = ",paste(thets, collapse = ", "),"\n",sep="")
   #thet <- d$t3[ceiling(n*PropForInterim)]
   
   ## ddi <- FormatAsCase(di) # needed ????
@@ -289,10 +292,10 @@ for(j in allj){ ## j <- 1 ## 5
   # {{{ Save results
   outMerge <- do.call(rbind,lapply(method, function(iMeth){
     iNames <- unique(c(names(out.interim[[iMeth]]),names(out.decision[[iMeth]]),names(out.final[[iMeth]])))
-    iMerge <- data.frame(matrix(NA, ncol = length(iNames)+3, nrow = 3, dimnames = list(NULL, c("method", "stage", "type", iNames))))
-    iMerge[1,c("method","stage","type",names(out.interim[[iMeth]]))] <- data.frame(method = iMeth, stage = 1, type = "interim", out.interim[[iMeth]]) 
-    iMerge[2,c("method","stage","type",names(out.decision[[iMeth]]))] <- data.frame(method = iMeth, stage = 1, type = "decision", out.decision[[iMeth]]) 
-    iMerge[3,c("method","stage","type",names(out.final[[iMeth]]))] <- data.frame(method = iMeth, stage = 2, type = "final", out.final[[iMeth]])
+    iMerge <- data.frame(matrix(NA, ncol = length(iNames), nrow = 3, dimnames = list(NULL, iNames)))
+    iMerge[1,names(out.interim[[iMeth]])] <- out.interim[[iMeth]]
+    iMerge[2,names(out.decision[[iMeth]])] <- out.decision[[iMeth]]
+    iMerge[3,names(out.final[[iMeth]])] <- out.final[[iMeth]]
     return(iMerge)
   }))
   

@@ -7,11 +7,14 @@
 #' ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted always without.
 #' @param lk lower bounds up to stage where study was stopped
 #' @param uk upper bounds up to stage where study was stopped
+#' @param reason.interim motivation for stopping or continuing at interim. Use to handle special cases (skipped interim because reach Imax, ...)
 #' @param kMax maximum number of analyses
 #' @param estimate naive estimate (e.g. using  ML or REML).
 #' @param method  method 1, 2 or 3
 #' @param bindingFutility [logical]  whether the futility stopping rule is binding.
 #' @param cNotBelowFixedc [logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
+#' @param continuity.correction [logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
+#' When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.
 
 ## * FinalEstimate (code)
 #' @export
@@ -20,12 +23,14 @@ FinalEstimate <- function(Info.d,
                           ck,
                           ck.unrestricted,
                           lk,  
-                          uk,  
+                          uk,
+                          reason.interim,
                           kMax, 
                           estimate,
                           method,
                           bindingFutility,
-                          cNotBelowFixedc){ 
+                          cNotBelowFixedc,
+                          continuity.correction){ 
   
   f <- function(delta){
     (FinalPvalue(Info.d=Info.d,
@@ -34,12 +39,14 @@ FinalEstimate <- function(Info.d,
                 ck.unrestricted=ck.unrestricted,
                 lk=lk,
                 uk=uk,
+                reason.interim=reason.interim,
                 kMax=kMax,
                 estimate=estimate,
                 delta=delta,
                 method=method,
                 bindingFutility=bindingFutility,
-                cNotBelowFixedc=cNotBelowFixedc) - 0.5)^2
+                cNotBelowFixedc=cNotBelowFixedc,
+                continuity.correction=continuity.correction) - 0.5)^2
   }
   
   res <- stats::optimise(f,lower=estimate-2*sqrt(1/Info.d[length(Info.d)]),upper=estimate+2*sqrt(1/Info.d[length(Info.d)]))

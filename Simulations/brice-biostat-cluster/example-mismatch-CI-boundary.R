@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 13 2023 (09:28) 
 ## Version: 
-## Last-Updated: mar  7 2023 (18:45) 
+## Last-Updated: mar 17 2023 (15:23) 
 ##           By: Brice Ozenne
-##     Update #: 16
+##     Update #: 22
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -24,15 +24,18 @@ xx <- res2stage[decision=="futility" & p.value_MUE<0.025,.SD,
 
 xx[method==1 & binding & fixC == TRUE & ar == 10 & hypo == "power",seed]
 
-## * Simulate data
+## * Simulate data (special case)
 library(DelayedGSD)
 
 method <- 1
 binding <- TRUE
-seed <- 919745562
-fixC <- TRUE
+seed <- 187033903
+fixC <- FALSE
 ar <- 10
 hypo <- "power"
+
+thets <- c(140, 140, 140)
+nGSD <- c(549, 548, 549)
 
 debug.plannedB <- CalcBoundaries(kMax = 2,  
                                  alpha = 0.025, 
@@ -46,7 +49,7 @@ debug.plannedB <- CalcBoundaries(kMax = 2,
                                  bindingFutility= binding,
                                  delta = 0.6)
 
-df.sim <- GenData(n = 553, 
+df.sim <- GenData(n = max(nGSD), 
                   N.fw = 2,
                   rand.block = c(1,1,0,0),
                   allsd = c(2.5,2.1,2.4),
@@ -65,8 +68,6 @@ df.sim <- GenData(n = 553,
                   DigitsOutcome = 2,
                   TimeFactor = 14,
                   DigitsTime = 0)$d
-thets <- c(143,143,143)
-nGSD <- c(486,486,486)
 
 ## ** interim
 SelectData(df.sim,t=thets[method])
@@ -87,28 +88,26 @@ debug.GSDI <- update(debug.plannedB, delta = debug.lmmI, trace = TRUE)
 debug.lmmD <- analyzeData(df.sim[which(df.sim$t1 <= thets[method] + 1.50001*14),],
                           ddf = "nlme", getinfo = TRUE, trace = TRUE)
 debug.GSDD <- update(debug.GSDI, delta = debug.lmmD, k = 1, type.k = "decision", trace = FALSE)
+summary(debug.GSDD)
 
-## ** final
-debug.lmmF <- analyzeData(df.sim[1:549,],
-                          ddf = "nlme", getinfo = TRUE, trace = TRUE)
-debug.GSDF <- update(debug.GSDD, delta = debug.lmmF, trace = FALSE)
-summary(debug.GSDF)
+##            GSD with repeated measurements at the decision analysis of stage 1 
+
 ## Boundaries and observed statistics 
-## stage |         Interim           | Decision         |     Spent          
-##       | F-bound E-bound    Stat   |  C-bound  Stat   |     alpha      beta
-##     1 |  0.9117 2.31555 2.17459 C |  1.95996         | 0.0102914 0.0823316
-##     2 |                           |  2.01492 1.964 F |     0.025       0.2
+## stage |         Interim             | Decision           | Spent     
+##       | F-bound E-bound Stat        |  C-bound    Stat   | alpha beta
+##     1 |    <NA>    <NA> <NA> S-Imax |  1.95996 1.73225 F | 0.025  0.2
+##     2 |                             |                    |           
 
 ## Observed and predicted information: 
 ## stage |  Interim     (%) | Decision     (%) |   n
-##     1 | 14.71054 0.64161 | 18.57954 0.81035 | 395
-##     2 |                  | 25.57982 1.11567 | 549
+##     1 | 18.77808 0.81901 | 21.89924 0.95514 | 399
+##     2 |                  |                  |    
 
 ## Current MUE-estimate of the treatment effect (Z1) 
 ## estimate   lower   upper  p.value
-##  0.40058 0.00013 0.81172 0.024964
+##   0.7975 0.47701 1.22493 1.000000
 
-
+confint(debug.GSDD)
 
 ##----------------------------------------------------------------------
 ### example-debug.R ends here

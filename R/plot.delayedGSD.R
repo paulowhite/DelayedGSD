@@ -114,7 +114,7 @@ plot.delayedGSD <- function(x,
     uk <- outBound[,"Ebound"]
     lk <- outBound[,"Fbound"]
     ck <- outBound[,"Cbound"]
-    
+
     if(is.null(main)){
         if(identical(planned,"only")){
             main <- "Planning"
@@ -226,10 +226,11 @@ plot.delayedGSD <- function(x,
         graphics::text(x=xdelta,y=delta,labels=specdec(delta,k=mydigits),col="purple", pos = 4)
         
     }
-
-    x.decision <- coef(x, type = "decision")
-    if(!is.na(x.decision["comment",k]) && x.decision["comment",k]!="Imax reached"){
-        graphics::text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=2)
+    if(k>0){
+        x.decision <- coef(x, type = "decision")
+        if(!is.na(x.decision["comment",k]) && x.decision["comment",k]!="Imax reached"){
+            graphics::text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=2)
+        }
     }
     
     if(planned == "only"){

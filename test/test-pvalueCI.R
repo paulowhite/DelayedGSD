@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 27 2022 (09:32) 
 ## Version: 
-## Last-Updated: mar  9 2023 (11:33) 
+## Last-Updated: mar 22 2023 (14:45) 
 ##           By: Brice Ozenne
-##     Update #: 60
+##     Update #: 66
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -64,31 +64,35 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
     ## p-value using FinalPvalue
     test.p <- FinalPvalue(Info.d = Info.var,
                           Info.i = Info.var,
-                          ck = efficacyBound[2],
-                          ck.unrestricted = efficacyBound[2],
+                          ck = efficacyBound,
+                          ck.unrestricted = efficacyBound,
                           lk = futilityBound,
                           uk = efficacyBound,
                           kMax = 3,
                           estimate = estimate,
                           method = 1,
+                          reason.interim = c("",""),
                           bindingFutility = TRUE,
-                          cNotBelowFixedc = FALSE)
+                          cNotBelowFixedc = FALSE,
+                          continuity.correction = TRUE)
     expect_equal(as.double(test.p), 0.00625)
     expect_equal(as.double(test.p), as.data.frame(ests)[2,"finalPValues"])
     
     ## confidence interval using FinalPvalue
     test.ci <- FinalCI(Info.d = Info.var,
                        Info.i = Info.var,
-                       ck = efficacyBound[2],
-                       ck.unrestricted = efficacyBound[2],
+                       ck = efficacyBound,
+                       ck.unrestricted = efficacyBound,
                        lk = futilityBound,
                        uk = efficacyBound,
                        kMax = 3,
                        conf.level = 0.95,
                        estimate = estimate,
+                       reason.interim = c("",""),
                        method = 1,
                        bindingFutility = TRUE,
-                       cNotBelowFixedc = FALSE)
+                       cNotBelowFixedc = FALSE,
+                       continuity.correction = TRUE)
     expect_equal(as.double(test.ci), c(0.53413706, 1.99336202), tol = 1e-4)
     as.data.frame(ests)[2,"finalConfidenceIntervalLowerBounds"] ## 0.2413634
     as.data.frame(ests)[2,"finalConfidenceIntervalUpperBounds"] ## 2.000625
@@ -96,15 +100,17 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
     ## median unbiased estimate
     test.beta <- FinalEstimate(Info.d = Info.var,
                                Info.i = Info.var,
-                               ck = efficacyBound[2],
-                               ck.unrestricted = efficacyBound[2],
+                               ck = efficacyBound,
+                               ck.unrestricted = efficacyBound,
                                lk = futilityBound,
                                uk = efficacyBound,
                                kMax = 3,
                                estimate = estimate,
+                               reason.interim = c("",""),
                                method = 1,
                                bindingFutility = TRUE,
-                               cNotBelowFixedc = FALSE)
+                               cNotBelowFixedc = FALSE,
+                               continuity.correction = TRUE)
     expect_equal(as.double(test.beta), 1.26709147, tol = 1e-6)
     as.data.frame(ests)[2,"medianUnbiasedEstimates"] ## 1.121087
 }) 
@@ -145,44 +151,50 @@ test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
  ## p-value using FinalPvalue
  pval.Obrien <- FinalPvalue(Info.d = Info.var,
                             Info.i = Info.var,
-                            ck = ck.Obrien[2],
-                            ck.unrestricted = ck.Obrien[2],
+                            ck = ck.Obrien,
+                            ck.unrestricted = ck.Obrien,
                             lk = lk.Obrien,
                             uk = uk.Obrien,
                             kMax = 4,
                             estimate = estimate[2],
+                            reason.interim = c("",""),
                             method = 1,
                             bindingFutility = TRUE,
-                            cNotBelowFixedc = FALSE)
+                            cNotBelowFixedc = FALSE,
+                            continuity.correction = TRUE)
  expect_equal(as.double(pval.Obrien), 0.001362486, tol = 1e-6)
  
  ## confidence interval using FinalPvalue
  CI.Obrien <- FinalCI(Info.d = Info.var,
                       Info.i = Info.var,
-                      ck = ck.Obrien[2],
-                      ck.unrestricted = ck.Obrien[2],
+                      ck = ck.Obrien,
+                      ck.unrestricted = ck.Obrien,
                       lk = lk.Obrien,
                       uk = uk.Obrien,
                       kMax = 4,
                       estimate = estimate[2],
+                      reason.interim = c("",""),
                       method = 1,
                       conf.level = 0.95,
                       bindingFutility = TRUE,
-                      cNotBelowFixedc = FALSE)
+                      cNotBelowFixedc = FALSE,
+                      continuity.correction = TRUE)
  expect_equal(as.double(CI.Obrien), c(0.1565499,0.7470000), tol = 1e-3) ## FROM THE BOOK: c(0.157, 0.748)
 
  ## median unbiased estimate
  estimate.Obrien <- FinalEstimate(Info.d = Info.var,
                                   Info.i = Info.var,
-                                  ck = ck.Obrien[2],
-                                  ck.unrestricted = ck.Obrien[2],
+                                  ck = ck.Obrien,
+                                  ck.unrestricted = ck.Obrien,
                                   lk = lk.Obrien,
                                   uk = uk.Obrien,
                                   kMax = 4,
                                   estimate = estimate[2],
+                                  reason.interim = c("",""),
                                   method = 1,
                                   bindingFutility = TRUE,
-                                  cNotBelowFixedc = FALSE)
+                                  cNotBelowFixedc = FALSE,
+                                  continuity.correction = TRUE)
  expect_equal(round(as.double(estimate.Obrien),3), 0.452, tol = 1e-3)
 
  ## ** Pocock case
@@ -201,45 +213,52 @@ test_that("p-value/CIs/MUestimate with four stage design stopped at interim 2",{
  ## p-value using FinalPvalue
  pval.Pocock <- FinalPvalue(Info.d = Info.var,
                             Info.i = Info.var,
-                            ck = ck.Pocock[2],
-                            ck.unrestricted = ck.Pocock[2],
+                            ck = ck.Pocock,
+                            ck.unrestricted = ck.Pocock,
                             lk = lk.Pocock,
                             uk = uk.Pocock,
                             kMax = 4,
                             estimate = estimate[2],
+                            reason.interim = c("",""),
                             method = 1,
                             bindingFutility = TRUE,
-                            cNotBelowFixedc = FALSE)
+                            cNotBelowFixedc = FALSE,
+                            continuity.correction = TRUE)
  expect_equal(as.double(pval.Pocock), 0.009819342, tol = 1e-6) 
  
  ## confidence interval using FinalPvalue
  CI.Pocock <- FinalCI(Info.d = Info.var,
                       Info.i = Info.var,
-                      ck = ck.Pocock[2],
-                      ck.unrestricted = ck.Pocock[2],
+                      ck = ck.Pocock,
+                      ck.unrestricted = ck.Pocock,
                       lk = lk.Pocock,
                       uk = uk.Pocock,
                       kMax = 4,
                       estimate = estimate[2],
+                      reason.interim = c("",""),
                       method = 1,
                       bindingFutility = TRUE,
                       cNotBelowFixedc = FALSE,
-                      conf.level = 0.95)
+                      conf.level = 0.95,
+                      continuity.correction = TRUE)
  expect_equal(round(as.double(CI.Pocock),3), c(0.074, 0.729), tol = 1e-3)
 
  ## median unbiased estimate
  estimate.Pocock <- FinalEstimate(Info.d = Info.var,
-                      Info.i = Info.var,
-                      ck = ck.Pocock[2],
-                      ck.unrestricted = ck.Pocock[2],
-                      lk = lk.Pocock,
-                      uk = uk.Pocock,
-                      kMax = 4,
-                      estimate = estimate[2],
-                      method = 1,
-                      bindingFutility = TRUE,
-                      cNotBelowFixedc = FALSE)
+                                  Info.i = Info.var,
+                                  ck = ck.Pocock,
+                                  ck.unrestricted = ck.Pocock,
+                                  lk = lk.Pocock,
+                                  uk = uk.Pocock,
+                                  kMax = 4,
+                                  estimate = estimate[2],
+                                  reason.interim = c("",""),
+                                  method = 1,
+                                  bindingFutility = TRUE,
+                                  cNotBelowFixedc = FALSE,
+                                  continuity.correction = TRUE)
  expect_equal(round(as.double(estimate.Pocock),3), 0.419, tol = 1e-3)
+
 })
 
 ## * P-value when at boundary value 
@@ -255,9 +274,11 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
                         kMax = 2, 
                         delta = 0,
                         estimate = 1.69415016027832 / sqrt(2.6923896504288),## 1.64370753556795,
+                        reason.interim = c(""),
                         method = 2,
                         bindingFutility = TRUE, 
-                        cNotBelowFixedc = FALSE)
+                        cNotBelowFixedc = FALSE,
+                        continuity.correction = TRUE)
     GS <- ErrorSpend(I=2.45494676691245,rho=2,beta_or_alpha=0.025,Info.max=3.646459)
     expect_equal(as.double(test), GS, tol = 1e-5)
     
@@ -270,9 +291,11 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
                         kMax = 2, 
                         delta = 0,  
                         estimate = 1.897834 / sqrt(12.58797814),
+                        reason.interim = c(""),
                         method = 3,
                         bindingFutility = TRUE,
-                        cNotBelowFixedc = FALSE)
+                        cNotBelowFixedc = FALSE,
+                        continuity.correction = TRUE)
     GS <- ErrorSpend(I=10.60271846,rho=2,beta_or_alpha=0.025,Info.max=22.71478)
     expect_equal(as.double(test), GS, tol = 1e-5)
     
@@ -286,9 +309,11 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
                         kMax = 2,
                         delta = 0, 
                         estimate = 2.01974814127831 / sqrt(4.30612228613852),
+                        reason.interim = c("",""),
                         method = 1,
                         bindingFutility = TRUE, 
-                        cNotBelowFixedc = FALSE)
+                        cNotBelowFixedc = FALSE,
+                        continuity.correction = TRUE)
     expect_equal(as.double(test), 0.025, tol = 1e-5)
     
     ## method 3
@@ -300,10 +325,13 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
                         kMax = 2, 
                         delta = 0,  
                         estimate = 1.99362293 / sqrt(24.67092824),
+                        reason.interim = c("",""),
                         method = 3,
                         bindingFutility = TRUE,
-                        cNotBelowFixedc = FALSE)
+                        cNotBelowFixedc = FALSE,
+                        continuity.correction = TRUE)
     expect_equal(as.double(test), 0.025, tol = 1e-5)
+
 })
 
 test_that("Check consistency between p-value and boundary (2 interim analysis)",{
@@ -331,9 +359,11 @@ test_that("Check consistency between p-value and boundary (2 interim analysis)",
                             uk = myBound$planned$uk,
                             kMax = myBound$kMax,
                             estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
+                            reason.interim = c("","",""),
                             method = iMethod,
                             bindingFutility = TRUE,
-                            cNotBelowFixedc = FALSE)
+                            cNotBelowFixedc = FALSE,
+                            continuity.correction = TRUE)
 
         expect_equal(as.double(test), 0.025, tol = 1e-3)
 
@@ -354,14 +384,16 @@ test_that("Check consistency between p-value and boundary (2 interim analysis)",
         test <- FinalPvalue(Info.d = myBound$planned$Info.d,
                             Info.i = myBound$planned$Info.i,
                             ck = myBound$planned$ck,
-                            ck.unrestricted = myBound$planned$ck.unrestricted,
+                            ck.unrestricted = myBound$planned$ck,
                             lk = myBound$planned$lk,
                             uk = myBound$planned$uk,
                             kMax = myBound$kMax,
                             estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
+                            reason.interim = c("","",""),
                             method = iMethod,
                             bindingFutility = FALSE,
-                            cNotBelowFixedc = FALSE)
+                            cNotBelowFixedc = FALSE,
+                            continuity.correction = TRUE)
 
         expect_equal(as.double(test), 0.025, tol = 1e-3)
     }
@@ -382,9 +414,11 @@ test_that("Check ordering and continuity of p-values (1 interim analysis)",{
                         kMax = 2, 
                         delta = 0,
                         estimate = z / sqrt(2.75046695782793),
+                        reason.interim = c(""),
                         method = 1,
                         bindingFutility = TRUE, 
-                        cNotBelowFixedc = FALSE)
+                        cNotBelowFixedc = FALSE,
+                        continuity.correction = TRUE)
         }else if(k==2){
             FinalPvalue(Info.d = 2.75046695782793,
                         Info.i = c(2.5589317424577, 4.30612228613852),
@@ -394,16 +428,20 @@ test_that("Check ordering and continuity of p-values (1 interim analysis)",{
                         kMax = 2,
                         delta = 0, 
                         estimate = z / sqrt(4.30612228613852),
+                        reason.interim = c("",""),
                         method = 1,
                         bindingFutility = TRUE, 
-                        cNotBelowFixedc = FALSE)
+                        cNotBelowFixedc = FALSE,
+                        continuity.correction = TRUE)
         }
     }
+
+    ## type 1 spent at interim: 1-pnorm(2.2459290489148)
 
     vecP <- c(fut.1_1 = calcP_2stage(z = -3, k = 1),
               fut.1_2 = calcP_2stage(z = 1, k = 1),
               fut.1_B = calcP_2stage(z = 1.725, k = 1),
-              fut.2_1 = calcP_2stage(z = -3, k = 2),
+              fut.2_1 = calcP_2stage(z = -5, k = 2),
               fut.2_2 = calcP_2stage(z = 1, k = 2),
               fut.2_3 = calcP_2stage(z = 2, k = 2),
               eff.2_B = calcP_2stage(z = 2.01974814127831, k = 2),
@@ -416,7 +454,7 @@ test_that("Check ordering and continuity of p-values (1 interim analysis)",{
     expect_true(all(round(diff(vecP),5)<=0))
 
     ## ** binding and fix C
-    calcP_2stage <- function(z, k){
+    calcP_2stage <- function(z, k, continuity.correction = TRUE){
         if(k==1){
             FinalPvalue(Info.d = 12.58797814,
                         Info.i = 10.60271846,
@@ -426,9 +464,11 @@ test_that("Check ordering and continuity of p-values (1 interim analysis)",{
                         kMax = 2, 
                         delta = 0,
                         estimate = z / sqrt(12.58797814),
+                        reason.interim = c(""),
                         method = 1,
                         bindingFutility = TRUE, 
-                        cNotBelowFixedc = TRUE)
+                        cNotBelowFixedc = TRUE,
+                        continuity.correction = continuity.correction)
         }else if(k==2){
             FinalPvalue(Info.d = 12.58797814,
                         Info.i = c(10.60271846, 20.74866926),
@@ -438,12 +478,16 @@ test_that("Check ordering and continuity of p-values (1 interim analysis)",{
                         kMax = 2,
                         delta = 0, 
                         estimate = z / sqrt(20.74866926),
+                        reason.interim = c("",""),
                         method = 1,
                         bindingFutility = TRUE, 
-                        cNotBelowFixedc = TRUE)
+                        cNotBelowFixedc = TRUE,
+                        continuity.correction = continuity.correction)
         }
     }
 
+     ## type 1 spent at interim: 1-pnorm(2.5458844) = 0.005450064
+    
     vecP <- c(fut.1_1 = calcP_2stage(z = -3, k = 1),
               fut.1_2 = calcP_2stage(z = 1, k = 1),
               fut.1_Bl = calcP_2stage(z = 1.49772992, k = 1),

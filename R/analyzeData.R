@@ -132,9 +132,9 @@ wide2long <- function(d, rm.na = FALSE, id.na = NULL, Z.id.na = TRUE){
     col.X <- grep("^X([[:digit:]]+)$*",names(dW), value = TRUE)
     col.missing <- grep("^missing([[:digit:]]+)$*",names(dW), value = TRUE)
     if(length(col.missing)==0){
-        dW$missing1 <- as.numeric(is.na(dW$X1))
-        dW$missing2 <- as.numeric(is.na(dW$X2))
-        dW$missing3 <- as.numeric(is.na(dW$X3))
+        for(iCol in col.X){ ## iCol <- col.X[1]
+            dW[[paste0("missing",gsub("^X","",iCol))]] <- as.numeric(is.na(dW[[iCol]]))
+        }
         col.missing <- grep("^missing([[:digit:]]+)$*",names(dW), value = TRUE)
     }
     n.times <- length(grep("t",names(dW)))
@@ -144,9 +144,9 @@ wide2long <- function(d, rm.na = FALSE, id.na = NULL, Z.id.na = TRUE){
                          idvar = c("id","Z","missing1","t1","X1"),
                          timevar = "visit",
                          v.names = c("missing","time","X"),
-                         varying = list(c("missing2","missing3"),
-                                        c("t2","t3"),
-                                        c("X2","X3")),
+                         varying = list(c(col.missing[-1]),
+                                        c(col.time[-1]),
+                                        c(col.X[-1])),
                          direction = "long")
     rownames(dL) <- NULL
 

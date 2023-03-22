@@ -7,6 +7,7 @@ if(Sys.info()["login"] == "bozenne"){
 }else if(Sys.info()["login"] == "hpl802"){
   setwd("x:/DelayedGSD/")
 }
+
 options(width = 110)
 
 library(data.table)
@@ -21,6 +22,7 @@ library(ggplot2)
 res2stage <- readRDS(file.path("Results-built","res2stage.rds"))
 res2stage[, method.char := paste0("method ",method)]
 res2stage[, stage.char := factor(stage, 1:2, c("interim","final"))]
+res2stage[, truth := ifelse(hypo=="power",0.6,0)]
 #+END_SRC
 
 #+RESULTS:
@@ -528,7 +530,9 @@ print(tablePrint)
 
 \clearpage
 
-* Frequency mismatch p-value / boundaries
+* Frequency mismatch
+
+** p-value / boundaries
 
 When concluding for futility:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
@@ -591,6 +595,196 @@ dcast(res2stage.mismatchEFF, hypo + missing + ar + binding + fixC ~ method.char,
 #+end_example
 
 \clearpage
+
+** confidence intervals
+
+When concluding for futility:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res2stage.mismatchFU <- res2stage[decision=="futility",.(N = .N, mismatch = 100*mean(lower_MUE>0)),
+                                  by = c("method.char","missing","binding","fixC","ar","hypo")]
+dcast(res2stage.mismatchFU, hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC   method 1   method 2   method 3
+ 1: power   FALSE  5    TRUE FALSE 0.00000000 0.00000000 0.00000000
+ 2: power    TRUE  5   FALSE FALSE 0.00000000 0.00000000 0.00000000
+ 3: power    TRUE  5   FALSE  TRUE 0.05189414 0.05213764 0.05194805
+ 4: power    TRUE  5    TRUE FALSE 0.00000000 0.00000000 0.00000000
+ 5: power    TRUE  5    TRUE  TRUE 0.00000000 0.00000000 0.00000000
+ 6: power    TRUE 10   FALSE FALSE 0.00000000 0.00000000 0.00000000
+ 7: power    TRUE 10   FALSE  TRUE 0.05128205 0.05221932 0.05238345
+ 8: power    TRUE 10    TRUE FALSE 0.05263158 0.05205622 0.05115090
+ 9: power    TRUE 10    TRUE  TRUE 0.00000000 0.00000000 0.00000000
+10: typeI   FALSE  5    TRUE FALSE 0.00000000 0.00000000 0.00000000
+11: typeI    TRUE  5   FALSE FALSE 0.00000000 0.00000000 0.00000000
+12: typeI    TRUE  5   FALSE  TRUE 0.00000000 0.00000000 0.00000000
+13: typeI    TRUE  5    TRUE FALSE 0.01024800 0.01024695 0.01024590
+14: typeI    TRUE  5    TRUE  TRUE 0.00000000 0.00000000 0.00000000
+15: typeI    TRUE 10   FALSE FALSE 0.00000000 0.00000000 0.00000000
+16: typeI    TRUE 10   FALSE  TRUE 0.00000000 0.00000000 0.00000000
+17: typeI    TRUE 10    TRUE FALSE 0.00000000 0.00000000 0.00000000
+18: typeI    TRUE 10    TRUE  TRUE 0.00000000 0.00000000 0.00000000
+#+end_example
+
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+res2stage[decision=="futility" & lower_MUE>0,]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+    scenario missing binding  fixC ar  hypo method stage     type statistic estimate_ML      se_ML p.value_ML
+ 1:        1    TRUE    TRUE FALSE 10 power      1     1 decision 1.7322474  0.37016505 0.37016505 0.04182771
+ 2:        1    TRUE    TRUE FALSE 10 power      2     1 decision 1.7322474  0.37016505 0.37016505 0.04182771
+ 3:        1    TRUE    TRUE FALSE 10 power      3     1 decision 1.7322474  0.37016505 0.37016505 0.04182771
+ 4:        4    TRUE    TRUE FALSE  5 typeI      1     1 decision 0.3678716  0.09701712 0.09701712 0.35654991
+ 5:        4    TRUE    TRUE FALSE  5 typeI      2     1 decision 0.3678716  0.09701712 0.09701712 0.35654991
+ 6:        4    TRUE    TRUE FALSE  5 typeI      3     1 decision 0.3678716  0.09701712 0.09701712 0.35654991
+ 7:        9    TRUE   FALSE  TRUE 10 power      1     1 decision 1.8635206  0.40111963 0.40111963 0.03139115
+ 8:        9    TRUE   FALSE  TRUE 10 power      2     1 decision 1.7901042  0.38489437 0.38489437 0.03692049
+ 9:        9    TRUE   FALSE  TRUE 10 power      3     1 decision 1.8635206  0.40111963 0.40111963 0.03139115
+10:       11    TRUE   FALSE  TRUE  5 power      1     1 decision 1.7609106  0.40679129 0.40679129 0.03937283
+11:       11    TRUE   FALSE  TRUE  5 power      2     1 decision 1.5699238  0.36508873 0.36508873 0.05846867
+12:       11    TRUE   FALSE  TRUE  5 power      3     1 decision 1.7609106  0.40679129 0.40679129 0.03937283
+       lower_ML  upper_ML estimate_MUE p.value_MUE lower_MUE upper_MUE     info    infoPC info.pred
+ 1: -0.04936225 0.7896923    0.7974956           1 0.4770104  1.224928 21.89924 0.9551434        NA
+ 2: -0.04936225 0.7896923    0.7974956           1 0.4770104  1.224928 21.89924 0.9559423        NA
+ 3: -0.04936225 0.7896923    0.7974956           1 0.4770104  1.224928 21.89924 0.9538148        NA
+ 4: -0.42092898 0.6149632    0.6243984           1 0.2288799  1.151919 14.37791 0.6270978        NA
+ 5: -0.42092898 0.6149632    0.6243984           1 0.2288799  1.151919 14.37791 0.6276223        NA
+ 6: -0.42092898 0.6149632    0.6243984           1 0.2288799  1.151919 14.37791 0.6262255        NA
+ 7: -0.02144578 0.8236850    0.8315648           1 0.5087438  1.262113 21.58343 0.9267393        NA
+ 8: -0.03720402 0.8069927    0.8148676           1 0.4924005  1.244943 21.63085 0.9219480        NA
+ 9: -0.02144578 0.8236850    0.8315648           1 0.5087438  1.262113 21.58343 0.9269087        NA
+10: -0.04686787 0.8604505    0.8687569           1 0.5222972  1.330839 18.73835 0.8045784        NA
+11: -0.09158612 0.8217636    0.8301337           1 0.4813647  1.295296 18.49100 0.7881215        NA
+12: -0.04686787 0.8604505    0.8687569           1 0.5222972  1.330839 18.73835 0.8047255        NA
+    infoPC.pred uk lk       ck decision                 reason time.interim      seed nX1.interim nX2.interim
+ 1:          NA NA NA 1.959964 futility                   <NA>          140 187033903         345         284
+ 2:          NA NA NA 1.959964 futility                   <NA>          140 187033903         345         284
+ 3:          NA NA NA 1.959964 futility                   <NA>          140 187033903         345         284
+ 4:          NA NA NA 1.874799 futility decreasing information          247 151594999         309         273
+ 5:          NA NA NA 1.875929 futility decreasing information          245 151594999         306         270
+ 6:          NA NA NA 2.310378 futility decreasing information          247 151594999         309         273
+ 7:          NA NA NA 1.959964 futility                   <NA>          138 187033903         356         298
+ 8:          NA NA NA 1.959964 futility                   <NA>          139 187033903         359         301
+ 9:          NA NA NA 1.959964 futility                   <NA>          138 187033903         356         298
+10:          NA NA NA 1.959964 futility decreasing information          247 187033903         312         279
+11:          NA NA NA 1.959964 futility decreasing information          249 187033903         315         282
+12:          NA NA NA 2.121270 futility decreasing information          247 187033903         312         279
+    nX3.interim method.char stage.char truth
+ 1:         242    method 1    interim   0.6
+ 2:         242    method 2    interim   0.6
+ 3:         242    method 3    interim   0.6
+ 4:         245    method 1    interim   0.0
+ 5:         244    method 2    interim   0.0
+ 6:         245    method 3    interim   0.0
+ 7:         253    method 1    interim   0.6
+ 8:         255    method 2    interim   0.6
+ 9:         253    method 3    interim   0.6
+10:         252    method 1    interim   0.6
+11:         254    method 2    interim   0.6
+12:         252    method 3    interim   0.6
+#+end_example
+
+
+When concluding for efficacy:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res2stage.mismatchEFF <- res2stage[decision=="efficacy",.(N = .N, mismatch = 100*mean(lower_MUE<0)),
+                                  by = c("method.char","missing","binding","fixC","ar","hypo")]
+dcast(res2stage.mismatchEFF, hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE        0        0        0
+ 2: power    TRUE  5   FALSE FALSE        0        0        0
+ 3: power    TRUE  5   FALSE  TRUE        0        0        0
+ 4: power    TRUE  5    TRUE FALSE        0        0        0
+ 5: power    TRUE  5    TRUE  TRUE        0        0        0
+ 6: power    TRUE 10   FALSE FALSE        0        0        0
+ 7: power    TRUE 10   FALSE  TRUE        0        0        0
+ 8: power    TRUE 10    TRUE FALSE        0        0        0
+ 9: power    TRUE 10    TRUE  TRUE        0        0        0
+10: typeI   FALSE  5    TRUE FALSE        0        0        0
+11: typeI    TRUE  5   FALSE FALSE        0        0        0
+12: typeI    TRUE  5   FALSE  TRUE        0        0        0
+13: typeI    TRUE  5    TRUE FALSE        0        0        0
+14: typeI    TRUE  5    TRUE  TRUE        0        0        0
+15: typeI    TRUE 10   FALSE FALSE        0        0        0
+16: typeI    TRUE 10   FALSE  TRUE        0        0        0
+17: typeI    TRUE 10    TRUE FALSE        0        0        0
+18: typeI    TRUE 10    TRUE  TRUE        0        0        0
+#+end_example
+
+* Coverage
+
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+res2stage.coverage <- res2stage[decision %in% c("futility","efficacy"),
+                                .(N = .N,
+                                  coverage = 100*mean( (lower_MUE <= truth) & (truth <= upper_MUE) )),
+                                by = c("method.char","missing","binding","fixC","ar","hypo")]
+dcast(res2stage.coverage, hypo + missing + ar + binding + fixC ~ method.char, value.var = "coverage")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE    94.79    94.82    94.92
+ 2: power    TRUE  5   FALSE FALSE    93.60    93.61    93.93
+ 3: power    TRUE  5   FALSE  TRUE    94.21    94.22    94.28
+ 4: power    TRUE  5    TRUE FALSE    94.76    94.59    94.89
+ 5: power    TRUE  5    TRUE  TRUE    95.44    95.38    95.22
+ 6: power    TRUE 10   FALSE FALSE    93.38    93.36    94.14
+ 7: power    TRUE 10   FALSE  TRUE    94.24    94.15    94.53
+ 8: power    TRUE 10    TRUE FALSE    94.75    94.73    94.98
+ 9: power    TRUE 10    TRUE  TRUE    95.97    95.91    95.46
+10: typeI   FALSE  5    TRUE FALSE    95.14    95.20    95.15
+11: typeI    TRUE  5   FALSE FALSE    95.01    95.02    95.57
+12: typeI    TRUE  5   FALSE  TRUE    95.07    95.08    95.74
+13: typeI    TRUE  5    TRUE FALSE    94.71    94.78    94.73
+14: typeI    TRUE  5    TRUE  TRUE    95.06    95.24    94.98
+15: typeI    TRUE 10   FALSE FALSE    95.08    95.08    96.19
+16: typeI    TRUE 10   FALSE  TRUE    95.27    95.25    96.48
+17: typeI    TRUE 10    TRUE FALSE    94.87    94.82    94.93
+18: typeI    TRUE 10    TRUE  TRUE    95.33    95.29    95.13
+#+end_example
+
+Average width of the confidence intervals
+#+BEGIN_SRC R :exports both :results output :session *R* :cache no
+res2stage.width <- res2stage[decision %in% c("futility","efficacy"),
+                             .(N = .N,
+                               width.naive = mean(upper_ML-lower_ML),
+                               width.MUE = mean(upper_MUE-lower_MUE)),
+                             by = c("method.char","missing","binding","fixC","ar","hypo")]
+res2stage.width[, width.ratio := width.MUE/width.naive]
+dcast(res2stage.width, hypo + missing + ar + binding + fixC ~ method.char, value.var = "width.ratio")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC  method 1  method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE 1.0517981 1.0518767 1.053589
+ 2: power    TRUE  5   FALSE FALSE 1.0430641 1.0430645 1.045294
+ 3: power    TRUE  5   FALSE  TRUE 1.0490757 1.0494445 1.045526
+ 4: power    TRUE  5    TRUE FALSE 1.0516795 1.0515698 1.052909
+ 5: power    TRUE  5    TRUE  TRUE 1.0580807 1.0575936 1.054137
+ 6: power    TRUE 10   FALSE FALSE 1.0532980 1.0532804 1.055866
+ 7: power    TRUE 10   FALSE  TRUE 1.0679703 1.0676474 1.056350
+ 8: power    TRUE 10    TRUE FALSE 1.0625603 1.0625641 1.062728
+ 9: power    TRUE 10    TRUE  TRUE 1.0774122 1.0766805 1.063708
+10: typeI   FALSE  5    TRUE FALSE 1.0431774 1.0434979 1.046821
+11: typeI    TRUE  5   FALSE FALSE 0.9994186 0.9994094 1.019993
+12: typeI    TRUE  5   FALSE  TRUE 0.9994042 0.9994106 1.020071
+13: typeI    TRUE  5    TRUE FALSE 1.0417925 1.0419051 1.045259
+14: typeI    TRUE  5    TRUE  TRUE 1.0424393 1.0429751 1.045768
+15: typeI    TRUE 10   FALSE FALSE 0.9946568 0.9949442 1.052180
+16: typeI    TRUE 10   FALSE  TRUE 0.9951513 0.9954542 1.051935
+17: typeI    TRUE 10    TRUE FALSE 1.0462148 1.0458686 1.056152
+18: typeI    TRUE 10    TRUE  TRUE 1.0462813 1.0476594 1.056027
+#+end_example
 
 * Percentage of missing values
 

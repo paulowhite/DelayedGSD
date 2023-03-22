@@ -45,7 +45,11 @@ GenData(
 
 \item{seed}{integer for the random seed generator state.}
 
-\item{MissProb}{Missingness probability, currently works only if N.fw=2. should be a matrix with columns=V1, rows=V2, for both missing=yes/no (in that order), in proportions.}
+\item{MissProb}{Missingness probability. Should be an N.fw-dimensional array with in each dimension the proportion of missing and non missing (in that order).
+For instance for two follow-up, should be a matrix containing the probability of missing both (1,1),
+missing only the first timepoint (1,2)
+missing only the second timepoint (2,1)
+or have complete data (2,2).}
 
 \item{DigitsOutcome}{Number of digits to round the outcome values (NULL means no rounding)}
 

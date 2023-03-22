@@ -73,6 +73,7 @@ Method1 <- function(rho_alpha=2,
     lk <- rep(-Inf,Kmax)
     uk <- rep(Inf,Kmax) 
     ck <- rep(NA,Kmax)
+    ck.unrestricted <- rep(NA,Kmax)
 
     if(alternative=="greater" & delta<0){
         stop("The values given for arguments \'alternative\' and \'delta\' are inconsistent. \n",
@@ -140,7 +141,7 @@ Method1 <- function(rho_alpha=2,
                       Trace=FALSE,
                       cMin=cMin,
                       PowerCorrection=PowerCorrection)
-        thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
+        thediff <- abs(xx$boundaries[Kmax,"uk"]-xx$boundaries[Kmax,"lk"])
         ## }}}
         if(thediff==0){
             ## {{{ if yes, we search coef
@@ -169,7 +170,7 @@ Method1 <- function(rho_alpha=2,
                               binding=binding,
                               cMin=cMin,
                               PowerCorrection=PowerCorrection)
-                thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
+                thediff <- abs(xx$boundaries[Kmax,"uk"]-xx$boundaries[Kmax,"lk"])
                 if(thediff>toldiff){
                     if(Trace){
                         cat("\n Value coef=",mycoef,"is too small  \n")
@@ -238,16 +239,16 @@ Method1 <- function(rho_alpha=2,
     uk[1] <- qnorm(p=1-IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
     lk[1] <- qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
 
-    ck[1] <- max(calc_ck(uk=uk[1],
-                         lk=lk[1],
-                         Info.i=Info.i[1],
-                         Info.d=Info.d[1],
-                         Info.max=Info.max,
-                         ImaxAnticipated=FALSE,
-                         rho_alpha=rho_alpha,
-                         alpha=alpha,
-                         bindingFutility = binding),
-                 cMin)
+    ck.unrestricted[1] <- calc_ck(uk=uk[1],
+                                  lk=lk[1],
+                                  Info.i=Info.i[1],
+                                  Info.d=Info.d[1],
+                                  Info.max=Info.max,
+                                  ImaxAnticipated=FALSE,
+                                  rho_alpha=rho_alpha,
+                                  alpha=alpha,
+                                  bindingFutility = binding)
+    ck[1] <- max(ck.unrestricted[1], cMin)
                                         #------------
   
   thealpha[1] <- IncAlpha[1]   
@@ -321,21 +322,21 @@ Method1 <- function(rho_alpha=2,
                                    tol = abseps)$root, silent = TRUE)
             
               if(!inherits(lk[k], "try-error")){
-                  ck[k] <- max(calc_ck(uk=uk[1:k],
-                                       lk=lk[1:k],
-                                       Info.i=Info.i[1:k],
-                                       Info.d=Info.d[k],
-                                       Info.max=Info.max,
-                                       ImaxAnticipated=FALSE,
-                                       rho_alpha=rho_alpha,
-                                       alpha=alpha,
-                                       bindingFutility = binding),
-                               cMin)
-              } else {
-                  lk[k] <- uk[k] # just to handle cases in which there is no root
-                  if(inherits(lk[k],"try-error")){warning(paste0("try-error for calculation of lk[",k,"]"))}
-              }
+                  ck.unrestricted[k] <- calc_ck(uk=uk[1:k],
+                                                lk=lk[1:k],
+                                                Info.i=Info.i[1:k],
+                                                Info.d=Info.d[k],
+                                                Info.max=Info.max,
+                                                ImaxAnticipated=FALSE,
+                                                rho_alpha=rho_alpha,
+                                                alpha=alpha,
+                                                bindingFutility = binding)
+                  ck[k] <- max(ck.unrestricted[k],cMin)
+          } else {
+              lk[k] <- uk[k] # just to handle cases in which there is no root
+              if(inherits(lk[k],"try-error")){warning(paste0("try-error for calculation of lk[",k,"]"))}
           }
+        }
           if(k==Kmax){
               lk[k] <- uk[k] # just to handle cases in which there is no root
 
@@ -374,14 +375,15 @@ Method1 <- function(rho_alpha=2,
   }
   
   ## {{{ create  output
-  d <- data.frame(l.k=lk,
-                  u.k=uk,
-                  c.k=ck,
+  d <- data.frame(lk=lk,
+                  uk=uk,
+                  ck=ck,
+                  ck.unrestricted=ck.unrestricted,
                   Type.I.Error=thealpha,
                   Type.II.Error=thebeta,
                   Inc.Type.I=IncAlpha,
                   Inc.Type.II=IncBeta,
-                  I.k=Info.i
+                  Ik=Info.i
   )
   out <- list(boundaries=d,
               rho_alpha=rho_alpha,

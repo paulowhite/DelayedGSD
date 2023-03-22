@@ -12,7 +12,11 @@
 #' @param cor.ij.1 correlation between outcome at two consecutive follow-up measurements  (main outcome)
 #' @param cor.0j.1 correlation between outcome at baseline and at any visit after the first visit  (main outcome)
 #' @param seed integer for the random seed generator state.
-#' @param MissProb Missingness probability, currently works only if N.fw=2. should be a matrix with columns=V1, rows=V2, for both missing=yes/no (in that order), in proportions.
+#' @param MissProb Missingness probability. Should be an N.fw-dimensional array with in each dimension the proportion of missing and non missing (in that order).
+#' For instance for two follow-up, should be a matrix containing the probability of missing both (1,1),
+#' missing only the first timepoint (1,2)
+#' missing only the second timepoint (2,1)
+#' or have complete data (2,2).
 #' @param DigitsOutcome Number of digits to round the outcome values (NULL means no rounding)
 #' @param TimeFactor Multiply the times by a factor (e.g. 14 if time between two follow-up visit should be approx 14 days)
 #' @param DigitsTime Number of digits to round the times (NULL means no rounding)
@@ -66,7 +70,7 @@ GenData <- function(n=52,
         }
         cor.matrix[1,3:NV] <- cor.matrix[3:NV,1] <- cor.0j.1
     }
-    # Combine cor matrix and var vector to var-cov matrix
+                                        # Combine cor matrix and var vector to var-cov matrix
     vcovmat <- diag(allsd)%*%cor.matrix%*%diag(allsd)
     # Generate outcome at baseline and each follow-up visit
     allmeans1 <- delta + mean0  # mean in treatment group
@@ -87,23 +91,41 @@ GenData <- function(n=52,
     }
 
                                         # Missing values
-    if(!is.null(MissProb)){
-        if(N.fw !=2){
-            stop("MissProb can be used only if N.fw=2.")
+    if(!is.null(MissProb)){        
+        if(any(is.na(MissProb))){
+            stop("Elements in argument \'MissProb\' should not be NAs. \n")
         }
-                                        #
-        ## browser()
+        
+        if(abs(sum(MissProb)-1)>1/(10*n)){
+            stop("Elements in argument \'MissProb\' should sum up to one. \n")
+        }
+        if(length(dim(MissProb))!=N.fw){
+            stop("Argument \'MissProb\' must have as many dimensions as number of follow-up (here ",N.fw,"). \n")
+        }
+        if(any(dim(MissProb)!=2)){
+            stop("Each dimension of \'MissProb\' must have two elements: \"missing\" and \"non-missing\". \n")
+        }
+        dimnames.MissProb <- dimnames(MissProb)
+        
         FreqMiss <- round(MissProb*n)
-        HowManyMiss <- sum(FreqMiss[1,1]+FreqMiss[1,2]+FreqMiss[2,1])
+        FreqMiss[length(MissProb)] <- 0 ## last case is no missing value
+        HowManyMiss <- sum(as.double(FreqMiss))
         whichMiss <- sample(x=1:n,size=HowManyMiss,replace=FALSE)
+        
+        typeMiss <- which(FreqMiss>0, arr.ind = TRUE)
+        n.typeMiss <- FreqMiss[FreqMiss>0]
+        nCum.typeMiss <- cumsum(n.typeMiss)
+        
         if(length(whichMiss)>0){
-            d[whichMiss[1:(FreqMiss[1,1] + FreqMiss[1,2] ) ],"X2"] <- NA
-            d[whichMiss[1:(FreqMiss[1,1])],"X3"] <- NA
-            d[whichMiss[(FreqMiss[1,1] + FreqMiss[1,2] +1):HowManyMiss ],"X3"] <- NA
+            for(iType in 1:NROW(typeMiss)){ ## iType <- 3
+                iX <- paste0("X",which(typeMiss[iType,]==1)+1)
+                d[whichMiss[c(1,nCum.typeMiss+1)[iType]:nCum.typeMiss[iType]],iX] <- NA
+            }
         }
     }
 
-    # round the outcome values
+
+    ## round the outcome values
     if(!is.null(DigitsOutcome)){
         d[,paste0("X",1:NV)] <- round(d[,paste0("X",1:NV)],DigitsOutcome)
     }

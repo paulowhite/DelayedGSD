@@ -15,6 +15,7 @@
   p.value = TRUE,
   ci = TRUE,
   estimate = TRUE,
+  continuity.correction = TRUE,
   trace = TRUE,
   ...
 )
@@ -39,6 +40,9 @@ or \code{"final"} (after reaching the last stage of the trial).}
 \item{ci}{[logical] should the confidence intervalsbe computed at decision?}
 
 \item{estimate}{[logical] should a de-biased estimate be computed at decision? WARNING: this is experiment and not reliable.}
+
+\item{continuity.correction}{[logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
+When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.}
 
 \item{trace}{[logical] should the execution of the function be traced?}
 

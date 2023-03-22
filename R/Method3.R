@@ -3,9 +3,9 @@
 ## Author: Paul Blanche
 ## Created: Jan  7 2022 (13:47) 
 ## Version: 
-## Last-Updated: feb 17 2022 (16:49) 
+## Last-Updated: mar 21 2023 (10:05) 
 ##           By: Brice Ozenne
-##     Update #: 59
+##     Update #: 62
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -165,7 +165,7 @@ Method3 <- function(rho_alpha=2,
                       toldiff=toldiff,
                       alternative="greater",
                       Trace=FALSE)
-        thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
+        thediff <- abs(xx$boundaries[Kmax,"uk"]-xx$boundaries[Kmax,"lk"])
         ## }}}       
         if(thediff==0){
             ## {{{ if yes, we search coef
@@ -192,7 +192,7 @@ Method3 <- function(rho_alpha=2,
                               abseps=abseps,
                               toldiff=toldiff,
                               alternative="greater")
-                thediff <- abs(xx$boundaries[Kmax,"u.k"]-xx$boundaries[Kmax,"l.k"])
+                thediff <- abs(xx$boundaries[Kmax,"uk"]-xx$boundaries[Kmax,"lk"])
                 if(thediff>toldiff){
                     if(Trace){
                         cat("\n Value coef=",mycoef,"is too small  \n")
@@ -426,14 +426,15 @@ Method3 <- function(rho_alpha=2,
     #lk[kMax] <- uk[kMax] <- NA
   
     ## {{{ create  output
-    d <- data.frame(l.k=lk,
-                    u.k=uk,
-                    c.k=ck,
+    d <- data.frame(lk=lk,
+                    uk=uk,
+                    ck=ck,
+                    ck.unrestricted=ck,
                     Type.I.Error=thealpha,
                     Type.II.Error=thebeta,
                     Inc.Type.I=IncAlpha,
                     Inc.Type.II=IncBeta,
-                    I.k=Info.i
+                    Ik=Info.i
                     )
     out <- list(boundaries=d,
                 rho_alpha=rho_alpha,

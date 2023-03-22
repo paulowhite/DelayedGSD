@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: aug  1 2022 (15:45) 
 ## Version: 
-## Last-Updated: okt 17 2022 (09:46) 
+## Last-Updated: mar 22 2023 (14:04) 
 ##           By: Brice Ozenne
-##     Update #: 119
+##     Update #: 124
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -83,7 +83,7 @@ exportGSD <- function(object,
             out$se_ML <- object.confint[,"se"]
         }else if(stage$type %in% c("decision","final")){
             out$estimate_ML <- object.confint[object.confint$method == "ML","estimate"]
-            out$se_ML <- object.confint[object.confint$method == "ML","estimate"]
+            out$se_ML <- object.confint[object.confint$method == "ML","se"]
             out$p.value_ML <- object.confint[object.confint$method == "ML","p.value"]
             out$lower_ML <- object.confint[object.confint$method == "ML","lower"]
             out$upper_ML <- object.confint[object.confint$method == "ML","upper"]
@@ -134,9 +134,8 @@ exportGSD <- function(object,
         out$sigma <- sigma(object$lmm[[index.lmm]]$fit)
     }
 
-
     ## ** export
-    return(out)
+    return(cbind(method = object$method, stage = object$stage[1,"k"], type = object$stage[1,"type"],out))
 
 }
 

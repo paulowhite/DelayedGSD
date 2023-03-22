@@ -15,6 +15,8 @@
 #' @param ci [logical] should the confidence intervalsbe computed at decision?
 #' @param estimate [logical] should a de-biased estimate be computed at decision? WARNING: this is experiment and not reliable.
 #' @param trace [logical] should the execution of the function be traced?
+#' @param continuity.correction [logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
+#' When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.
 #' @param ... not used, for compatibility with the generic method.
 
 ## * update.delayedGSD (examples)
@@ -72,7 +74,7 @@
 #' @export
 update.delayedGSD <- function(object, delta, Info.i, Info.d, 
                               k = NULL, type.k = NULL, overrule.futility = FALSE,
-                              p.value = TRUE, ci = TRUE, estimate = TRUE,
+                              p.value = TRUE, ci = TRUE, estimate = TRUE, continuity.correction = TRUE,
                               trace = TRUE, ...){
 
     
@@ -239,20 +241,6 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         lk <- object$lk
         uk <- object$uk
 
-        ## *** remove skipped interim
-        index.skip <- which(object$conclusion["reason.interim",]=="decreasing information")
-        if(length(index.skip)>0){
-            Info.d <- Info.d[-index.skip]
-            Info.i <- Info.i[-index.skip]
-            ck <- ck[-index.skip]
-            ck.unrestricted <- ck.unrestricted[-index.skip]
-            uk <- uk[-index.skip]
-            lk <- lk[-index.skip]
-            kMax <- kMax - length(index.skip)
-            k <- k - length(index.skip)
-        }
-
-
         ## *** p.value
         if(p.value){
             resP <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
@@ -260,13 +248,15 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                 ck = ck[1:min(k,kMax-1)],
                                 ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],
                                 lk = lk[1:k],  
-                                uk = uk[1:k],  
+                                uk = uk[1:k],
+                                reason.interim = object$conclusion["reason.interim",1:k],
                                 kMax = kMax, 
                                 delta = 0,  
                                 estimate = delta[1,"estimate"],
                                 method = object$method,
                                 bindingFutility = object$bindingFutility,
-                                cNotBelowFixedc=object$cNotBelowFixedc)
+                                cNotBelowFixedc=object$cNotBelowFixedc,
+                                continuity.correction=continuity.correction)
             delta.MUE[1,"p.value"] <- as.double(resP)
             attr(delta.MUE,"error") <- c(p.value = attr(resP,"error"))
         }
@@ -279,12 +269,14 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                              ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],   
                              lk = lk[1:k],  
                              uk = uk[1:k],  
+                             reason.interim = object$conclusion["reason.interim",1:k],
                              kMax = kMax, 
                              conf.level = object$conf.level,  
                              estimate = delta[1,"estimate"],
                              method = object$method,
                              bindingFutility = object$bindingFutility,
-                             cNotBelowFixedc=object$cNotBelowFixedc)
+                             cNotBelowFixedc=object$cNotBelowFixedc,
+                             continuity.correction=continuity.correction)
             delta.MUE[1,"lower"] <- resCI["lower"]
             delta.MUE[1,"upper"] <- resCI["upper"]
 
@@ -303,11 +295,13 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                                      ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],   
                                                      lk = lk[1:k],  
                                                      uk = uk[1:k],  
+                                                     reason.interim = object$conclusion["reason.interim",1:k],
                                                      kMax = kMax, 
                                                      estimate = delta[1,"estimate"],
                                                      method = object$method,
                                                      bindingFutility = object$bindingFutility,
-                                                     cNotBelowFixedc=object$cNotBelowFixedc)
+                                                     cNotBelowFixedc=object$cNotBelowFixedc,
+                                                     continuity.correction=continuity.correction)
         }
         object$delta <- rbind(object$delta, delta.MUE)
         attr(object$delta,"error") <- attr(delta.MUE,"error")

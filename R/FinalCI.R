@@ -7,6 +7,7 @@
 #' ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted always without.
 #' @param lk lower bounds up to stage where study was stopped
 #' @param uk upper bounds up to stage where study was stopped
+#' @param reason.interim motivation for stopping or continuing at interim. Use to handle special cases (skipped interim because reach Imax, ...)
 #' @param kMax maximum number of analyses
 #' @param conf.level confidence level (to get a 100*(1-alpha)\% CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
@@ -14,6 +15,8 @@
 #' @param method  method 1, 2 or 3
 #' @param bindingFutility [logical]  whether the futility stopping rule is binding.
 #' @param cNotBelowFixedc [logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
+#' @param continuity.correction [logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
+#' When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.
 
 ## * FinalCI (code)
 #' @export
@@ -22,14 +25,16 @@ FinalCI <- function(Info.d,
                     ck,  
                     ck.unrestricted,  
                     lk,  
-                    uk,  
+                    uk,
+                    reason.interim,
                     kMax, 
                     conf.level,
                     estimate,
                     optimizer = "optimise",
                     method,
                     bindingFutility,
-                    cNotBelowFixedc){
+                    cNotBelowFixedc,
+                    continuity.correction){
 
     alpha <- 1-conf.level
 
@@ -40,12 +45,14 @@ FinalCI <- function(Info.d,
                     ck.unrestricted=ck.unrestricted,
                     lk=lk,
                     uk=uk,
+                    reason.interim=reason.interim,
                     kMax=kMax,
                     estimate=estimate,
                     delta=delta,
                     method=method,
                     bindingFutility=bindingFutility,
-                    cNotBelowFixedc=cNotBelowFixedc) - alpha/2
+                    cNotBelowFixedc=cNotBelowFixedc,
+                    continuity.correction=continuity.correction) - alpha/2
     }
 
     g <- function(delta){
@@ -55,12 +62,14 @@ FinalCI <- function(Info.d,
                       ck.unrestricted=ck.unrestricted,
                       lk=lk,
                       uk=uk,
+                      reason.interim=reason.interim,
                       kMax=kMax,
                       estimate=estimate,
                       delta=delta,
                       method=method,
                       bindingFutility=bindingFutility,
-                      cNotBelowFixedc=cNotBelowFixedc) - alpha/2
+                      cNotBelowFixedc=cNotBelowFixedc,
+                      continuity.correction=continuity.correction) - alpha/2
     }
 
     if(optimizer=="optimise"){

@@ -11,13 +11,15 @@ FinalCI(
   ck.unrestricted,
   lk,
   uk,
+  reason.interim,
   kMax,
   conf.level,
   estimate,
   optimizer = "optimise",
   method,
   bindingFutility,
-  cNotBelowFixedc
+  cNotBelowFixedc,
+  continuity.correction
 )
 }
 \arguments{
@@ -32,6 +34,8 @@ ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted 
 
 \item{uk}{upper bounds up to stage where study was stopped}
 
+\item{reason.interim}{motivation for stopping or continuing at interim. Use to handle special cases (skipped interim because reach Imax, ...)}
+
 \item{kMax}{maximum number of analyses}
 
 \item{conf.level}{confidence level (to get a 100*(1-alpha)\% CI)}
@@ -45,6 +49,9 @@ ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted 
 \item{bindingFutility}{[logical]  whether the futility stopping rule is binding.}
 
 \item{cNotBelowFixedc}{[logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)}
+
+\item{continuity.correction}{[logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
+When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.}
 }
 \description{
 calculate confidence intervals at the end of the study

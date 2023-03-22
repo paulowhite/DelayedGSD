@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt 13 2022 (14:49) 
 ## Version: 
-## Last-Updated: mar  9 2023 (10:50) 
+## Last-Updated: mar 20 2023 (15:44) 
 ##           By: Brice Ozenne
-##     Update #: 25
+##     Update #: 26
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -136,17 +136,20 @@ pmvnorm(lower = c(lk[1],uk[2]),
 ## [1] 0.01955299
 
 ## *** Compute p-value
-resP <- FinalPvalue(Info.d = Info.d,  
+resP <- FinalPvalue(Info.d = Info.d/10,  
                     Info.i = Info.i,
                     ck = ck, 
+                    ck.unrestricted = ck.unrestricted, 
                     lk = lk,  
                     uk = uk,  
                     kMax = 2, 
                     delta = 0,  
                     estimate = thetaHat,
+                    reason.interim = debugF.GSD$conclusion["reason.interim",],
                     method = 1,
                     bindingFutility = binding,
                     cNotBelowFixedc = FALSE)
+
 resP < 0.025
 thetaHat*sqrt(Info.i[2]) > lk[2]
 

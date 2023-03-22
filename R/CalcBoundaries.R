@@ -21,8 +21,6 @@
 #' @param trace whether to print some messages
 #' @param PowerCorrection whether to correct the power for Method 1
 #'
-#' @details 
-#' 
 #' @examples
 #' myBound <- CalcBoundaries(kMax=2,
 #'               alpha=0.025,  
@@ -118,7 +116,7 @@ CalcBoundaries <- function(kMax = 2,
     ## ## ** remove boundaries corresponding to stage that will not be reached
 
     if(method==1){
-    
+
         delayedBnds <- Method1(rho_alpha = rho_alpha,
                                rho_beta = rho_beta,
                                alpha = alpha,
@@ -129,11 +127,11 @@ CalcBoundaries <- function(kMax = 2,
                                InfoR.d = InfoR.d,
                                delta = delta, 
                                alternative = alternative,
-                               binding=bindingFutility,
+                               binding = bindingFutility,
                                Trace = trace,
                                cMin = cMin,
-                               mycoefMax=mycoefMax,
-                               PowerCorrection=PowerCorrection)
+                               mycoefMax = mycoefMax,
+                               PowerCorrection = PowerCorrection)
     } else if(method==2){
 
         delayedBnds <- Method2(rho_alpha = rho_alpha,
@@ -146,7 +144,7 @@ CalcBoundaries <- function(kMax = 2,
                                InfoR.d = InfoR.d,
                                delta = delta, 
                                alternative = alternative,
-                               binding=bindingFutility,
+                               binding = bindingFutility,
                                Trace = trace,
                                cMin = cMin)
 
@@ -162,12 +160,13 @@ CalcBoundaries <- function(kMax = 2,
                                InfoR.d = InfoR.d,
                                delta = delta, 
                                alternative = alternative,
-                               binding=bindingFutility,
+                               binding = bindingFutility,
                                Trace = trace) 
 
     }
 
     ## ** output
+
     out <- list(call = call,
                 stage = data.frame(k = 0, type = "planning"),
                 conclusion = matrix(as.character(NA), nrow = 4, ncol = kMax, dimnames = list(c("interim","reason.interim","decision","comment.decision"),NULL)),
@@ -196,9 +195,10 @@ CalcBoundaries <- function(kMax = 2,
                                rho_beta = rho_beta,
                                InflationFactor = delayedBnds$coef,
                                Info.max = delayedBnds$Info.max,
-                               uk = delayedBnds$boundaries$u.k,
-                               lk = delayedBnds$boundaries$l.k,
-                               ck = delayedBnds$boundaries$c.k[1:(kMax-1)],
+                               uk = delayedBnds$boundaries$uk,
+                               lk = delayedBnds$boundaries$lk,
+                               ck = delayedBnds$boundaries$ck[1:(kMax-1)],
+                               ck.unrestricted = delayedBnds$boundaries$ck.unrestricted[1:(kMax-1)],
                                alphaSpent = cumsum(delayedBnds$boundaries$Inc.Type.I),
                                betaSpent = cumsum(delayedBnds$boundaries$Inc.Type.II),
                                Info.i = InfoR.i*delayedBnds$Info.max,
