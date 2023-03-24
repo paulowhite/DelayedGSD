@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan  7 2022 (15:00) 
 ## Version: 
-## Last-Updated: mar 22 2023 (14:40) 
+## Last-Updated: mar 24 2023 (18:10) 
 ##           By: Brice Ozenne
-##     Update #: 26
+##     Update #: 34
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -77,6 +77,55 @@ test_that("I(1st interim)>Imax, I(1st decison)>Imax",{
 ## ** Not at interim but at decision
 ## ** At final
 
+## * Decreasing information
+## remotes::install_github("paulowhite/DelayedGSD", ref = "a12eb76419")
+debug.plannedB <- CalcBoundaries(kMax = 2,  
+                                 alpha = 0.025, 
+                                 beta = 0.2,  
+                                 InfoR.i = c(0.58, 1.00),  
+                                 InfoR.d = c(0.68,1),  
+                                 rho_alpha = 2,  
+                                 rho_beta = 2,  
+                                 method = 1,  
+                                 cNotBelowFixedc = TRUE,
+                                 bindingFutility= FALSE,
+                                 delta = 0.6)
+inflationFactor <- debug.plannedB$planned$InflationFactor
+
+df.sim <- GenData(n = 561,  ## only 557 for analysis with method 1 (561 is for method 2)
+                  N.fw = 2,
+                  rand.block = c(1,1,0,0),
+                  allsd = c(2.5,2.1,2.4),
+                  mean0 = c(10,0,0),
+                  delta = c(0,0.5,1)*0.6,
+                  ar = (0.86*2)*2*5,
+                  cor.01.1 = -0.15,
+                  cor.ij.1 = 0.68,
+                  cor.0j.1 = -0.27,
+                  seed = 187033903,
+                  MissProb = matrix(c(0.04807692, 0.05769231, 0.00961538, 0.88461538), 
+                                    nrow = 2, 
+                                    ncol = 2, 
+                                    dimnames = list(c("V1 missing", "V1 not missing"),c("V2 missing", "V2 not missing")) 
+                                    ),
+                  DigitsOutcome = 2,
+                  TimeFactor = 14,
+                  DigitsTime = 0)$d
+
+## ** interim
+SelectData(df.sim, t = 247)
+
+debug.lmmI <- analyzeData(SelectData(df.sim, t = 247),
+                          ddf = "nlme", data.decision = sum(df.sim$t1 <= 247 + 1.50001*14), getinfo = TRUE, trace = TRUE)
+debug.GSDI <- update(debug.plannedB, delta = debug.lmmI, trace = TRUE)
+
+## ** decision
+debug.lmmD <- analyzeData(df.sim[which(df.sim$t1 <= 247 + 1.50001*14),],
+                          ddf = "nlme", getinfo = TRUE, trace = TRUE)
+debug.GSDF <- update(debug.GSDI, delta = debug.lmmD, trace = FALSE)
+summary(debug.GSDF)
+confint(debug.GSDF)
+#### hard to find a good confidence interval
 
 
 ## * Skipped interim analysis

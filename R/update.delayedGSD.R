@@ -242,7 +242,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         uk <- object$uk
 
         ## *** p.value
-        if(p.value){
+        if(p.value || ci){
             resP <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
                                 Info.i = Info.i[1:k],
                                 ck = ck[1:min(k,kMax-1)],
@@ -257,12 +257,14 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                 bindingFutility = object$bindingFutility,
                                 cNotBelowFixedc=object$cNotBelowFixedc,
                                 continuity.correction=continuity.correction)
-            delta.MUE[1,"p.value"] <- as.double(resP)
-            attr(delta.MUE,"error") <- c(p.value = attr(resP,"error"))
+            if(p.value){
+                delta.MUE[1,"p.value"] <- as.double(resP)
+                attr(delta.MUE,"error") <- c(p.value = attr(resP,"error"))
+            }
         }
 
         ## *** CI
-        if(ci){
+        if(ci & as.double(resP) < 1){
             resCI <- FinalCI(Info.d = Info.d[1:min(k,kMax-1)],  
                              Info.i = Info.i[1:k],
                              ck = ck[1:min(k,kMax-1)],   

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 21 2023 (09:42) 
 ## Version: 
-## Last-Updated: mar 22 2023 (13:34) 
+## Last-Updated: mar 23 2023 (10:24) 
 ##           By: Brice Ozenne
-##     Update #: 76
+##     Update #: 77
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -102,6 +102,7 @@
 ##'
 
 ## * gridFinalPvalue (code)
+##' @export
 gridFinalPvalue <- function(object,
                             continuity.correction,
                             seq.futility = c(-3,0),

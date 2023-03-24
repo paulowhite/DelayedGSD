@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 20 2023 (17:36) 
 ## Version: 
-## Last-Updated: feb 21 2023 (17:54) 
+## Last-Updated: mar 23 2023 (10:53) 
 ##           By: Brice Ozenne
-##     Update #: 7
+##     Update #: 10
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,16 +19,19 @@ library(DelayedGSD)
 source("FCT.R")
 
 ## * example with crazy p-value
-ar <- 10
+ar <- 5
 binding <- FALSE
-fixC <- FALSE
+fixC <- TRUE
 delta.factor <- switch("power",
                        "power" = 0.6,
                        "typeI" = 0)
 
 method <- 1
-seed <- 520254210
-n <- ceiling(2*2*((2.310865/0.6)^2)*(qnorm(1-0.2)-qnorm(0.025))^2)/(1-(0.04807692+0.05769231))
+seed <- 187033903
+
+thets <- c(247,249,247)
+nGSD <- c(557,561,557)
+
 
 debug.plannedB <- CalcBoundaries(kMax = 2,  
                                  alpha = 0.025, 
@@ -42,9 +45,8 @@ debug.plannedB <- CalcBoundaries(kMax = 2,
                                  bindingFutility= binding,
                                  delta = 0.6)
 inflationFactor <- debug.plannedB$planned$InflationFactor
-nGSD <- ceiling(n*inflationFactor)
 
-df.sim <- GenData(n = nGSD, 
+df.sim <- GenData(n = max(nGSD), 
                   N.fw = 2,
                   rand.block = c(1,1,0,0),
                   allsd = c(2.5,2.1,2.4),
@@ -63,8 +65,6 @@ df.sim <- GenData(n = nGSD,
                   DigitsOutcome = 2,
                   TimeFactor = 14,
                   DigitsTime = 0)$d
-thets <- c(218,218,218)
-nGSD <- c(486,486,486)
 
 ## ** interim
 SelectData(df.sim,t=thets[method])

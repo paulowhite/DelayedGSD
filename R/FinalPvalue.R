@@ -158,53 +158,8 @@ FinalPvalue <- function(Info.d,
   
     requireNamespace("mvtnorm")
   
-    ## ** reconstruct information matrix
-    k <- length(Info.i)
-    if(k==kMax){
-        I_all <- c(as.vector(rbind(Info.i[-kMax], Info.d)),Info.i[kMax])  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
-        index_tempo <- as.vector(rbind(rep(1,length(Info.i[-kMax])), rep(2,length(Info.d))))
-        index_interim <- which(index_tempo==1) ## 1, 3, ...
-        index_decision <- which(index_tempo==2) ## 2, 4, ...
-        index_final <- length(I_all)
-        critval <- uk[kMax]
-    }else{
-        I_all <- as.vector(rbind(Info.i, Info.d))  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k|
-        index_tempo <- as.vector(rbind(rep(1,length(Info.i)), rep(2,length(Info.d))))
-        index_interim <- which(index_tempo==1) ## 1, 3, ...
-        index_decision <- which(index_tempo==2) ## 2, 4, ...
-        index_final <- NA
-        critval <- ck[k]
-    }
-    ## special case: decreasing information between interim and decision (for an interim that we do not skip)
-    if(k>1 && any( (Info.i[1:(k-1)]>Info.d[1:(k-1)]) & reason.interim[1:(k-1)]!="decreasing information") ){
-        index.pb <- which( (Info.i[1:(k-1)]>Info.d[1:(k-1)]) & reason.interim!="decreasing information")
-        ## keep the correlation interim(iState),decision(iStage), rescale the information at decision accordingly
-        Info.d[index.pb] <- Info.i[index.pb] * Info.i[index.pb]/Info.d[index.pb]        
-    }
-    ## special case: decreasing information between interim and decision/final
-    if(k<kMax && Info.i[k]>Info.d[k]){ 
-        ## keep the correlation interim(iState),decision(iStage), rescale the information at decision accordingly
-        ## note that we will never skip this interim since we stopped and went for decision, i.e. it must have greater information than previous interim
-        Info.d[k] <- Info.i[k] * Info.i[k]/Info.d[k]        
-    }else if(k==kMax && any(Info.i[-kMax] > Info.i[kMax])){
-        ## keep the correlation interim(iState),decision(iStage), rescale the information at decision accordingly
-        Info.i[kMax] <- max(Info.i[-kMax]) * max(Info.i[-kMax])/Info.i[kMax]
-    }
-    ## Previous version:
-    ## we will ignore the decision analysis and simply calculate the probability of stopping for efficacy.
-    ## This is correct for Methods 1 and 2 if c can be chosen freely (under the null).
-    ## It is conservative otherwise as it is more likely to flip from efficacy to futility, hence the p-value will be larger than it should be (under the null)
-
-    m <- length(I_all)
-    sigmaZm <- diag(1,m)
-    for(i in 1:m){
-        for(j in i:m){
-            sigmaZm[i,j] <- sqrt(I_all[i]/I_all[j])
-            sigmaZm[j,i] <- sigmaZm[i,j]
-        }
-    }
-  
     ## ** reconstruct test statistic
+    k <- length(Info.i)
     if(k==kMax){
         statistic <- estimate * sqrt(Info.i[k])
     }else{
@@ -213,7 +168,59 @@ FinalPvalue <- function(Info.d,
             statistic <- ck.unrestricted[k] ## correction to ensure consistency between rejection and p-value (we do not reject in this interval)
         }
     }
-    
+
+    ## ** modify information matrix to deal with decreasing information (special case)
+    ## For an interim where we do not stop (nor skip): decreasing information between interim and hypothetical decision
+    Info.d2 <- Info.d
+    Info.i2 <- Info.i
+    if(k>1 && any( (Info.i[1:(k-1)]>Info.d[1:(k-1)]) & reason.interim[1:(k-1)]!="decreasing information") ){
+        index.pb <- which( (Info.i[1:(k-1)]>Info.d[1:(k-1)]) & reason.interim!="decreasing information")
+        ## keep the correlation interim(iState),decision(iStage), rescale the information at decision accordingly
+        Info.d2[index.pb] <- Info.i[index.pb] * Info.i[index.pb]/Info.d[index.pb]        
+    }
+    ## For an interim where we stop: decreasing information between interim and decision (or final)
+    if(k<kMax && Info.i[k]>Info.d[k]){
+        ## keep the correlation interim(iState),decision(iStage), rescale the information at decision accordingly
+        ## note that we will never skip this interim since we stopped and went for decision, i.e. it must have greater information than previous interim
+        Info.d2[k] <- Info.i[k] * Info.i[k]/Info.d[k]        
+    }else if(k==kMax && any(Info.i[-kMax] > Info.i[kMax])){
+        ## keep the correlation interim(iState),decision(iStage), rescale the information at decision accordingly
+        Info.i2[kMax] <- max(Info.i[-kMax]) * max(Info.i[-kMax])/Info.i[kMax]
+    }
+    ## Previous version:
+    ## we will ignore the decision analysis and simply calculate the probability of stopping for efficacy.
+    ## This is correct for Methods 1 and 2 if c can be chosen freely (under the null).
+    ## It is conservative otherwise as it is more likely to flip from efficacy to futility, hence the p-value will be larger than it should be (under the null)
+
+    ## ** reconstruct information matrix
+    if(k==kMax){
+        I_all <- c(as.vector(rbind(Info.i[-kMax], Info.d)),Info.i[kMax])  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
+        I_all2 <- c(as.vector(rbind(Info.i2[-kMax], Info.d2)),Info.i2[kMax])  ## same but non-decreasing information
+        index_tempo <- as.vector(rbind(rep(1,length(Info.i[-kMax])), rep(2,length(Info.d))))
+        index_interim <- which(index_tempo==1) ## 1, 3, ...
+        index_decision <- which(index_tempo==2) ## 2, 4, ...
+        index_final <- length(I_all)
+        critval <- uk[kMax]
+    }else{
+        I_all <- as.vector(rbind(Info.i, Info.d))  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k|
+        I_all2 <- as.vector(rbind(Info.i, Info.d2))  ## same but non-decreasing information
+        index_tempo <- as.vector(rbind(rep(1,length(Info.i)), rep(2,length(Info.d))))
+        index_interim <- which(index_tempo==1) ## 1, 3, ...
+        index_decision <- which(index_tempo==2) ## 2, 4, ...
+        index_final <- NA
+        critval <- ck[k]
+    }
+
+    m <- length(I_all)
+    sigmaZm <- diag(1,m)
+    for(i in 1:m){
+        for(j in i:m){
+            sigmaZm[i,j] <- sqrt(I_all2[i]/I_all2[j])
+            sigmaZm[j,i] <- sigmaZm[i,j]
+        }
+    }
+
+  
     ## ** compute p-value 
     pval <- 0
 
@@ -222,11 +229,12 @@ FinalPvalue <- function(Info.d,
     if(!bindingFutility){
         lk[1:min(k,kMax-1)] <- -Inf
     }
+
     ## under H0 or H1
     theta <- delta * sqrt(I_all)
 
     ## *** previous stages
-   if(k>1){
+    if(k>1){
         for(iStage in 1:(k-1)){ ## iStage <- 1
            
             if(reason.interim[iStage]=="decreasing information"){ ## special case: decreasing information from on interim analysis to another interim analysis
@@ -294,6 +302,7 @@ FinalPvalue <- function(Info.d,
     }else { ## is it a decision analysis after stopping at interim (interim 1:1, decision i)
         iIndex_interim <- c(index_interim[iSeq_interimM1], index_interim[k])
         iIndex <- c(iIndex_interim, index_decision[k])
+
         if((statistic >= critval) & (ck[k]>ck.unrestricted[k]) & continuity.correction>0){
             ## continuity correction when stopping for efficacy
             if(continuity.correction == 1){
@@ -316,7 +325,7 @@ FinalPvalue <- function(Info.d,
         }else{
             shift <- 0
         }
-        
+
         if((statistic < critval)){
             ## prob to continue (and therefore have a more extreme result than stopping now for futility)
             pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,lk[k]),  
@@ -342,6 +351,6 @@ FinalPvalue <- function(Info.d,
         }
     }
     
-    return(unname(pval))
+    return(unname(min(pval,1)))
 }
 

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt 13 2022 (14:49) 
 ## Version: 
-## Last-Updated: mar 20 2023 (15:44) 
+## Last-Updated: mar 23 2023 (10:47) 
 ##           By: Brice Ozenne
-##     Update #: 26
+##     Update #: 28
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,9 +19,9 @@
 ## ** Simulate data
 library(DelayedGSD)
 
-method <- 3
-binding <- TRUE
-seed <- 65836753
+method <- 1
+binding <- FALSE
+seed <- 187033903
 
 debug.plannedB <- CalcBoundaries(kMax = 2,  
                                  alpha = 0.025, 
