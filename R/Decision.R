@@ -76,6 +76,7 @@ Decision <- function(object,
     
     ## ** extract information, test statistic, and boundaries
     Info.max <- object$planned$Info.max
+    method <- object$method
 
     outInfo <- coef(object, type = "information", planned = FALSE)
     outBound <- coef(object, type = "boundary", planned = FALSE)
@@ -114,7 +115,13 @@ Decision <- function(object,
     if(type.k=="decision"){
                                         
         if(Z > ck[k]){
-            object$conclusion["decision",k] <- "efficacy"
+            if(method == 3 && object$conclusion["reason.interim",k] == "futility"){
+                ## with method 3 we cannot conclude efficacy if we stopped for futility
+                object$conclusion["decision",k] <- "futility"
+                object$conclusion["comment.decision",k] <- "stop for futility at interim"
+            }else{
+                object$conclusion["decision",k] <- "efficacy"
+            }
         } else {
             object$conclusion["decision",k] <- "futility"
         }

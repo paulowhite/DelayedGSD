@@ -29,6 +29,7 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
     if(length(dots)){
         stop("Argument(s) \'",paste(names(dots), collapse = "\' \'"),"\' not used. ")
     }
+
     if(identical(k,"all")){
 
         out <- object$delta
@@ -78,7 +79,15 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
     if(!is.null(method)){
         out <- out[out$method %in% method,,drop=FALSE]
     }
-    rownames(out) <- NULL            
+    rownames(out) <- NULL
+    if("MUE" %in% method){
+        attr(out,"error") <- attr(object$delta,"error")
+        if(!is.null(attr(out,"error")) && any(attr(out,"error")>1e-3)){
+            warning("Possibly incorrect evaluation of the MUE ",paste(names(attr(out,"error")[attr(out,"error")>1e-3]),collapse = ", "),".\n",
+                    "Mismatch in the optimization process in term of confidence level: ",paste(attr(out,"error")[attr(out,"error")>1e-3],collapse = ", "),". \n",sep="")
+        }
+    }
+
     return(out)
 
 }

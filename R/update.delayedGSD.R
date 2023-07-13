@@ -259,7 +259,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                 continuity.correction=continuity.correction)
             if(p.value){
                 delta.MUE[1,"p.value"] <- as.double(resP)
-                attr(delta.MUE,"error") <- c(p.value = attr(resP,"error"))
+                attr(delta.MUE,"error") <- c(p.value = unname(attr(resP,"error")))
             }
         }
 
@@ -283,33 +283,39 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
             delta.MUE[1,"upper"] <- resCI["upper"]
 
             if(is.null(attr(delta.MUE,"error"))){
-                attr(delta.MUE,"error") <- c(lower = attr(resCI,"error")["lower"], upper = attr(resCI,"error")["upper"])
+                attr(delta.MUE,"error") <- c(lower = unname(attr(resCI,"error")["lower"]), upper = unname(attr(resCI,"error")["upper"]))
             }else{
-                attr(delta.MUE,"error") <- c(attr(delta.MUE,"error"), lower = attr(resCI,"error")["lower"], upper = attr(resCI,"error")["upper"])
+                attr(delta.MUE,"error") <- c(attr(delta.MUE,"error"), lower = unname(attr(resCI,"error")["lower"]), upper = unname(attr(resCI,"error")["upper"]))
             }
         }
         
         ## *** Estimate
         if(estimate){
-            delta.MUE[1,"estimate"] <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
-                                                     Info.i = Info.i[1:k],
-                                                     ck = ck[1:min(k,kMax-1)],
-                                                     ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],   
-                                                     lk = lk[1:k],  
-                                                     uk = uk[1:k],  
-                                                     reason.interim = object$conclusion["reason.interim",1:k],
-                                                     kMax = kMax, 
-                                                     estimate = delta[1,"estimate"],
-                                                     method = object$method,
-                                                     bindingFutility = object$bindingFutility,
-                                                     cNotBelowFixedc=object$cNotBelowFixedc,
-                                                     continuity.correction=continuity.correction)
+            resMUE <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
+                                    Info.i = Info.i[1:k],
+                                    ck = ck[1:min(k,kMax-1)],
+                                    ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],   
+                                    lk = lk[1:k],  
+                                    uk = uk[1:k],  
+                                    reason.interim = object$conclusion["reason.interim",1:k],
+                                    kMax = kMax, 
+                                    estimate = delta[1,"estimate"],
+                                    method = object$method,
+                                    bindingFutility = object$bindingFutility,
+                                    cNotBelowFixedc=object$cNotBelowFixedc,
+                                    continuity.correction=continuity.correction)
+            delta.MUE[1,"estimate"] <- resMUE
+            if(is.null(attr(delta.MUE,"error"))){
+                attr(delta.MUE,"error") <- c(estimate = unname(attr(resMUE,"error")))
+            }else{
+                attr(delta.MUE,"error") <- c(attr(delta.MUE,"error"), estimate = unname(attr(resMUE,"error")))
+            }
         }
         object$delta <- rbind(object$delta, delta.MUE)
         attr(object$delta,"error") <- attr(delta.MUE,"error")
         if(trace>0){cat("done \n", sep = "")}
     }
-    
+
     ## ** export
     return(object)
 }

@@ -31,25 +31,26 @@ FinalEstimate <- function(Info.d,
                           bindingFutility,
                           cNotBelowFixedc,
                           continuity.correction){ 
-  
-  f <- function(delta){
-    (FinalPvalue(Info.d=Info.d,
-                Info.i=Info.i,
-                ck=ck,
-                ck.unrestricted=ck.unrestricted,
-                lk=lk,
-                uk=uk,
-                reason.interim=reason.interim,
-                kMax=kMax,
-                estimate=estimate,
-                delta=delta,
-                method=method,
-                bindingFutility=bindingFutility,
-                cNotBelowFixedc=cNotBelowFixedc,
-                continuity.correction=continuity.correction) - 0.5)^2
-  }
-  
-  res <- stats::optimise(f,lower=estimate-2*sqrt(1/Info.d[length(Info.d)]),upper=estimate+2*sqrt(1/Info.d[length(Info.d)]))
-  
-  res$minimum
+
+    f <- function(delta){
+        (FinalPvalue(Info.d=Info.d,
+                     Info.i=Info.i,
+                     ck=ck,
+                     ck.unrestricted=ck.unrestricted,
+                     lk=lk,
+                     uk=uk,
+                     reason.interim=reason.interim,
+                     kMax=kMax,
+                     estimate=estimate,
+                     delta=delta,
+                     method=method,
+                     bindingFutility=bindingFutility,
+                     cNotBelowFixedc=cNotBelowFixedc,
+                     continuity.correction=continuity.correction) - 0.5)^2
+    }
+    lowerBound <- estimate-2*sqrt(1/Info.d[length(Info.d)])
+    upperBound <- estimate+2*sqrt(1/Info.d[length(Info.d)])
+    res <- stats::optimise(f,lower=lowerBound,upper=upperBound)
+    attr(res$minimum,"error") <- res$objective
+    return(res$minimum)
 }

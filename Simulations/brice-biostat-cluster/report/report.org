@@ -15,9 +15,6 @@ library(ggplot2)
 #+END_SRC
 
 #+RESULTS:
-: data.table 1.14.2 using 4 threads (see ?getDTthreads).  Latest news: r-datatable.com
-: Advarselsbesked:
-: pakke 'ggplot2' blev bygget under R version 4.2.2
 
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
