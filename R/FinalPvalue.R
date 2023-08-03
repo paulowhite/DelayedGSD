@@ -290,15 +290,42 @@ FinalPvalue <- function(Info.d,
                                         sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
     }else if(method == 3 && reason.interim[k]=="futility"){ ## is it a decision analysis after stopping at interim for futility (method 3)
         
-        if(length(iSeq_interimM1)==0){
-            pval <- 1
-        }else{
-            iIndex <- index_interim[iSeq_interimM1]
-            pval <- pval + mvtnorm::pmvnorm(lower = iLk,  
-                                            upper = iUk,
-                                            mean = theta[iIndex],
-                                            sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-        }
+        #if(length(iSeq_interimM1)==0){
+        #    pval <- 1
+        #}else{
+        #    iIndex <- index_interim[iSeq_interimM1]
+        #    pval <- pval + mvtnorm::pmvnorm(lower = iLk,  
+        #                                    upper = iUk,
+        #                                    mean = theta[iIndex],
+        #                                    sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
+        #}
+      
+      #COBA 03082023:
+      iIndex_interim <- c(index_interim[iSeq_interimM1], index_interim[k])
+      iIndex <- c(iIndex_interim, index_decision[k])
+      
+      shift <- 0 ##I have not implemented any continuity correction here. Not sure if needed TBD
+      
+      ## prob to continue (and therefore have a more extreme result than concluding futility now)
+      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,lk[k]),  
+                                      upper = c(iUk,uk[k]),
+                                      mean = theta[iIndex_interim],
+                                      sigma = sigmaZm[iIndex_interim,iIndex_interim,drop=FALSE])
+      
+      ## prob to stop for futility at interim and conclude a more extreme result 
+      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic - shift),   
+                                      upper = c(iUk,lk_orig[k],Inf),
+                                      mean = theta[iIndex],
+                                      sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+      
+      
+      ## prob to stop for efficacy at interim and conclude more extreme result (use min of critval and statistic as stopping for eff and z_k>c_k will result in efficacy conclusion (always more extreme than concluding futility, which is the case when stopping for futility at interim for Method 3 as flips from fut to eff not allowed))
+      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[k],min(critval,statistic - shift)),  
+                                      upper = c(iUk,Inf,Inf),
+                                      mean = theta[iIndex],
+                                      sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+      
+      
     }else { ## is it a decision analysis after stopping at interim (interim 1:1, decision i)
         iIndex_interim <- c(index_interim[iSeq_interimM1], index_interim[k])
         iIndex <- c(iIndex_interim, index_decision[k])
@@ -332,6 +359,13 @@ FinalPvalue <- function(Info.d,
                                             upper = c(iUk,uk[k]),
                                             mean = theta[iIndex_interim],
                                             sigma = sigmaZm[iIndex_interim,iIndex_interim,drop=FALSE])
+            if(method%in%3){
+              ## prob to stop for futility at interim and conclude a more extreme result (this should only be added in case of futility for method 3, as for method 3 flips from fut to eff are not allowed and a futile result should not be considered more extreme than a positive result)
+              pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic - shift),   
+                                              upper = c(iUk,lk_orig[k],Inf),
+                                              mean = theta[iIndex],
+                                              sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+            }
         }
 
         ## prob to stop for efficacy at interim and conclude more extreme result
