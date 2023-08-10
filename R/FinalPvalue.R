@@ -311,8 +311,8 @@ FinalPvalue <- function(Info.d,
                                       upper = c(iUk,uk[k]),
                                       mean = theta[iIndex_interim],
                                       sigma = sigmaZm[iIndex_interim,iIndex_interim,drop=FALSE])
-      
-      ## prob to stop for futility at interim and conclude a more extreme result 
+
+        ## prob to stop for futility at interim and conclude a more extreme result 
       pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic - shift),   
                                       upper = c(iUk,lk_orig[k],Inf),
                                       mean = theta[iIndex],
@@ -359,6 +359,7 @@ FinalPvalue <- function(Info.d,
                                             upper = c(iUk,uk[k]),
                                             mean = theta[iIndex_interim],
                                             sigma = sigmaZm[iIndex_interim,iIndex_interim,drop=FALSE])
+            
             if(method%in%3){
               ## prob to stop for futility at interim and conclude a more extreme result (this should only be added in case of futility for method 3, as for method 3 flips from fut to eff are not allowed and a futile result should not be considered more extreme than a positive result)
               pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic - shift),   

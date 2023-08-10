@@ -57,7 +57,7 @@ print(df.args, row.names = FALSE)
 cat("\n")
 
 ## * Settings
-nsim <- 100 # number of simulations
+nsim <- 25 # number of simulations
 method <- 1:3 # methods used to compute the boundaries
                                         #--- to plan the trial ----
 kMax <- 3  #max number of analyses (including final)

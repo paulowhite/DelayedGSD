@@ -1,4 +1,4 @@
-% Created 2023-08-10 to 09:18
+% Created 2023-08-10 to 09:30
 % Intended LaTeX compiler: pdflatex
 \documentclass[12pt]{article}
 
@@ -123,7 +123,7 @@ linkcolor=[rgb]{0,0,0.5},
 \maketitle
 
 \section{Rejection rate}
-\label{sec:org522cc58}
+\label{sec:org64d51e5}
 
 Power by method (columns) and scenario (rows): \hfill (nominal level 80\%)
 \begin{verbatim}
@@ -172,7 +172,7 @@ Type 1 error by method (columns) and scenario (rows): \hfill (nominal level 2.5\
 \clearpage
 
 \section{Conclusion of the trial}
-\label{sec:org4e56db1}
+\label{sec:orgfe05625}
 
 Relative frequency of stopping for efficacy/futility at decision/final
 
@@ -254,7 +254,7 @@ Method 3:
 \clearpage
 
 \section{Bias (True effect: 0.6 under the alternative)}
-\label{sec:org01885da}
+\label{sec:orgfb93a4f}
 
 Bias per estimator and method\footnote{e.g. \texttt{biasMLE1} mixed model
 estimator (treatment effect), method 1 (boundaries)}:
@@ -311,7 +311,7 @@ Median bias \footnote{Relative frequency at which the estimate is greater than t
 \clearpage
 
 \section{Distribution of the estimates}
-\label{sec:orgea1e4f0}
+\label{sec:org8a7692a}
 
 Distribution of the estimates:
 \begin{figure}[!h]
@@ -338,7 +338,7 @@ Distribution of the median unbiased estimate conditional to the stage:
 \clearpage
 
 \section{Special cases}
-\label{sec:orgcefa52e}
+\label{sec:orgcd0da24}
 
 Reason for stopping (efficacy, futility, Imax reached), continuing the
 trial (decreasing information, no boundary crossed), or concluding
@@ -386,7 +386,7 @@ stop for futility at interim 1                  0    0    0    0    0    0    0 
 \clearpage
 
 \section{Reversal probability}
-\label{sec:orge17b4b8}
+\label{sec:org6b8c272}
 
 Percentage of time we observe a reversal:
 \begin{adjustwidth}{-1cm}{-1cm}
@@ -418,10 +418,10 @@ Percentage of time we observe a reversal:
 \clearpage
 
 \section{Logical consistency of p-values/CIs}
-\label{sec:org5292659}
+\label{sec:org685075f}
 
 \subsection{Mismatch p-value / boundaries}
-\label{sec:orgafa7ea3}
+\label{sec:orgc050277}
 
 When concluding for futility:
 \begin{verbatim}
@@ -472,7 +472,7 @@ When concluding for efficacy:
 \clearpage
 
 \subsection{Mismatch confidence intervals / boundaries}
-\label{sec:org5b21698}
+\label{sec:orgfc4443b}
 
 When concluding for futility:
 \begin{verbatim}
@@ -498,9 +498,6 @@ When concluding for futility:
 \end{verbatim}
 
 This only occurs for non-binding futility rules and concluding futility, e.g.:
-\#+END\textsubscript{SRC}
-
-
 When concluding for efficacy:
 \begin{verbatim}
      hypo missing ar binding  fixC method 1 method 2 method 3
@@ -525,7 +522,7 @@ When concluding for efficacy:
 \end{verbatim}
 
 \subsection{Range of p-values}
-\label{sec:org8d81157}
+\label{sec:org4b25add}
 
 \begin{verbatim}
     missing binding  fixC ar  hypo        method 1        method 2       method 3
@@ -549,21 +546,34 @@ When concluding for efficacy:
 18:   FALSE    TRUE FALSE  5 typeI           [0;1]           [0;1]      [3e-04;1]
 \end{verbatim}
 
+\clearpage
+
 \section{Coverage}
-\label{sec:org7ec3dc9}
+\label{sec:org52d83ae}
+
+\begin{verbatim}
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE 94.79000 94.79000 94.92000
+ 2: power    TRUE  5   FALSE FALSE 95.86382 95.86207 95.66505
+ 3: power    TRUE  5   FALSE  TRUE 96.30458 96.26486 95.66505
+ 4: power    TRUE  5    TRUE FALSE 94.74000 94.74000 94.87000
+ 5: power    TRUE  5    TRUE  TRUE 95.08000 95.08000 94.87000
+ 6: power    TRUE 10   FALSE FALSE 95.98172 96.04941 95.75968
+ 7: power    TRUE 10   FALSE  TRUE 96.79139 96.75297 95.75968
+ 8: power    TRUE 10    TRUE FALSE 94.84000 94.82000 95.12000
+ 9: power    TRUE 10    TRUE  TRUE 95.73000 95.65000 95.12000
+10: typeI   FALSE  5    TRUE FALSE 95.14000 95.14000 95.15000
+11: typeI    TRUE  5   FALSE FALSE 94.86949 94.86949 95.39954
+12: typeI    TRUE  5   FALSE  TRUE 94.91695 94.90745 95.39954
+13: typeI    TRUE  5    TRUE FALSE 94.82000 94.82000 94.87000
+14: typeI    TRUE  5    TRUE  TRUE 94.90000 94.91000 94.87000
+15: typeI    TRUE 10   FALSE FALSE 95.01402 95.01402 96.04407
+16: typeI    TRUE 10   FALSE  TRUE 95.09116 95.07162 96.04407
+17: typeI    TRUE 10    TRUE FALSE 95.16000 95.19000 95.21000
+18: typeI    TRUE 10    TRUE  TRUE 95.34000 95.36000 95.21000
+\end{verbatim}
 
 Average width of the confidence intervals
-\lstset{language=r,label= ,caption= ,captionpos=b,numbers=none}
-\begin{lstlisting}
-res2stage.width <- res2stage[decision %in% c("futility","efficacy"),
-                             .(N = .N,
-                               width.naive = mean(upper_ML-lower_ML, na.rm = TRUE),
-                               width.MUE = mean(upper_MUE-lower_MUE, na.rm = TRUE)),
-                             by = c("method.char","missing","binding","fixC","ar","hypo")]
-res2stage.width[, width.ratio := width.MUE/width.naive]
-dcast(res2stage.width, hypo + missing + ar + binding + fixC ~ method.char, value.var = "width.ratio")
-\end{lstlisting}
-
 \begin{verbatim}
      hypo missing ar binding  fixC  method 1  method 2 method 3
  1: power   FALSE  5    TRUE FALSE 1.0517981 1.0518066 1.053592
@@ -586,17 +596,22 @@ dcast(res2stage.width, hypo + missing + ar + binding + fixC ~ method.char, value
 18: typeI    TRUE 10    TRUE  TRUE 1.0461003 1.0478314 1.056215
 \end{verbatim}
 
-\section{Percentage of missing values}
-\label{sec:org911d30a}
+\clearpage
 
-Here only for method 1 - values are very similar between different
-methods:
+\section{Percentage of missing values}
+\label{sec:orgb4682ca}
+
+At the first interim
 \begin{itemize}
-\item \texttt{pc.all} percentage of observations with full data
+\item \texttt{pc.all} percentage of observations with full data (with respect to
+all observations, i.e. patients with baseline measurement)
 \item \texttt{pc.missing3} percentage of observations missing the final outcome
 but with intermediate outcome value and baseline.
 \item \texttt{pc.missing23} percentage of observations with only baseline value
 \end{itemize}
+
+Here only for method 1 - values are very similar between different
+methods:
 \begin{verbatim}
     method missing ar  hypo  fixC binding     N   pc.all pc.missing3 pc.missing23
  1:      1    TRUE  5 power FALSE    TRUE 10000 79.52088    9.591086    10.888036
@@ -622,7 +637,7 @@ but with intermediate outcome value and baseline.
 \clearpage
 
 \section{Information}
-\label{sec:org2893723}
+\label{sec:org044dbcb}
 
 Percentage of information for method 1\footnote{average over the reached stages}:
 \begin{verbatim}

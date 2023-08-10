@@ -642,10 +642,8 @@ unique(res2stage[decision=="futility" & lower_MUE>0,.(stage,method)])
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
 seedPB <- res2stage[decision=="futility" & lower_MUE>0 & scenario %in% 9, unique(seed)]
-res2stage[seed %in% seedPB[1] & scenario == 9 & method == 3 & stage == 1,
-          .(scenario, method, type, stage, statistic, info, uk, lk, ck, decision, reason, p.value_MUE, lower_MUE, upper_MUE, seed)]
-res2stage[seed %in% seedPB[2] & scenario == 9 & method == 3 & stage == 1,
-          .(scenario, method, type, stage, statistic, info, uk, lk, ck, decision, reason, p.value_MUE, lower_MUE, upper_MUE, seed)]
+res2stage[seed %in% seedPB[1:2] & scenario == 9 & method == 3 & stage == 1,
+          .(scenario, method, type, stage, statistic, info, uk, lk, ck, decision, reason, p.value_MUE, lower_MUE, upper_MUE, seed, file)]
 #+END_SRC
 
 #+RESULTS:
@@ -653,18 +651,19 @@ res2stage[seed %in% seedPB[2] & scenario == 9 & method == 3 & stage == 1,
    scenario method     type stage statistic     info       uk        lk       ck decision
 1:        9      3  interim     1 0.5918775 14.02574 2.241626 0.7090032       NA     stop
 2:        9      3 decision     1 2.3359933 17.97582       NA        NA 1.959964 futility
+3:        9      3  interim     1 2.4761300 11.72226 2.416131 0.3589753       NA     stop
+4:        9      3 decision     1 1.9329332 16.58190       NA        NA 1.959964 futility
                          reason p.value_MUE lower_MUE upper_MUE      seed
 1:                     futility          NA        NA        NA 996631745
 2: stop for futility at interim   0.9965259 0.4075308 0.4330387 996631745
-   scenario method     type stage statistic     info       uk        lk       ck decision   reason
-1:        9      3  interim     1  2.476130 11.72226 2.416131 0.3589753       NA     stop efficacy
-2:        9      3 decision     1  1.932933 16.58190       NA        NA 1.959964 futility     <NA>
-   p.value_MUE lower_MUE upper_MUE      seed
-1:          NA        NA        NA 579018813
-2:   0.9987181 0.3409305 0.3518915 579018813
+3:                     efficacy          NA        NA        NA 579018813
+4:                         <NA>   0.9987181 0.3409305 0.3518915 579018813
+                                                      file
+1: sim-2stage_missing_fixC_nonbinding_ar10_power-1_100.rds
+2: sim-2stage_missing_fixC_nonbinding_ar10_power-1_100.rds
+3: sim-2stage_missing_fixC_nonbinding_ar10_power-1_100.rds
+4: sim-2stage_missing_fixC_nonbinding_ar10_power-1_100.rds
 #+end_example
-
-#+END_SRC
 
 
 When concluding for efficacy:
@@ -730,9 +729,11 @@ res2W.stage.rangep[order(scenario),.SD,.SDcols = setdiff(names(res2W.stage.range
 18:   FALSE    TRUE FALSE  5 typeI           [0;1]           [0;1]      [3e-04;1]
 #+end_example
 
+\clearpage
+
 * Coverage
 
-#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
 res2stage.coverage <- res2stage[decision %in% c("futility","efficacy"),
                                 .(N = .N,
                                   coverage = 100*mean( (lower_MUE <= truth) & (truth <= upper_MUE), na.rm = TRUE)),
@@ -764,7 +765,7 @@ dcast(res2stage.coverage, hypo + missing + ar + binding + fixC ~ method.char, va
 #+end_example
 
 Average width of the confidence intervals
-#+BEGIN_SRC R :exports both :results output :session *R* :cache no
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
 res2stage.width <- res2stage[decision %in% c("futility","efficacy"),
                              .(N = .N,
                                width.naive = mean(upper_ML-lower_ML, na.rm = TRUE),
@@ -797,6 +798,8 @@ dcast(res2stage.width, hypo + missing + ar + binding + fixC ~ method.char, value
 18: typeI    TRUE 10    TRUE  TRUE 1.0461003 1.0478314 1.056215
 #+end_example
 
+\clearpage
+
 * Percentage of missing values
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
@@ -816,12 +819,15 @@ setkeyv(res2stageS.nXinterim,"ar")
 #+RESULTS:
 : [1] FALSE
 
-Here only for method 1 - values are very similar between different
-methods:
-- =pc.all= percentage of observations with full data
+At the first interim
+- =pc.all= percentage of observations with full data (with respect to
+  all observations, i.e. patients with baseline measurement)
 - =pc.missing3= percentage of observations missing the final outcome
   but with intermediate outcome value and baseline.
 - =pc.missing23= percentage of observations with only baseline value
+
+Here only for method 1 - values are very similar between different
+methods:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
 res2stageS.nXinterim[method==1]
 #+END_SRC
