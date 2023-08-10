@@ -1,0 +1,78 @@
+
+R version 4.1.2 (2021-11-01) -- "Bird Hippie"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> rm(list=ls())
+> 
+> ## * User interface
+> ## cd /projects/biostat01/people/hpl802/DelayedGSD/
+> args <- commandArgs(TRUE) ## BATCH MODE
+> 
+> ## arguments missing, binding, ... in BATCH model (e.g. when running on the server via slurm)
+> iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_ID"))
+> n.iter_sim <- as.numeric(Sys.getenv("SLURM_ARRAY_TASK_COUNT"))
+> if(length(args)>0){
++     for (arg in args){
++         eval(parse(text=arg))
++     }
++ }
+> if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on the server via slurm, iter_sim will be NA)
++     iter_sim <- 61
++     n.iter_sim <- 100
++ 
++     if("missing" %in% ls() == FALSE){ missing <- TRUE }
++     if("binding" %in% ls() == FALSE){ binding <- TRUE }
++     if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
++     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
++     if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0 }
++     if("n.method" %in% ls() == FALSE){ n.method <- NULL }
++ }
+> 
+> name <- ""
+> if(missing>0){
++     name <- paste(name,"missing",sep="_")
++ }else{
++     name <- paste(name,"nomissing",sep="_")
++ }
+> if(cNotBelowFixedc>0){
++     name <- paste(name,"fixC",sep="_")
++ }
+> if(binding>0){
++     name <- paste(name,"binding",sep="_")
++ }else{
++     name <- paste(name,"nonbinding",sep="_")
++ }
+> name <- paste0("3stage",name,"_ar",ar.factor)
+> if(delta.factor>0){
++     name <- paste(name,"power",sep="_")
++ }else{
++     name <- paste(name,"typeI",sep="_")
++ }
+> 
+> cat("BATCH ",name,": ",iter_sim," over ",n.iter_sim,"\n",sep="")
+BATCH 3stage_nomissing_binding_ar5_power: 4 over 10
+> cat("Arguments:\n")
+Arguments:
+> df.args <- data.frame(missing = missing,
++                       binding = binding,
++                       cNotBelowFixedc = cNotBelowFixedc,
++                       ar.factor = ar.factor,
++                       delta.factor = delta.factor)
+> if(!is.null(n.method)){df.args$n.method <- n.method}
+Error: object 'n.method' not found
+Execution halted

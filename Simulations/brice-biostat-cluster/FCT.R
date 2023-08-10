@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: aug  1 2022 (15:45) 
 ## Version: 
-## Last-Updated: mar 22 2023 (14:04) 
+## Last-Updated: aug  9 2023 (11:16) 
 ##           By: Brice Ozenne
-##     Update #: 124
+##     Update #: 126
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -52,8 +52,10 @@ exportGSD <- function(object,
     ## ** check user input
     if(identical(object,NA)){
        return(out) 
+    }else if(is.null(object)){
+        stop("Argument \'object\' is NULL. \n")
     }else if(!inherits(object,"delayedGSD")){
-        stop("Argument \'object\' inherits from \"delayedGSD\". \n")
+        stop("Argument \'object\' must inherits from \"delayedGSD\". \n")
     }
 
     ## ** extract information

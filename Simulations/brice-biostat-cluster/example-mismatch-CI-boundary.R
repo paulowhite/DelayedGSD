@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 13 2023 (09:28) 
 ## Version: 
-## Last-Updated: mar 17 2023 (15:23) 
+## Last-Updated: aug  9 2023 (11:03) 
 ##           By: Brice Ozenne
-##     Update #: 22
+##     Update #: 23
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,22 +15,13 @@
 ## 
 ### Code:
 
-res2stage.mismatchFU <- res2stage[decision=="futility",.(N = .N, mismatch = 100*mean(p.value_MUE<0.025)),
-                                  by = c("method.char","missing","binding","fixC","ar","hypo")]
-dcast(res2stage.mismatchFU, hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
-
-xx <- res2stage[decision=="futility" & p.value_MUE<0.025,.SD,
-                by = c("method.char","missing","binding","fixC","ar","hypo")]
-
-xx[method==1 & binding & fixC == TRUE & ar == 10 & hypo == "power",seed]
-
 ## * Simulate data (special case)
 library(DelayedGSD)
 
-method <- 1
-binding <- TRUE
-seed <- 187033903
-fixC <- FALSE
+method <- 3
+binding <- FALSE
+seed <- 579018813 ## 996631745
+fixC <- TRUE
 ar <- 10
 hypo <- "power"
 
