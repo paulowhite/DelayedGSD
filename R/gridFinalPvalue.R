@@ -122,6 +122,8 @@ gridFinalPvalue <- function(object,
     seq.kMax <- sort(seq.kMax)
     seq.efficacy <- sort(seq.efficacy)
 
+    #browser()
+    
     if(inherits(object,"delayedGSD")){
 
         kMax <- object$kMax
@@ -168,7 +170,7 @@ gridFinalPvalue <- function(object,
         for(iArg in 1:length(valid.args)){
             assign(valid.args[iArg], value = object[[valid.args[iArg]]], envir = environment())
         }
-        kMax <- length(Info.i)
+        kMax <- length(Info.d)
         alphaSpent <- rep(NA, kMax)
     }else{
         stop("Argument \'object\' should either be \n",
@@ -203,16 +205,16 @@ gridFinalPvalue <- function(object,
     }
 
     grid <- rbind(grid,
-                  data.frame(name = paste0("fut.",kMax,".",1:sum(seq.kMax<uk[kMax])),
-                             z = seq.kMax[seq.kMax<uk[kMax]],
+                  data.frame(name = paste0("fut.",kMax,".",1:sum(seq.kMax<ck[kMax])),
+                             z = seq.kMax[seq.kMax<ck[kMax]],
                              k = kMax,
                              alphaSpent = NA),
                   data.frame(name = paste0("eff.",kMax,".B"),
-                             z = uk[kMax],
+                             z = ck[kMax],
                              k = kMax,
                              alphaSpent = alphaSpent[kMax]),
-                  data.frame(name = paste0("eff.",kMax,".",1:sum(seq.kMax>uk[kMax])),
-                             z = seq.kMax[seq.kMax>uk[kMax]],
+                  data.frame(name = paste0("eff.",kMax,".",1:sum(seq.kMax>ck[kMax])),
+                             z = seq.kMax[seq.kMax>ck[kMax]],
                              k = kMax,
                              alphaSpent = NA)
                   )
@@ -233,14 +235,15 @@ gridFinalPvalue <- function(object,
 
     ## ** evaluate p-value over the domain
     calcP <- function(z, k){
-        out <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],
-                           Info.i = Info.i[1:k],
-                           ck = ck[1:min(k,kMax-1)], ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],
-                           lk = lk[1:k],
-                           uk = uk[1:k],
+        out <- FinalPvalue(Info.d = Info.d[1:k],
+                           Info.i = Info.i[1:min(k,kMax-1)],
+                           #ck = ck[1:min(k,kMax-1)], ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],
+                           ck = ck[1:min(k,kMax)], ck.unrestricted = ck.unrestricted[1:min(k,kMax)],
+                           lk = lk[1:min(k,kMax-1)],
+                           uk = uk[1:min(k,kMax-1)],
                            kMax = kMax,
                            delta = 0, 
-                           estimate = ifelse(k<kMax, z / sqrt(Info.d[k]), z / sqrt(Info.i[k])),
+                           estimate = z / sqrt(Info.d[k]),
                            reason.interim = reason.interim[1:k],
                            method = method,
                            bindingFutility = bindingFutility, 

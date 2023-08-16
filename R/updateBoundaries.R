@@ -3,8 +3,8 @@
 #' @description Recompute the boundaries based according to the current information.
 #'
 #' @param object Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
-#' @param Info.i [numeric vector of size k] Optional argument used to update the information at interim or final (only past or current information). 
-#' @param Info.d [numeric vector of size k] Optional argument used to update the information at decision (observed or predicted information).
+#' @param Info.i [numeric vector of size k] Optional argument used to update the information at interim (only past or current information). 
+#' @param Info.d [numeric vector of size k] Optional argument used to update the information at decision or final (observed or predicted information).
 #' @param k [integer] Index of the analysis.
 #' @param type.k [character] Type of analysis: \code{"interim"} (after continuing recruitment),
 #' \code{"decision"} (after stopping recruitment for efficacy or futility),
@@ -103,7 +103,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
     }
     
     ## ** update boundaries
-   
+   #browser()
     ## *** at interim
     if(type.k == "interim"){
 
@@ -184,17 +184,23 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
             
             object$lk[k]  <- newBounds$lk[k]
             object$uk[k]  <- newBounds$uk[k]
+            object$ck[k]  <- newBounds$ck
+            object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
             object$alphaSpent[k] <- newBounds$alphaSpent[k]
             object$betaSpent[k] <- newBounds$betaSpent[k]
-            if(k<kMax){
-                object$lk[(k+1):kMax]  <- NA
-                object$uk[(k+1):kMax]  <- NA
-                object$ck[k]  <- newBounds$ck
-                object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
-                if(k<kMax-1){
-                    object$ck[(k+1):(kMax-1)]  <- NA                    
-                }
-            }
+            
+            object$lk[(k+1):kMax] <- NA
+            object$uk[(k+1):kMax]  <- NA
+            
+            
+            #if(k<kMax){
+            #    object$lk[(k+1):kMax]  <- NA
+            #    
+            #    if(k<kMax-1){
+            #        object$ck[(k+1):kMax]  <- NA 
+            #        object$ck.unrestricted[(k+1):kMax]  <- NA 
+            #    }
+            #}
         } 
 
     }
@@ -272,7 +278,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                 object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
             }
             if(k<kMax-1){
-                object$ck[(k+1):(kMax-1)]  <- NA                    
+                object$ck[(k+1):kMax]  <- NA                    
             }
             
         }else{
@@ -335,11 +341,11 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                            Trace = trace)
             }
             object$ck[k]  <- newBounds$ck
-            if(k<kMax){
-                object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
-            }
+            object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
+            
             if(k<kMax-1){
-                object$ck[(k+1):(kMax-1)]  <- NA                    
+                object$ck[(k+1):kMax]  <- NA                    
+                object$ck.unrestricted[(k+1):kMax]  <- NA
             }
         }
     }
@@ -348,7 +354,7 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
     ## *** at final
     if(type.k == "final"){ ##  that could be replace by a call to CalcBoundaries
 
-        if(Info.i[k] < Info.i[k-1]){
+        if(Info.d[k] < Info.i[k-1]){
             object$conclusion["comment.decision",k] <- "decreasing information"
             warning("boundaries will not be computed correctly")
         }
@@ -405,8 +411,10 @@ updateBoundaries <- function(object, delta, Info.i, Info.d, k, type.k, update.st
                                        binding=bindingFutility,
                                        Trace = trace)
         }
-        object$uk[k]  <- newBounds$uk[k]
-        object$lk[k]  <- newBounds$lk[k]
+        #object$uk[k]  <- newBounds$uk[k]
+        #object$lk[k]  <- newBounds$lk[k]
+        object$ck[k]  <- newBounds$ck
+        object$ck.unrestricted[k]  <- newBounds$ck.unrestricted
         object$alphaSpent[k] <- newBounds$alphaSpent[k]
         object$betaSpent[k] <- newBounds$betaSpent[k]
     }

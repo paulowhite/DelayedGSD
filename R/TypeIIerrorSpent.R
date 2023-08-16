@@ -3,7 +3,7 @@
 TypeIIerrorSpent <- function(lk,         #the futility boundaries (can be given only up to and including analysis k or can be complete boundaries)
                              uk,         #the efficacy boundaries (can be given only up to and including analysis k or can be complete boundaries)
                              ck,         #the decision boundaries (can be given only up to and including analysis k or can be complete boundaries)
-                             Info.i,     #Expected or observed (wherever possible) information at the interim and final analyses 1:Kmax (can be given only up to analysis k)
+                             Info.i,     #Expected or observed (wherever possible) information at the interim analyses 1:(Kmax-1) (can be given only up to analysis k)
                              Info.dk,    #Expected or observed (wherever possible) information at the decision analysis k
                              sigmaZk,    #The covariance matrix of the distribution of the test statistics (can be complete or only for interim analyses 1:k)
                              thetheta,   #The mean of the distribution of the test statistics under the alternative hypothesis

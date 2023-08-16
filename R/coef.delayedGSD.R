@@ -42,6 +42,8 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
 
     Info.max <- object$planned$Info.max
 
+    #browser()
+    
     ## ** retrive quantities
     if(type=="effect"){
         if(planned==TRUE){
@@ -54,9 +56,9 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
         if(planned==TRUE){
 
             out <- data.frame(stage = 1:kMax,
-                              Fbound = object$planned$lk,
-                              Ebound = object$planned$uk,
-                              Cbound = c(object$planned$ck,utils::tail(object$planned$uk,1)))
+                              Fbound = c(object$planned$lk[1:(kMax-1)],NA),
+                              Ebound = c(object$planned$uk[1:(kMax-1)],NA),
+                              Cbound = object$planned$ck)
 
         }else{
 
@@ -71,8 +73,8 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
             }
 
             ## assemble
-            out <- data.frame(stage = 1:kMax, Fbound = object$lk, Ebound = object$uk, statistic.interim = statistic.interim,
-                              Cbound = c(object$ck, utils::tail(object$uk,1)), statistic.decision = statistic.decision)
+            out <- data.frame(stage = 1:kMax, Fbound = c(object$lk[1:(kMax-1)],NA), Ebound = c(object$uk[1:(kMax-1)],NA), statistic.interim = statistic.interim,
+                              Cbound = object$ck, statistic.decision = statistic.decision)
             rownames(out) <- NULL                
 
             ## remove critical boundaries when continuing at interim
@@ -86,8 +88,8 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
     }else if(type=="information"){
 
         if(planned==TRUE){
-            Info.i <- object$planned$Info.i ## interim and final
-            Info.d <- c(object$planned$Info.d,utils::tail(object$planned$Info.i,1)) ## decision and final
+            Info.i <- c(object$planned$Info.i,utils::tail(object$planned$Info.d,1)) ## interim and final
+            Info.d <- object$planned$Info.d ## decision and final
             InfoR.i <- Info.i/Info.max
             InfoR.d <- Info.d/Info.max
             if(!is.null(object$n.obs)){
@@ -96,8 +98,10 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
                 n.obs <- NA
             }
         }else{
-            Info.i <- object$Info.i ## interim and final
-            Info.d <- c(object$Info.d, utils::tail(object$Info.i,1)) ## decision and final
+          #browser()
+            Info.i <- c(object$Info.i, utils::tail(object$Info.d,1)) ## interim and final
+            Info.d <- object$Info.d ## decision and final
+            Info <- c(object$planned$Info.i,object$planned$Info.d[object$kMax])
             InfoR.i <- Info.i/Info.max
             InfoR.d <- Info.d/Info.max
             if(type.k=="decision"){
@@ -106,10 +110,11 @@ coef.delayedGSD <- function(object, type = "effect", planned = NULL, predicted =
                 index.lmm <- 1:k
             }            
             n.obs <- object$n.obs
+            #browser()
             index.lastNNA <- utils::tail(which(!is.na(n.obs)),1)
             index.NA <- which(is.na(n.obs))
-            if(length(index.lastNNA)>0 && length(index.NA)>0 && predicted && type.k == "interim" && object$planned$Info.i[index.NA[1]]>Info.i[index.lastNNA]){
-                n.obs[index.NA] <- n.obs[index.lastNNA] * object$planned$Info.i[index.NA]/Info.i[index.lastNNA]
+            if(length(index.lastNNA)>0 && length(index.NA)>0 && predicted && type.k == "interim" && Info[index.NA[1]]>Info.i[index.lastNNA]){
+                n.obs[index.NA] <- n.obs[index.lastNNA] * Info[index.NA]/Info.i[index.lastNNA]
             }
             if(type.k == "interim" && predicted==FALSE){
                 Info.d[k] <- NA

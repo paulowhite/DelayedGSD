@@ -28,8 +28,8 @@
 #' @param kMax max number of analyses (including final)
 #' @param Info.max maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
 #' @param binding whether we assume binding futility boundaries
-#' @param InfoR.i Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
-#' @param InfoR.d Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
+#' @param InfoR.i Expected or observed (wherever possible) information rates at the interim analyses 1:(Kmax-1)
+#' @param InfoR.d Expected or observed information rates at all potential decision and final analyses 1:Kmax
 #' @param delta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
 #' @param abseps tolerance for precision when finding roots or computing integrals
 #' @param alternative a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
@@ -99,6 +99,7 @@ Method3 <- function(rho_alpha=2,
     lk <- rep(-Inf,Kmax)
     uk <- rep(Inf,Kmax) 
     ck <- rep(cMin,Kmax)
+    ck.unrestricted <- rep(cMin,Kmax)
   
     if(alternative=="greater" & delta<0){
         stop("The values given for arguments \'alternative\' and \'delta\' are inconsistent. \n",
@@ -120,12 +121,15 @@ Method3 <- function(rho_alpha=2,
     IncAlpha <- rep(0,Kmax)  # alpha spent at step k
     IncBeta <- rep(0,Kmax)   # beta spent at step k     
  
+    #information sequence relevant for alpha spending and covariance matrix
+    InfoR <- c(InfoR.i,InfoR.d[Kmax])
+    
     # compute variance-covariance matrix of vector (Z_1,...,Z_k)
     sigmaZk <- diag(1,Kmax)
     for(i in 1:Kmax){
         for(j in i:Kmax){
-            sigmaZk[i,j] <- sqrt(InfoR.i[i]/InfoR.i[j])
-            sigmaZk[j,i] <- sqrt(InfoR.i[i]/InfoR.i[j])
+            sigmaZk[i,j] <- sqrt(InfoR[i]/InfoR[j])
+            sigmaZk[j,i] <- sqrt(InfoR[i]/InfoR[j])
         }
     }
   
@@ -251,14 +255,15 @@ Method3 <- function(rho_alpha=2,
     #compute information at each analysis
     Info.i <- InfoR.i*Info.max
     Info.d <- InfoR.d*Info.max
+    Info <- InfoR*Info.max
   
     # compute the mean of the multivariate normal distribution under the alternative H1
-    thetheta <- delta*sqrt(Info.i)
+    thetheta <- delta*sqrt(Info)
     ## }}} 
 
     ## {{{ case k=1 
-    IncAlpha[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
-    IncBeta[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
+    IncAlpha[1] <- ErrorSpend(I=Info[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
+    IncBeta[1] <-  ErrorSpend(I=Info[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
   
     #efficacy boundary
     find.uk <- function(x){
@@ -317,9 +322,9 @@ Method3 <- function(rho_alpha=2,
         for(k in 2:Kmax){
             if(!lk[k-1]==uk[k-1]){
                 ## {{{ if  over-running has not occurred yet
-                thealpha[k] <- ErrorSpend(I=Info.i[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
+                thealpha[k] <- ErrorSpend(I=Info[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
                 IncAlpha[k] <- thealpha[k] - thealpha[(k-1)]   
-                thebeta[k] <- ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
+                thebeta[k] <- ErrorSpend(I=Info[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
                 IncBeta[k] <- thebeta[k] - thebeta[(k-1)]   
                 ## {{{ 
                 ## {{{ u_k by solving what follows 
@@ -416,12 +421,18 @@ Method3 <- function(rho_alpha=2,
         }
     }
     ## }}}
+    
+    ck.unrestricted[Kmax] <- uk[Kmax]
+    ck[Kmax] <- max(uk[Kmax],cMin)
+    
     if(alternative=="less"){
         lk <- -lk
         uk <- -uk
         delta <- -delta
+        ck.unrestricted <- -ck.unrestricted
+        ck <- -ck
     }  
-    ck[Kmax] <- NA
+    #ck[Kmax] <- NA
     #ck[kMax] <- uk[kMax]
     #lk[kMax] <- uk[kMax] <- NA
   
@@ -429,12 +440,12 @@ Method3 <- function(rho_alpha=2,
     d <- data.frame(lk=lk,
                     uk=uk,
                     ck=ck,
-                    ck.unrestricted=ck,
+                    ck.unrestricted=ck.unrestricted,
                     Type.I.Error=thealpha,
                     Type.II.Error=thebeta,
                     Inc.Type.I=IncAlpha,
                     Inc.Type.II=IncBeta,
-                    Ik=Info.i
+                    Ik=Info
                     )
     out <- list(boundaries=d,
                 rho_alpha=rho_alpha,

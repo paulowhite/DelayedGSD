@@ -5,8 +5,8 @@
 #' 
 #' @param object object of class \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.
 #' @param delta [data.frame or lmmGSD] estimated effect (\code{"estimate"}), standard error (\code{"se"}), test statistic (\code{"statistic"}), degrees of freedom (\code{"df"}), and p-value (\code{"p.value"}) all unadjusted for GSD. Alternatively output of \code{analyzeData}.
-#' @param Info.i [numeric] information at the current stage when interim or final. Not used when argument \code{beta} is a lmmGSD object.
-#' @param Info.d [numeric] information at the current stage when decision or at the coming decision when interim leading to early stop. Not used when argument \code{beta} is a lmmGSD object.
+#' @param Info.i [numeric] information at the current stage when interim. Not used when argument \code{beta} is a lmmGSD object.
+#' @param Info.d [numeric] information at the current stage when decision or final or at the coming decision when interim leading to early stop. Not used when argument \code{beta} is a lmmGSD object.
 #' @param k [integer] index of the analysis.
 #' @param type.k [character] type of analysis: \code{"interim"} (after continuing recruitment),
 #' \code{"decision"} (after stopping recruitment for efficacy or futility),
@@ -127,6 +127,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
             cat("Update information and bound relative to the (skipped) decision analysis of stage ",k,". \n", sep = "")
         }
     }
+    
+    #browser()
 
     ## ** update object with information and estimate
     ## skipped
@@ -199,9 +201,9 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         object$Info.i[k] <- as.double(Info.i)
     }else if(type.k == "final"){
         if(missing(Info.d) && !missing(Info.i)){
-            object$Info.i[k] <- as.double(Info.i)
+            object$Info.d[k] <- as.double(Info.i)
         }else if(missing(Info.i) && !missing(Info.d)){
-            object$Info.i[k] <- as.double(Info.d)
+            object$Info.d[k] <- as.double(Info.d)
         }else{
             stop("Could not guess the information based on the provided information. \n",
                  "At final, exactly only one of the two arguments: \'Info.d\' and  \'Info.i\' should be provided. \n")
@@ -243,12 +245,12 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
 
         ## *** p.value
         if(p.value || ci){
-            resP <- FinalPvalue(Info.d = Info.d[1:min(k,kMax-1)],  
-                                Info.i = Info.i[1:k],
-                                ck = ck[1:min(k,kMax-1)],
-                                ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],
-                                lk = lk[1:k],  
-                                uk = uk[1:k],
+            resP <- FinalPvalue(Info.d = Info.d[1:k],  
+                                Info.i = Info.i[1:min(k,kMax-1)],
+                                ck = ck[1:min(k,kMax)],
+                                ck.unrestricted = ck.unrestricted[1:min(k,kMax)],
+                                lk = lk[1:min(k,kMax-1)],  
+                                uk = uk[1:min(k,kMax-1)],
                                 reason.interim = object$conclusion["reason.interim",1:k],
                                 kMax = kMax, 
                                 delta = 0,  
@@ -265,12 +267,12 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
 
         ## *** CI
         if(ci & as.double(resP) < 1){
-            resCI <- FinalCI(Info.d = Info.d[1:min(k,kMax-1)],  
-                             Info.i = Info.i[1:k],
-                             ck = ck[1:min(k,kMax-1)],   
-                             ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],   
-                             lk = lk[1:k],  
-                             uk = uk[1:k],  
+            resCI <- FinalCI(Info.d = Info.d[1:k],  
+                             Info.i = Info.i[1:min(k,kMax-1)],
+                             ck = ck[1:min(k,kMax)],   
+                             ck.unrestricted = ck.unrestricted[1:min(k,kMax)],   
+                             lk = lk[1:min(k,kMax-1)],  
+                             uk = uk[1:min(k,kMax-1)],  
                              reason.interim = object$conclusion["reason.interim",1:k],
                              kMax = kMax, 
                              conf.level = object$conf.level,  
@@ -291,12 +293,12 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         
         ## *** Estimate
         if(estimate){
-            resMUE <- FinalEstimate(Info.d = Info.d[1:min(k,kMax-1)],  
-                                    Info.i = Info.i[1:k],
-                                    ck = ck[1:min(k,kMax-1)],
-                                    ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],   
-                                    lk = lk[1:k],  
-                                    uk = uk[1:k],  
+            resMUE <- FinalEstimate(Info.d = Info.d[1:k],  
+                                    Info.i = Info.i[1:min(k,kMax-1)],
+                                    ck = ck[1:min(k,kMax)],
+                                    ck.unrestricted = ck.unrestricted[1:min(k,kMax)],   
+                                    lk = lk[1:min(k,kMax-1)],  
+                                    uk = uk[1:min(k,kMax-1)],  
                                     reason.interim = object$conclusion["reason.interim",1:k],
                                     kMax = kMax, 
                                     estimate = delta[1,"estimate"],

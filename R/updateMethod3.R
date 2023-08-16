@@ -33,12 +33,15 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
   
   cMin <- qnorm(1-alpha)
   
+  #information sequence relevant for alpha spending and covariance matrix
+  InfoR <- c(InfoR.i,InfoR.d[Kmax])
+  
   ## *** compute variance-covariance matrix of vector (Z_1,...,Z_k)
   sigmaZk <- diag(1,Kmax)
   for(i in 1:Kmax){
     for(j in i:Kmax){
-      sigmaZk[i,j] <- sqrt(InfoR.i[i]/InfoR.i[j])
-      sigmaZk[j,i] <- sqrt(InfoR.i[i]/InfoR.i[j])
+      sigmaZk[i,j] <- sqrt(InfoR[i]/InfoR[j])
+      sigmaZk[j,i] <- sqrt(InfoR[i]/InfoR[j])
     }
   }
   # compute If (see Jennison book page 87
@@ -48,9 +51,10 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
   #compute information at each analysis
   Info.i <- InfoR.i*Info.max
   Info.d <- InfoR.d*Info.max
+  Info <- InfoR*Info.max
   
   # compute the mean of the multivariate normal distribution under the alternative H1
-  thetheta <- delta*sqrt(Info.i)
+  thetheta <- delta*sqrt(Info)
     ## }}}
 
     ## ** case k=1
@@ -63,8 +67,8 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
     sigmaZk2[1,2] <- sigmaZk2[2,1] <- sqrt(Info.i[1]/Info.d[1])
     
     if(type.k=="interim"){
-      alphaSpent[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
-      betaSpent[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
+      alphaSpent[1] <- ErrorSpend(I=Info[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
+      betaSpent[1] <-  ErrorSpend(I=Info[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
 
       #efficacy boundary
       find.uk <- function(x){
@@ -150,9 +154,9 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
     if(type.k=="interim"){
 
       ## ** Estimate uk
-      alphaSpent[k] <- ErrorSpend(I=Info.i[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
+      alphaSpent[k] <- ErrorSpend(I=Info[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
       alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
-      betaSpent[k] <- ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
+      betaSpent[k] <- ErrorSpend(I=Info[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
       betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
       
       ## {{{ 
@@ -213,7 +217,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
 
         lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
         upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
-        if(InfoR.i[k]>1){
+        if(InfoR.d[k]>1){
             lowerRoot <- -10
             upperRoot <- 10
         }
@@ -238,8 +242,8 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       
       lk[k] <- uk[k]
       
-      ck.unrestricted <- NA
-      
+      ck.unrestricted <- uk[k] 
+      lk[k] <- uk[k] <- NA
       
     }
   }

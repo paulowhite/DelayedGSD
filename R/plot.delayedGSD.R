@@ -71,6 +71,7 @@ plot.delayedGSD <- function(x,
     alpha <- x$alpha
     kMax <- x$kMax
     k <- x$stage$k
+    kmain <- k
     type.k <- x$stage$type
 
     specdec <- function(x,k){ format(round(x,k),nsmall=k)}
@@ -79,6 +80,8 @@ plot.delayedGSD <- function(x,
     }else if(planned %in% c(TRUE,FALSE) == FALSE && planned != "only"){
         stop("Argument \'planned\' should be TRUE, FALSE, or \"only\". \n")
     }
+    
+    
     ## extract from object
     if(identical(planned,"only")){
         outInfo <- coef(x, type = "information", planned = TRUE)
@@ -88,11 +91,13 @@ plot.delayedGSD <- function(x,
     }else{
         outInfo <- coef(x, type = "information", planned = FALSE, predicted = predicted)
         outBound <- coef(x, type = "boundary", planned = FALSE, predicted = predicted)
+        outBound <- outBound[,c("stage","Fbound","Ebound","Cbound")]
         outDelta <- stats::confint(x, k = "all", method = "ML")
 
         index.skip <- which(x$conclusion["reason.interim",]=="decreasing information")
         if(length(index.skip)>0){
             outDelta <- outDelta[outDelta$stage %in% index.skip == FALSE,,drop=FALSE]
+            kmain <- k
             k <- k - length(index.skip)
         }
         delta <- switch(EXPR = type,
@@ -115,16 +120,21 @@ plot.delayedGSD <- function(x,
     lk <- outBound[,"Fbound"]
     ck <- outBound[,"Cbound"]
 
+    
     if(is.null(main)){
         if(identical(planned,"only")){
             main <- "Planning"
         }else if(type.k=="final"){
-            main <- paste0("Final analysis (stage ",k,")")
+            main <- paste0("Final analysis (stage ",kmain,")")
         }else if(type.k=="decision"){
-            main <- paste0("Decision analysis at stage ",k)
+            main <- paste0("Decision analysis at stage ",kmain)
         }else if(type.k=="interim"){
-            main <- paste0("Interim analysis at stage ",k)
+            main <- paste0("Interim analysis at stage ",kmain)
         }
+      
+      if(length(index.skip)>0){
+        main <- paste0(main, ", analysis ",paste(index.skip,collapse=",")," skipped")
+      }
     }
 
     ## prepare
@@ -150,10 +160,10 @@ plot.delayedGSD <- function(x,
     ## NOTE: subset by [!is.na(uk)] to handle the case where we end the study early, e.g. for efficacy
     ## in that case bounds after the decision analysis are set to NA and should be ignored
     xu <- Ival[!is.na(uk) & !is.infinite(uk)]
-    xd <- Idval[!is.na(ck) & !is.infinite(ck)]
+    xd <- Idval[!is.na(ck) & !is.infinite(uk)]
     yu <- uk[!is.na(uk) & !is.infinite(uk)]
     yl <- lk[!is.na(lk) & !is.infinite(lk)]   
-    yc <- ck[!is.na(ck) & !is.infinite(ck)]
+    yc <- ck[!is.na(ck) & !is.infinite(uk)]
     yh <- stats::qnorm(1-alpha)
     ylab <- "Stopping boundary (Z-statistic)"
  
@@ -162,9 +172,9 @@ plot.delayedGSD <- function(x,
             legend.x <- "topleft"
         }
         ylab <- "Stopping boundary (P-value)"
-        yu <- 1-stats::pnorm(uk)
-        yl <- 1-stats::pnorm(lk)
-        yc <- 1-stats::pnorm(ck)
+        yu <- 1-stats::pnorm(yu)
+        yl <- 1-stats::pnorm(yl)
+        yc <- 1-stats::pnorm(yc)
         yh <- alpha
     }else{
         if(is.null(legend.x)){
@@ -172,12 +182,13 @@ plot.delayedGSD <- function(x,
         }
     
     }
+    
     if(type=="E"){
         ylab <- "Stopping boundary (Effect estimate)"
-        yu <- uk/sqrt(Info.i)
-        yl <- lk/sqrt(Info.i)
-        yc <- ck/sqrt(Info.d)
-        yh <- stats::qnorm(1-alpha)/sqrt(Info.i[length(Info.i)])
+        yu <- yu/sqrt(Info.i)[!is.na(uk) & !is.infinite(uk)]
+        yl <- yl/sqrt(Info.i)[!is.na(lk) & !is.infinite(lk)]
+        yc <- yc/sqrt(Info.d)[!is.na(ck) & !is.infinite(uk)]
+        yh <- stats::qnorm(1-alpha)/sqrt(Info.d[length(Info.d)])
     }
     if(is.null(ylim)){
         ylim <- switch(EXPR = type,
@@ -188,24 +199,27 @@ plot.delayedGSD <- function(x,
     }
     if(is.null(xlim)){
         if(Itype=="rate"){
-            xlim <- c(0,max(1,xu)*1.1)
+            xlim <- c(0,max(1,xd)*1.1)
         }else{
-            xlim <- c(0,1.1*max(xu,na.rm=TRUE))
+            xlim <- c(0,1.1*max(xd,na.rm=TRUE))
         }
     }
                                         # }}}
                                         # {{{ Plot
-    graphics::plot(xu,yu,type="l",lty=2,lwd=2,ylim=ylim,col="green3",xlab=xlb,ylab=ylab,axes=FALSE,
+    graphics::plot(c(xu,xd[length(xd)]),c(yu,yc[length(yc)]),type="l",lty=2,lwd=2,ylim=ylim,col="green3",xlab=xlb,ylab=ylab,axes=FALSE,
                    xlim=xlim,main=main)
-    graphics::lines(xu,yl,col="red",lwd=2,lty=2)
+    graphics::lines(c(xu,xd[length(xd)]),c(yl,yc[length(yc)]),col="red",lwd=2,lty=2)
     graphics::points(xu,yl,col="red",pch=21,bg="red",cex=cex.bound)
     graphics::points(xu,yu,col="green3",pch=21,bg="green3",cex=cex.bound)
     graphics::points(xd,yc,col="black",pch=19,cex=cex.bound)
 
     if(!is.null(delta)){
         xdelta <- xu[1:k]
+      
         if(type.k=="decision"){
             xdelta <- c(xdelta,xd[k])
+        } else if (type.k=="final") {
+          xdelta <- c(xu,xd[k])
         }
         ## lines(c(0,xdelta),c(0,delta),col="purple",lwd=2,lty=3)
         graphics::points(xdelta,delta,col="purple",pch=22,bg="purple",cex=cex.estimate[1])
@@ -245,6 +259,7 @@ plot.delayedGSD <- function(x,
     }
     graphics::text(x=xu,y=yl,labels=specdec(yl,k=mydigits),col="red",pos=pos.l)
     graphics::text(x=xu,y=yu,labels=specdec(yu,k=mydigits),col="green3",pos=pos.u)    
+    graphics::text(x=xd,y=yc,labels=specdec(yc,k=mydigits),col="black",pos=pos.l)
                                         #---   
     graphics::abline(h=yh,lty=2,col="grey")
     graphics::text(x=0,y=yh,labels=specdec(yh,k=mydigits),col="grey",pos=1)        
@@ -264,11 +279,11 @@ plot.delayedGSD <- function(x,
                                   blue=colvectred[3],
                                   alpha=0.25)
 
-    graphics::polygon(x=c(0,xu,rev(xu),0),
-                      y=c(yl[1],yl,rep(ifelse(type=="P",max(ylim),min(ylim)),length(yu)+1)),
+    graphics::polygon(x=c(0,c(xu,xd[length(xd)]),rev(c(xu,xd[length(xd)])),0),
+                      y=c(yl[1],c(yl,yc[length(yc)]),rep(ifelse(type=="P",max(ylim),min(ylim)),length(yu)+2)),
                       col=myrgbcolred,border=NA)
-    graphics::polygon(x=c(0,xu,rev(xu),0),
-                      y=c(yu[1],yu,rep(ifelse(type!="P",max(ylim),min(ylim)),length(yu)+1)),
+    graphics::polygon(x=c(0,c(xu,xd[length(xd)]),rev(c(xu,xd[length(xd)])),0),
+                      y=c(yu[1],c(yu,yc[length(yc)]),rep(ifelse(type!="P",max(ylim),min(ylim)),length(yu)+2)),
                       col=myrgbcolgreen,border=NA)
                                         # legend   
     if(legend){

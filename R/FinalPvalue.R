@@ -1,12 +1,12 @@
 ## * FinalPvalue (documentation)
 #' @title P-value at Decision
 #' @description  Compute the p-value at the end of the trial.
-#' @param Info.d Information at all decision analyses up to stage where study was stopped (excepted the final analysis)
-#' @param Info.i Information at all interim analyses up to stage where study was stopped (should include the information at the final analysis if stopped at final analysis)
+#' @param Info.d Information at all decision analyses up to stage where study was stopped (including the final analysis if stopped at final analysis)
+#' @param Info.i Information at all interim analyses up to stage where study was stopped (excluding final analysis if stopped at final analysis)
 #' @param ck,ck.unrestricted decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis).
 #' ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted always without.
-#' @param lk lower bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)
-#' @param uk upper bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)
+#' @param lk lower bounds up to stage where study was stopped (should include interim boundaries only, not the boundary of the final analysis if study continued to the end)
+#' @param uk upper bounds up to stage where study was stopped (should include interim boundaries only, not the boundary of the final analysis if study continued to the end)
 #' @param reason.interim motivation for stopping or continuing at interim. Use to handle special cases (skipped interim because reach Imax, ...)
 #' @param kMax maximum number of analyses
 #' @param delta true effect under which to calculate the probability (should always be 0 for p-value, only change for calculation of CI)
@@ -158,16 +158,24 @@ FinalPvalue <- function(Info.d,
   
     requireNamespace("mvtnorm")
   
+  #browser()
+  
     ## ** reconstruct test statistic
-    k <- length(Info.i)
-    if(k==kMax){
-        statistic <- estimate * sqrt(Info.i[k])
-    }else{
-        statistic <- estimate * sqrt(Info.d[k])
-        if(cNotBelowFixedc  && (statistic < ck[k]) && (statistic > ck.unrestricted[k])){
-            statistic <- ck.unrestricted[k] ## correction to ensure consistency between rejection and p-value (we do not reject in this interval)
-        }
+    k <- length(Info.d)
+    #if(k==kMax){ #COBA 10082023 removing this as also the final boundary c_K can be restricted to be at least 1.96
+    #    statistic <- estimate * sqrt(Info.i[k])
+    #}else{
+    #if(k==kMax){
+    #  statistic <- estimate * sqrt(Info.i[k])
+    #} else {
+      statistic <- estimate * sqrt(Info.d[k])
+    #}
+    
+    statistic_nocor <- statistic
+    if(cNotBelowFixedc  && (statistic < ck[k]) && (statistic > ck.unrestricted[k])){
+        statistic <- ck.unrestricted[k] ## correction to ensure consistency between rejection and p-value (we do not reject in this interval)
     }
+    #}
 
     ## ** modify information matrix to deal with decreasing information (special case)
     ## For an interim where we do not stop (nor skip): decreasing information between interim and hypothetical decision
@@ -183,7 +191,7 @@ FinalPvalue <- function(Info.d,
         ## keep the correlation interim(iState),decision(iStage), rescale the information at decision accordingly
         ## note that we will never skip this interim since we stopped and went for decision, i.e. it must have greater information than previous interim
         Info.d2[k] <- Info.i[k] * Info.i[k]/Info.d[k]        
-    }else if(k==kMax && any(Info.i[-kMax] > Info.i[kMax])){
+    }else if(k==kMax && any(Info.i > Info.d[kMax])){
         ## keep the correlation interim(iState),decision(iStage), rescale the information at decision accordingly
         Info.i2[kMax] <- max(Info.i[-kMax]) * max(Info.i[-kMax])/Info.i[kMax]
     }
@@ -194,13 +202,13 @@ FinalPvalue <- function(Info.d,
 
     ## ** reconstruct information matrix
     if(k==kMax){
-        I_all <- c(as.vector(rbind(Info.i[-kMax], Info.d)),Info.i[kMax])  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
-        I_all2 <- c(as.vector(rbind(Info.i2[-kMax], Info.d2)),Info.i2[kMax])  ## same but non-decreasing information
-        index_tempo <- as.vector(rbind(rep(1,length(Info.i[-kMax])), rep(2,length(Info.d))))
+        I_all <- c(as.vector(rbind(Info.i, Info.d[-kMax])),Info.d[kMax])  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k| |decision final|
+        I_all2 <- c(as.vector(rbind(Info.i2, Info.d2[-kMax])),Info.d2[kMax])  ## same but non-decreasing information
+        index_tempo <- as.vector(rbind(rep(1,length(Info.i)), rep(2,length(Info.d[-kMax]))))
         index_interim <- which(index_tempo==1) ## 1, 3, ...
         index_decision <- which(index_tempo==2) ## 2, 4, ...
         index_final <- length(I_all)
-        critval <- uk[kMax]
+        critval <- ck[kMax]
     }else{
         I_all <- as.vector(rbind(Info.i, Info.d))  ## vectorize in the following order: |interim 1| |decision 1| |interim 2| ... |interim k| |decision k|
         I_all2 <- as.vector(rbind(Info.i, Info.d2))  ## same but non-decreasing information
@@ -267,6 +275,13 @@ FinalPvalue <- function(Info.d,
             }
         }
     }
+    
+    #continuity correction option 2:
+    if((statistic >= critval) & (ck[k]>ck.unrestricted[k]) & continuity.correction==2){                
+      shift <- max(0,ck[k]-ck.unrestricted[k])
+    }else{
+      shift <- 0
+    }
 
     ## ** current stage (decision or final)
     if(k==1){
@@ -278,33 +293,34 @@ FinalPvalue <- function(Info.d,
     iUk <- uk[iSeq_interimM1]
 
     if(k==kMax || reason.interim[k]=="Imax reached"){ ## is it the final analysis (interim 1:(k-1), final) or  (interim 1:(k-2), skip interim, decision) 
+      
         if(k<kMax){
             iIndex <- c(index_interim[iSeq_interimM1], index_decision[k])
         }else if(k==kMax){
             iIndex <- c(index_interim[iSeq_interimM1], index_final)
         }
+      
+      if((statistic >= critval) & (ck[k]>ck.unrestricted[k]) & continuity.correction==1){
+        ## continuity correction 1 when concluding efficacy at final
+        correction <- mvtnorm::pmvnorm(lower = c(iLk,ck.unrestricted[k]),  
+                                       upper = c(iUk,ck[k]),
+                                       mean = theta[iIndex],
+                                       sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+    
+        pval <- pval + correction
+        attr(pval,"correction") <- correction
+        shift <- 0
+      }  
+      
         ## prob to continue until final analysis and obtain a higher result than the observed
-        pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,statistic),  
+        pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,statistic-shift),  
                                         upper = c(iUk,Inf),
                                         mean = theta[iIndex],
                                         sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
     }else if(method == 3 && reason.interim[k]=="futility"){ ## is it a decision analysis after stopping at interim for futility (method 3)
         
-        #if(length(iSeq_interimM1)==0){
-        #    pval <- 1
-        #}else{
-        #    iIndex <- index_interim[iSeq_interimM1]
-        #    pval <- pval + mvtnorm::pmvnorm(lower = iLk,  
-        #                                    upper = iUk,
-        #                                    mean = theta[iIndex],
-        #                                    sigma= sigmaZm[iIndex,iIndex,drop=FALSE])
-        #}
-      
-      #COBA 03082023:
       iIndex_interim <- c(index_interim[iSeq_interimM1], index_interim[k])
       iIndex <- c(iIndex_interim, index_decision[k])
-      
-      shift <- 0 ##I have not implemented any continuity correction here. Not sure if needed TBD
       
       ## prob to continue (and therefore have a more extreme result than concluding futility now)
       pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,lk[k]),  
@@ -313,43 +329,48 @@ FinalPvalue <- function(Info.d,
                                       sigma = sigmaZm[iIndex_interim,iIndex_interim,drop=FALSE])
       
       ## prob to stop for futility at interim and conclude a more extreme result 
-      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic - shift),   
+      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic_nocor),   
                                       upper = c(iUk,lk_orig[k],Inf),
                                       mean = theta[iIndex],
                                       sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
       
       
       ## prob to stop for efficacy at interim and conclude more extreme result (use min of critval and statistic as stopping for eff and z_k>c_k will result in efficacy conclusion (always more extreme than concluding futility, which is the case when stopping for futility at interim for Method 3 as flips from fut to eff not allowed))
-      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[k],min(critval,statistic - shift)),  
+      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,uk[k],min(ck.unrestricted[k],statistic_nocor)), #OLD -shift here, note that shift=0 if statistic < critval, so shift is only subtracted for more extreme results that would have resulted in efficacy
                                       upper = c(iUk,Inf,Inf),
                                       mean = theta[iIndex],
                                       sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+      
+      #if((statistic >= critval) & (ck[k]>ck.unrestricted[k]) & continuity.correction==1){
+      #  ## continuity correction when stopping for efficacy
+      #  correction <- mvtnorm::pmvnorm(lower = c(iLk,uk[k],ck.unrestricted[k]),  
+      #                                 upper = c(iUk,Inf,ck[k]),
+      #                                 mean = theta[iIndex],
+      #                                 sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+      #  pval <- pval + correction
+      #  attr(pval,"correction") <- correction
+      #  shift <- 0
+      #}
       
       
     }else { ## is it a decision analysis after stopping at interim (interim 1:1, decision i)
         iIndex_interim <- c(index_interim[iSeq_interimM1], index_interim[k])
         iIndex <- c(iIndex_interim, index_decision[k])
 
-        if((statistic >= critval) & (ck[k]>ck.unrestricted[k]) & continuity.correction>0){
+        if((statistic >= critval) & (ck[k]>ck.unrestricted[k]) & continuity.correction==1){
             ## continuity correction when stopping for efficacy
-            if(continuity.correction == 1){
-                correction <- mvtnorm::pmvnorm(lower = c(iLk,uk[k],ck.unrestricted[k]),  
-                                               upper = c(iUk,Inf,ck[k]),
-                                               mean = theta[iIndex],
-                                               sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
-                if(method%in%c(1,2)){
-                    correction <- correction + mvtnorm::pmvnorm(lower = c(iLk,-Inf,ck.unrestricted[k]),  
-                                                                upper = c(iUk,lk_orig[k],ck[k]),
-                                                                mean = theta[iIndex],
-                                                                sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
-                }
-                pval <- pval + correction
-                attr(pval,"correction") <- correction
-                shift <- 0
-            }else if(continuity.correction == 2){                
-                shift <- max(0,ck[k]-ck.unrestricted[k])
+            correction <- mvtnorm::pmvnorm(lower = c(iLk,uk[k],ck.unrestricted[k]),  
+                                           upper = c(iUk,Inf,ck[k]),
+                                           mean = theta[iIndex],
+                                           sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
+            if(method%in%c(1,2)){
+                correction <- correction + mvtnorm::pmvnorm(lower = c(iLk,-Inf,ck.unrestricted[k]),  
+                                                            upper = c(iUk,lk_orig[k],ck[k]),
+                                                            mean = theta[iIndex],
+                                                            sigma = sigmaZm[iIndex,iIndex,drop=FALSE])
             }
-        }else{
+            pval <- pval + correction
+            attr(pval,"correction") <- correction
             shift <- 0
         }
 
@@ -361,7 +382,7 @@ FinalPvalue <- function(Info.d,
                                             sigma = sigmaZm[iIndex_interim,iIndex_interim,drop=FALSE])
             if(method%in%3){
               ## prob to stop for futility at interim and conclude a more extreme result (this should only be added in case of futility for method 3, as for method 3 flips from fut to eff are not allowed and a futile result should not be considered more extreme than a positive result)
-              pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic - shift),   
+              pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic),
                                               upper = c(iUk,lk_orig[k],Inf),
                                               mean = theta[iIndex],
                                               sigma = sigmaZm[iIndex,iIndex,drop=FALSE])

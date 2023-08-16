@@ -9,8 +9,8 @@
 #' @param beta type II error
 #' @param kMax max number of analyses (including final)
 #' @param Info.max maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
-#' @param InfoR.i Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
-#' @param InfoR.d Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
+#' @param InfoR.i Expected or observed (wherever possible) information rates at the interim analyses 1:(Kmax-1)
+#' @param InfoR.d Expected or observed information rates at all potential decision analyses including the final analysis 1:Kmax
 #' @param delta expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
 #' @param abseps tolerance for precision when finding roots or computing integrals
 #' @param alternative a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
@@ -95,12 +95,15 @@ Method1 <- function(rho_alpha=2,
     IncAlpha <- rep(0,Kmax)  ## alpha spent at step k
     IncBeta <- rep(0,Kmax)   ## beta spent at step k
     
+    #information sequence relevant for alpha spending and covariance matrix
+    InfoR <- c(InfoR.i,InfoR.d[Kmax])
+    
     ## compute variance-covariance matrix of vector (Z_1,...,Z_k)
     sigmaZk <- diag(1,Kmax)
     for(i in 1:Kmax){
         for(j in i:Kmax){
-            sigmaZk[i,j] <- sqrt(InfoR.i[i]/InfoR.i[j])
-            sigmaZk[j,i] <- sqrt(InfoR.i[i]/InfoR.i[j])
+            sigmaZk[i,j] <- sqrt(InfoR[i]/InfoR[j])
+            sigmaZk[j,i] <- sqrt(InfoR[i]/InfoR[j])
         }
     }
                                         # compute If (see Jennison book page 87
@@ -228,13 +231,14 @@ Method1 <- function(rho_alpha=2,
   #compute information at each analysis
   Info.i <- InfoR.i*Info.max
   Info.d <- InfoR.d*Info.max
+  Info <- InfoR*Info.max
   
   # compute the mean of the multivariate normal distribution under the alternative H1
-  thetheta <- delta*sqrt(Info.i)
+  thetheta <- delta*sqrt(Info)
   ## }}} 
   ## {{{ case k=1 
-  IncAlpha[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
-  IncBeta[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
+  IncAlpha[1] <- ErrorSpend(I=Info[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
+  IncBeta[1] <-  ErrorSpend(I=Info[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
 
     uk[1] <- qnorm(p=1-IncAlpha[1],mean=0,sd=1)         # compute under the null (Ho)
     lk[1] <- qnorm(p=IncBeta[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
@@ -267,9 +271,9 @@ Method1 <- function(rho_alpha=2,
     for(k in 2:Kmax){
       if(!lk[k-1]==uk[k-1]){
         ## {{{ if  over-running has not occurred yet
-        thealpha[k] <- ErrorSpend(I=Info.i[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
+        thealpha[k] <- ErrorSpend(I=Info[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
         IncAlpha[k] <- thealpha[k] - thealpha[(k-1)]
-        thebeta[k] <- ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
+        thebeta[k] <- ErrorSpend(I=Info[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)  
         if(PowerCorrection){
           #real type II error spent at analysis k-1
           IncBeta[k-1] <- TypeIIerrorSpent(lk=lk,
@@ -368,11 +372,18 @@ Method1 <- function(rho_alpha=2,
   }
   ## }}}
   
+  ck.unrestricted[Kmax] <- uk[Kmax]
+  ck[Kmax] <- max(uk[Kmax],cMin)
+  
   if(alternative=="less"){
     lk <- -lk
     uk <- -uk
     delta <- -delta
+    ck.unrestricted <- -ck.unrestricted
+    ck <- -ck
   }
+  
+  #browser()
   
   ## {{{ create  output
   d <- data.frame(lk=lk,
@@ -383,7 +394,7 @@ Method1 <- function(rho_alpha=2,
                   Type.II.Error=thebeta,
                   Inc.Type.I=IncAlpha,
                   Inc.Type.II=IncBeta,
-                  Ik=Info.i
+                  Ik=Info
   )
   out <- list(boundaries=d,
               rho_alpha=rho_alpha,

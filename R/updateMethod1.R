@@ -5,10 +5,10 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                           beta=0.2, betaSpent = NULL,            # Type-II error (overall) or spent at to the interim analysis (i.e. cumulative)
                           Kmax,                 # number of planned analyses (including the final analysis)
                           Info.max=NULL,        # Info.max, i.e. maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.
-                          InfoR.i=NULL,         # Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax
-                          InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses 1:(Kmax-1)
-                          uk = NULL,            # efficacy boundary from the previous interim analyses or planning
-                          lk = NULL,            # futility boundary from the previous interim analyses or planning
+                          InfoR.i=NULL,         # Expected or observed (wherever possible) information rates at the interim analyses 1:(Kmax-1)
+                          InfoR.d=NULL,         # Expected or observed information rates at all potential decision analyses, including the final analysis 1:Kmax
+                          uk = NULL,            # efficacy boundaries from the previous interim analyses or planning
+                          lk = NULL,            # futility boundaries from the previous interim analyses or planning
                           k = NULL, type.k = NULL, ImaxAnticipated = FALSE, # current stage, type of analysis, and conclusion for all previous analyses
                           delta=0,              # expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))
                           abseps = 1e-06,       # tolerance for precision when finding roots or computing integrals
@@ -26,7 +26,6 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
 ){
   ## {{{ set seed
   
-  
     if(!is.null(myseed)){
         if(!is.null(get0(".Random.seed"))){ ## avoid error when .Random.seed do not exists, e.g. fresh R session with no call to RNG
             old <- .Random.seed # to save the current seed
@@ -37,29 +36,35 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
 
   ## *** initialize boundaries
   
+  #information sequence relevant for alpha spending and covariance matrix
+  InfoR <- c(InfoR.i,InfoR.d[Kmax])
+  
   ## *** compute variance-covariance matrix of vector (Z_1,...,Z_k)
   sigmaZk <- diag(1,Kmax)
   for(i in 1:Kmax){
     for(j in i:Kmax){
-      sigmaZk[i,j] <- sqrt(InfoR.i[i]/InfoR.i[j])
-      sigmaZk[j,i] <- sqrt(InfoR.i[i]/InfoR.i[j])
+      sigmaZk[i,j] <- sqrt(InfoR[i]/InfoR[j])
+      sigmaZk[j,i] <- sqrt(InfoR[i]/InfoR[j])
     }
   }
   
   #compute information at each analysis
   Info.i <- InfoR.i*Info.max
   Info.d <- InfoR.d*Info.max
+  Info <- InfoR*Info.max
+  
+  #browser()
   
   # compute the mean of the multivariate normal distribution under the alternative H1
-  thetheta <- delta*sqrt(Info.i)
+  thetheta <- delta*sqrt(Info)
   ## }}} 
   ## ** case k=1
     if(k==1){
         
     ## {{{ case k=1
     if(type.k=="interim"){
-      alphaSpent[1] <- ErrorSpend(I=Info.i[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
-      betaSpent[1] <-  ErrorSpend(I=Info.i[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
+      alphaSpent[1] <- ErrorSpend(I=Info[1],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max)
+      betaSpent[1] <-  ErrorSpend(I=Info[1],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
       
       uk[1] <- qnorm(p=1-alphaSpent[1],mean=0,sd=1)         # compute under the null (Ho)
       lk[1] <- qnorm(p=betaSpent[1],mean=thetheta[1],sd=1)  # compute under the alternative (H1)
@@ -89,9 +94,9 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
     if(type.k=="interim"){
       
       ## ** Estimate uk
-      alphaSpent[k] <- ErrorSpend(I=Info.i[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
+      alphaSpent[k] <- ErrorSpend(I=Info[k],rho=rho_alpha,beta_or_alpha=alpha,Info.max=Info.max) 
       alphaSpentInc[k] <- alphaSpent[k] - alphaSpent[(k-1)]   
-      betaSpent[k] <- ErrorSpend(I=Info.i[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
+      betaSpent[k] <- ErrorSpend(I=Info[k],rho=rho_beta,beta_or_alpha=beta,Info.max=Info.max)
       
       if(PowerCorrection){
         #real type II error spent at analysis k-1
@@ -151,7 +156,7 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
             betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]
             lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
             upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
-            if(InfoR.i[k]>1){
+            if(InfoR.d[k]>1){
                 lowerRoot <- -10
                 upperRoot <- 10
             }
@@ -176,7 +181,8 @@ updateMethod1 <- function(rho_alpha=2,          # rho parameter of the rho-famil
       
       lk[k] <- uk[k]
       
-      ck.unrestricted <- NA
+      ck.unrestricted <- uk[k] 
+      lk[k] <- uk[k] <- NA
       
       
     }

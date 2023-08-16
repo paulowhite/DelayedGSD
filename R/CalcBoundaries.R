@@ -5,13 +5,13 @@
 #' @param kMax max number of analyses (including final)
 #' @param alpha type I error
 #' @param beta type II error
-#' @param InfoR.i planned or observed information rates at interim analysis, including the final analysis.
+#' @param InfoR.i planned or observed information rates at the interim analyses 1:(Kmax-1)
 #' @param rho_alpha rho parameter for alpha error spending function
 #' @param rho_beta rho parameter for beta error spending function
 #' @param method use method 1 or 2 from paper H&J
 #' @param cNotBelowFixedc whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
 #' @param delta effect that the study is powered for
-#' @param InfoR.d (expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.
+#' @param InfoR.d (expected) information rate at each decision analysis, including the final analysis.
 #' @param bindingFutility [logical]  whether the futility stopping rule is binding.
 #' @param alternative a character string specifying the alternative hypothesis, \code{"greater"} or \code{"less"}.
 #' H0 \eqn{\theta=0} vs H1 \eqn{theta<0} (\code{"less"}) or theta > 0 (\code{"greater"}).
@@ -25,13 +25,13 @@
 #' myBound <- CalcBoundaries(kMax=2,
 #'               alpha=0.025,  
 #'               beta=0.2,  
-#'               InfoR.i=c(0.5,1),
+#'               InfoR.i=c(0.5),
 #'               rho_alpha=2,
 #'               rho_beta=2,
 #'               method=2,
 #'               cNotBelowFixedc=TRUE,
 #'               delta=1.5,
-#'               InfoR.d=0.55)
+#'               InfoR.d=c(0.55,1))
 #' myBound
 #' plot(myBound)
 #' 
@@ -39,14 +39,14 @@
 #' myBound <- CalcBoundaries(kMax=3,
 #'               alpha=0.025,  
 #'               beta=0.1,  
-#'               InfoR.i=c(3.5,6.75,12)/12,
+#'               InfoR.i=c(3.5,6.75)/12,
 #'               rho_alpha=1.345,
 #'               rho_beta=1.345,
 #'               method=1, ## has been changed from 2 to 1
 #'               cNotBelowFixedc=TRUE,
 #'               bindingFutility=FALSE,
 #'               delta=1,
-#'               InfoR.d=c(5.5,8.75)/12)
+#'               InfoR.d=c(5.5,8.75,12)/12)
 #' myBound
 #' plot(myBound)
 
@@ -55,13 +55,13 @@
 CalcBoundaries <- function(kMax = 2,  
                            alpha = 0.025, 
                            beta = 0.2,  
-                           InfoR.i = c(0.5,1),  
+                           InfoR.i = 0.5,  
                            rho_alpha = 2,  
                            rho_beta = 2,  
                            method = 1, 
                            cNotBelowFixedc = FALSE, 
                            delta = 1.5, 
-                           InfoR.d = 0.55,   
+                           InfoR.d = c(0.55,1),   
                            bindingFutility = TRUE,
                            alternative = "greater",
                            conf.level = 1-2*alpha,
@@ -76,22 +76,22 @@ CalcBoundaries <- function(kMax = 2,
     call <- match.call() ## keep track of how the user run the function
     alternative <- match.arg(alternative, c("less","greater"))
 
-    if(length(InfoR.d)!=kMax-1){
-        if(length(InfoR.d)==kMax && InfoR.d[kMax] == 1){
-            InfoR.d <- InfoR.d[-kMax]
+    if(length(InfoR.i)!=kMax-1){
+        if(length(InfoR.i)==kMax && InfoR.i[kMax] == 1){
+            InfoR.i <- InfoR.i[-kMax]
         }else{
-            stop("Argument \'InfoR.d\' should have length kMax-1=",kMax-1,". \n")
+            stop("Argument \'InfoR.i\' should have length kMax-1=",kMax-1,". \n")
         }
     }
-    if(length(InfoR.i)!=kMax){
-        if(length(InfoR.i)==(kMax-1)){
-            InfoR.i <- c(InfoR.i,1)
+    if(length(InfoR.d)!=kMax){
+        if(length(InfoR.d)==(kMax-1)){
+            InfoR.d <- c(InfoR.d,1)
         }else{
-            stop("Argument \'InfoR.i\' should have length kMax=",kMax,". \n")
+            stop("Argument \'InfoR.d\' should have length kMax=",kMax,". \n")
         }
     }
   
-    if(sum(InfoR.d < InfoR.i[-length(InfoR.i)])>0){
+    if(sum(InfoR.d[-length(InfoR.d)] < InfoR.i)>0){
         stop("Information at decision analysis should not be smaller than information at interim analysis")
     }
   
@@ -112,6 +112,10 @@ CalcBoundaries <- function(kMax = 2,
 
     ## ** compute boundaries at decision and possibly update futility boundary at interim
     cMin <- ifelse(cNotBelowFixedc,stats::qnorm(1-alpha),-Inf)
+    
+    if(!cNotBelowFixedc & method==3){
+      stop("Method 3 requires cNotBelowFixedc=TRUE")
+    }
     
     ## ## ** remove boundaries corresponding to stage that will not be reached
 
@@ -170,12 +174,12 @@ CalcBoundaries <- function(kMax = 2,
     out <- list(call = call,
                 stage = data.frame(k = 0, type = "planning"),
                 conclusion = matrix(as.character(NA), nrow = 4, ncol = kMax, dimnames = list(c("interim","reason.interim","decision","comment.decision"),NULL)),
-                uk = rep(NA, kMax), 
-                lk = rep(NA, kMax),
-                ck = rep(NA, kMax-1),
-                ck.unrestricted = rep(NA, kMax-1),
-                Info.i = rep(NA, kMax), 
-                Info.d = rep(NA, kMax-1),                
+                uk = rep(NA, kMax-1), 
+                lk = rep(NA, kMax-1),
+                ck = rep(NA, kMax),
+                ck.unrestricted = rep(NA, kMax),
+                Info.i = rep(NA, kMax-1), 
+                Info.d = rep(NA, kMax),                
                 lmm = vector(mode = "list", length = kMax),
                 alpha = alpha,
                 conf.level = conf.level,
@@ -195,10 +199,10 @@ CalcBoundaries <- function(kMax = 2,
                                rho_beta = rho_beta,
                                InflationFactor = delayedBnds$coef,
                                Info.max = delayedBnds$Info.max,
-                               uk = delayedBnds$boundaries$uk,
-                               lk = delayedBnds$boundaries$lk,
-                               ck = delayedBnds$boundaries$ck[1:(kMax-1)],
-                               ck.unrestricted = delayedBnds$boundaries$ck.unrestricted[1:(kMax-1)],
+                               uk = delayedBnds$boundaries$uk[1:(kMax-1)],
+                               lk = delayedBnds$boundaries$lk[1:(kMax-1)],
+                               ck = delayedBnds$boundaries$ck,
+                               ck.unrestricted = delayedBnds$boundaries$ck.unrestricted,
                                alphaSpent = cumsum(delayedBnds$boundaries$Inc.Type.I),
                                betaSpent = cumsum(delayedBnds$boundaries$Inc.Type.II),
                                Info.i = InfoR.i*delayedBnds$Info.max,

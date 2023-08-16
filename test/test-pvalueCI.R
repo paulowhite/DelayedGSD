@@ -67,7 +67,7 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
                           ck = efficacyBound,
                           ck.unrestricted = efficacyBound,
                           lk = futilityBound,
-                          uk = efficacyBound,
+                          uk = efficacyBound[1:2],
                           kMax = 3,
                           estimate = estimate,
                           method = 1,
@@ -84,7 +84,7 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
                        ck = efficacyBound,
                        ck.unrestricted = efficacyBound,
                        lk = futilityBound,
-                       uk = efficacyBound,
+                       uk = efficacyBound[1:2],
                        kMax = 3,
                        conf.level = 0.95,
                        estimate = estimate,
@@ -103,7 +103,7 @@ test_that("Compare p-value/CIs/MUestimate to rpact in the non-longitudinal case"
                                ck = efficacyBound,
                                ck.unrestricted = efficacyBound,
                                lk = futilityBound,
-                               uk = efficacyBound,
+                               uk = efficacyBound[1:2],
                                kMax = 3,
                                estimate = estimate,
                                reason.interim = c("",""),
@@ -301,11 +301,11 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
     
     ## ** Continue at interim and and statistic precisely at boundary at final (method 1, cNotBelowFixedc)
     ## method 1 or 2 (the calculation of the p-value is the same for both methods)
-    test <- FinalPvalue(Info.d = 2.75046695782793,
-                        Info.i = c(2.5589317424577, 4.30612228613852),
-                        ck = 1.7253424172699, ck.unrestricted = 1.7253424172699,
-                        lk = c(1.11127641794951, 2.01974814127831),
-                        uk = c(2.2459290489148, 2.01974814127831),
+    test <- FinalPvalue(Info.d = c(2.75046695782793, 4.30612228613852),
+                        Info.i = c(2.5589317424577),
+                        ck = c(1.7253424172699,2.01974814127831), ck.unrestricted = c(1.7253424172699,2.01974814127831),
+                        lk = c(1.11127641794951),
+                        uk = c(2.2459290489148),
                         kMax = 2,
                         delta = 0, 
                         estimate = 2.01974814127831 / sqrt(4.30612228613852),
@@ -317,11 +317,11 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
     expect_equal(as.double(test), 0.025, tol = 1e-5)
     
     ## method 3
-    test <- FinalPvalue(Info.d = 12.58797814,  
-                        Info.i = c(10.60271846, 24.67092824),
-                        ck = 1.897834, ck.unrestricted = 1.897834,
-                        lk = c(0.22424864, 1.99362293),  
-                        uk = c(2.52429353, 1.99362293),  
+    test <- FinalPvalue(Info.d = c(12.58797814, 24.67092824),  
+                        Info.i = c(10.60271846),
+                        ck = c(1.897834, 1.99362293), ck.unrestricted = c(1.897834, 1.99362293),
+                        lk = c(0.22424864),  
+                        uk = c(2.52429353),  
                         kMax = 2, 
                         delta = 0,  
                         estimate = 1.99362293 / sqrt(24.67092824),
@@ -336,21 +336,28 @@ test_that("Check consistency between p-value and boundary (1 interim analysis)",
 
 test_that("Check consistency between p-value and boundary (2 interim analysis)",{
 
+  
     for(iMethod in 1:3){ ## iMethod <- 1
-        ## for binding futility rule
+      
+      if(iMethod==3){
+        cNotBelowFixedc <- TRUE
+      } else {
+        cNotBelowFixedc <- FALSE
+      } 
+      
+      ## for binding futility rule
         myBound <- suppressWarnings(CalcBoundaries(kMax = 3,
                                                    alpha = 0.025, 
                                                    beta = 0.1, 
-                                                   InfoR.i = c(3.5,6.75,12)/12,
+                                                   InfoR.i = c(3.5,6.75)/12,
                                                    rho_alpha = 1.345,
                                                    rho_beta = 1.345,
                                                    method = iMethod, ## has been changed from 2 to 1
-                                                   cNotBelowFixedc = FALSE,
+                                                   cNotBelowFixedc = cNotBelowFixedc,
                                                    bindingFutility = TRUE,
                                                    delta = 1,
-                                                   InfoR.d = c(5.5,8.75)/12))
+                                                   InfoR.d = c(5.5,8.75,12)/12))
 
-            
         test <- FinalPvalue(Info.d = myBound$planned$Info.d,
                             Info.i = myBound$planned$Info.i,
                             ck = myBound$planned$ck,
@@ -358,11 +365,11 @@ test_that("Check consistency between p-value and boundary (2 interim analysis)",
                             lk = myBound$planned$lk,
                             uk = myBound$planned$uk,
                             kMax = myBound$kMax,
-                            estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
+                            estimate = myBound$planned$ck[myBound$kMax]/sqrt(myBound$planned$Info.max),
                             reason.interim = c("","",""),
                             method = iMethod,
                             bindingFutility = TRUE,
-                            cNotBelowFixedc = FALSE,
+                            cNotBelowFixedc = cNotBelowFixedc,
                             continuity.correction = TRUE)
 
         expect_equal(as.double(test), 0.025, tol = 1e-3)
@@ -371,14 +378,14 @@ test_that("Check consistency between p-value and boundary (2 interim analysis)",
         myBound <- suppressWarnings(CalcBoundaries(kMax = 3,
                                                    alpha = 0.025, 
                                                    beta = 0.1, 
-                                                   InfoR.i = c(3.5,6.75,12)/12,
+                                                   InfoR.i = c(3.5,6.75)/12,
                                                    rho_alpha = 1.345,
                                                    rho_beta = 1.345,
                                                    method = iMethod, 
-                                                   cNotBelowFixedc = FALSE,
+                                                   cNotBelowFixedc = cNotBelowFixedc,
                                                    bindingFutility = FALSE,
                                                    delta = 1,
-                                                   InfoR.d = c(5.5,8.75)/12))
+                                                   InfoR.d = c(5.5,8.75,12)/12))
 
             
         test <- FinalPvalue(Info.d = myBound$planned$Info.d,
@@ -388,11 +395,11 @@ test_that("Check consistency between p-value and boundary (2 interim analysis)",
                             lk = myBound$planned$lk,
                             uk = myBound$planned$uk,
                             kMax = myBound$kMax,
-                            estimate = myBound$planned$uk[myBound$kMax]/sqrt(myBound$planned$Info.max),
+                            estimate = myBound$planned$ck[myBound$kMax]/sqrt(myBound$planned$Info.max),
                             reason.interim = c("","",""),
                             method = iMethod,
                             bindingFutility = FALSE,
-                            cNotBelowFixedc = FALSE,
+                            cNotBelowFixedc = cNotBelowFixedc,
                             continuity.correction = TRUE)
 
         expect_equal(as.double(test), 0.025, tol = 1e-3)
@@ -420,11 +427,11 @@ test_that("Check ordering and continuity of p-values (1 interim analysis)",{
                         cNotBelowFixedc = FALSE,
                         continuity.correction = TRUE)
         }else if(k==2){
-            FinalPvalue(Info.d = 2.75046695782793,
-                        Info.i = c(2.5589317424577, 4.30612228613852),
-                        ck = 1.7253424172699, ck.unrestricted = 1.7253424172699,
-                        lk = c(1.11127641794951, 2.01974814127831),
-                        uk = c(2.2459290489148, 2.01974814127831),
+            FinalPvalue(Info.d = c(2.75046695782793, 4.30612228613852),
+                        Info.i = c(2.5589317424577),
+                        ck = c(1.7253424172699,2.01974814127831), ck.unrestricted = c(1.7253424172699, 2.01974814127831),
+                        lk = c(1.11127641794951),
+                        uk = c(2.2459290489148),
                         kMax = 2,
                         delta = 0, 
                         estimate = z / sqrt(4.30612228613852),
@@ -470,11 +477,11 @@ test_that("Check ordering and continuity of p-values (1 interim analysis)",{
                         cNotBelowFixedc = TRUE,
                         continuity.correction = continuity.correction)
         }else if(k==2){
-            FinalPvalue(Info.d = 12.58797814,
-                        Info.i = c(10.60271846, 20.74866926),
-                        ck = 1.959964, ck.unrestricted = 1.49772992,
-                        lk = c(0.24335814, 1.9961649),
-                        uk = c(2.5458844, 1.9961649),
+            FinalPvalue(Info.d = c(12.58797814, 20.74866926),
+                        Info.i = c(10.60271846),
+                        ck = c(1.959964, 1.9961649), ck.unrestricted = c(1.49772992, 1.9961649),
+                        lk = c(0.24335814),
+                        uk = c(2.5458844),
                         kMax = 2,
                         delta = 0, 
                         estimate = z / sqrt(20.74866926),
