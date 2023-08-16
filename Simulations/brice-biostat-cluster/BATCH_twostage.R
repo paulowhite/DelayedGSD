@@ -19,8 +19,9 @@ if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on
     if("missing" %in% ls() == FALSE){ missing <- TRUE }
     if("binding" %in% ls() == FALSE){ binding <- FALSE }
     if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- TRUE }
-    if("ar.factor" %in% ls() == FALSE){ ar.factor <- 5}
+    if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
     if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
+    if("n.method" %in% ls() == FALSE){ n.method <- NULL }
 }
 
 name <- ""
@@ -46,11 +47,13 @@ if(delta.factor>0){
 
 cat("BATCH ",name,": ",iter_sim," over ",n.iter_sim,"\n",sep="")
 cat("Arguments:\n")
-print(data.frame(missing = missing,
-                 binding = binding,
-                 cNotBelowFixedc = cNotBelowFixedc,
-                 ar.factor = ar.factor,
-                 delta.factor = delta.factor), row.names = FALSE)
+df.args <- data.frame(missing = missing,
+                      binding = binding,
+                      cNotBelowFixedc = cNotBelowFixedc,
+                      ar.factor = ar.factor,
+                      delta.factor = delta.factor)
+if(!is.null(n.method)){df.args$n.method <- n.method}
+print(df.args, row.names = FALSE)
 cat("\n")
 
 ## * Settings
@@ -115,21 +118,25 @@ source("FCT.R") ## exportGSD function
 ## * Planned boundaries
 plannedB <- vector(mode = "list", length = 3)
 for(iMeth in method){ ## iMeth <- 1
-  plannedB[[iMeth]] <- CalcBoundaries(kMax=kMax,  
-                                      alpha=alpha, 
-                                      beta=beta,  
-                                      InfoR.i=informationRates,  
-                                      InfoR.d=c(Id,1),  
-                                      rho_alpha=rho_alpha,  
-                                      rho_beta=rho_beta,  
-                                      method=iMeth,  
-                                      cNotBelowFixedc=cNotBelowFixedc,
-                                      bindingFutility=binding,
-                                      delta=deltaPower)
-  ## summary(plannedB[[1]])
-  ## coef(plannedB[[iMeth]], type = "information")
+    plannedB[[iMeth]] <- CalcBoundaries(kMax=kMax,  
+                                        alpha=alpha, 
+                                        beta=beta,  
+                                        InfoR.i=informationRates,  
+                                        InfoR.d=c(Id,1),  
+                                        rho_alpha=rho_alpha,  
+                                        rho_beta=rho_beta,  
+                                        method=iMeth,  
+                                        cNotBelowFixedc=cNotBelowFixedc,
+                                        bindingFutility=binding,
+                                        delta=deltaPower)
+    ## summary(plannedB[[1]])
+    ## coef(plannedB[[iMeth]], type = "information")
 }
-inflationFactor <- unlist(lapply(plannedB,function(iP){iP$planned$InflationFactor}))
+if(is.null(n.method)){
+    inflationFactor <- unlist(lapply(plannedB,function(iP){iP$planned$InflationFactor}))
+}else{
+    inflationFactor <- rep(plannedB[[n.method]]$planned$InflationFactor, 3)
+}
 nGSD <- ceiling(n*inflationFactor)
 RES <- NULL
 
@@ -141,7 +148,7 @@ allj <- seq(1+(iter_sim-1)*nsim, iter_sim*nsim, by = 1)
 for(j in allj){ ## j <- 1 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 187033903
+  #myseedi <- 94206819
   # {{{ TRACE info (e.g. to check the Rout)
   cat("seed ",myseedi," for ","j=",j," (index ",which(j==allj),") out of ",nsim,": ", sep="")
   # }}}
@@ -214,12 +221,12 @@ for(j in allj){ ## j <- 1 ## 5
                                       export.boundary = TRUE,
                                       export.decision = TRUE)
   }
-  ## currentGSD[[1]]
+  ## currentGSD[[3]]
   ## plot(currentGSD[[1]], legend.x = "bottomleft")
   
   
   out.decision <- vector(mode = "list", length = 3)
-  for(iMeth in method){ ## iMeth <- 1
+  for(iMeth in method){ ## iMeth <- 3
     
     ## ** decision
     dDecision <- d[which(d$t1 <= thets[iMeth] + theDelta.t*TimeFactor),]
@@ -248,15 +255,6 @@ for(j in allj){ ## j <- 1 ## 5
           }
           ## update information
           currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmD, k = 1, type.k = "decision", trace = FALSE)
-      
-          out.decision[[iMeth]] <- exportGSD(currentGSD[[iMeth]],
-                                             export.statistic = FALSE,
-                                             export.ML = FALSE,
-                                             export.MUE = FALSE,
-                                             export.info = TRUE,
-                                             export.predinfo = FALSE,
-                                             export.boundary = TRUE,
-                                             export.decision = FALSE)
       }
   }
                                         # }}}
@@ -270,7 +268,7 @@ for(j in allj){ ## j <- 1 ## 5
     
     if(currentGSD[[iMeth]]$stage[,"type"]=="decision"){
       
-      out.final[[iMeth]] <- exportGSD(NA)
+      out.final[[iMeth]] <- cbind(method = iMeth, stage = 2, type = "final", exportGSD(NA))
       
     }else{
       currentGSD[[iMeth]] <- update(currentGSD[[iMeth]], delta = lmmF, trace = FALSE)
@@ -290,13 +288,11 @@ for(j in allj){ ## j <- 1 ## 5
   
   stopComp <- Sys.time()
   # {{{ Save results
-  outMerge <- do.call(rbind,lapply(method, function(iMeth){
-    iNames <- unique(c(names(out.interim[[iMeth]]),names(out.decision[[iMeth]]),names(out.final[[iMeth]])))
-    iMerge <- data.frame(matrix(NA, ncol = length(iNames), nrow = 3, dimnames = list(NULL, iNames)))
-    iMerge[1,names(out.interim[[iMeth]])] <- out.interim[[iMeth]]
-    iMerge[2,names(out.decision[[iMeth]])] <- out.decision[[iMeth]]
-    iMerge[3,names(out.final[[iMeth]])] <- out.final[[iMeth]]
-    return(iMerge)
+  outMerge <- do.call(rbind,lapply(method, function(iMeth){ ## iMeth <- 3
+      cbind(rbind(out.interim[[iMeth]],
+                  out.decision[[iMeth]],
+                  out.final[[iMeth]]),
+            time.interim = thets[iMeth], nX1.interim = nX1.interim[iMeth], nX2.interim = nX2.interim[iMeth], nX3.interim = nX3.interim[iMeth])
   }))
   
   ## outMerge[outMerge$method==3,]
@@ -305,11 +301,7 @@ for(j in allj){ ## j <- 1 ## 5
       ## results
       outMerge,
       ## simulation details
-      time.interim = rep(thets,each=3),
       seed=myseedi,             
-      nX1.interim = rep(nX1.interim,each=3),
-      nX2.interim = rep(nX2.interim,each=3),
-      nX3.interim = rep(nX3.interim,each=3),
       ## computation time
       computation.time=as.double(round(difftime(stopComp,startComp,units="secs"),3))
   )

@@ -2,32 +2,32 @@
 
 #SBATCH --job-name=2stageGST  # Job name
 #SBATCH --array=1-100     # Number of jobs
-#SBATCH --partition=standard    # Queue. Use long for run time >8h and standard otherwise
+#SBATCH --partition=long    # Queue. Use long for run time >8h and standard otherwise
 #SBATCH --mem=1G # Memory limit, e.g. reserve 1 GB memory 
 #SBATCH --output=output/slurm/slurm-%x-%a-%J.out # Direct output to subdirectory
 #SBATCH --error=output/slurm/slurm-%x-%a-%J.out # Same file for output and error
 
 ## no missing value
-R CMD BATCH --vanilla '--args missing=FALSE binding=TRUE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0.6' BATCH_twostage.R output/2stage_nomissing_binding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=FALSE binding=TRUE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0' BATCH_twostage.R output/2stage_nomissing_binding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=FALSE binding=TRUE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_nomissing_binding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=FALSE binding=TRUE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_nomissing_binding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
 ## missing values:  (non-binding,binding) ar(5,10) (power,type1)
-R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0.6' BATCH_twostage.R output/2stage_missing_binding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0' BATCH_twostage.R output/2stage_missing_binding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=FALSE ar.factor=10 delta.factor=0.6' BATCH_twostage.R output/2stage_missing_binding_ar10_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=FALSE ar.factor=10 delta.factor=0' BATCH_twostage.R output/2stage_missing_binding_ar10_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0.6' BATCH_twostage.R output/2stage_missing_nonbinding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0' BATCH_twostage.R output/2stage_missing_nonbinding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=FALSE ar.factor=10 delta.factor=0.6' BATCH_twostage.R output/2stage_missing_nonbinding_ar10_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=FALSE ar.factor=10 delta.factor=0' BATCH_twostage.R output/2stage_missing_nonbinding_ar10_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_missing_binding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_missing_binding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=FALSE ar.factor=10 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_missing_binding_ar10_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=FALSE ar.factor=10 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_missing_binding_ar10_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_missing_nonbinding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=FALSE ar.factor=5 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_missing_nonbinding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=FALSE ar.factor=10 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_missing_nonbinding_ar10_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=FALSE ar.factor=10 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_missing_nonbinding_ar10_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
 ## missing values: fix C (non-binding,binding) ar(5,10) (power,type1)
-R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=TRUE ar.factor=5 delta.factor=0.6' BATCH_twostage.R output/2stage_missing_fixC_binding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=TRUE ar.factor=5 delta.factor=0' BATCH_twostage.R output/2stage_missing_fixC_binding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=TRUE ar.factor=10 delta.factor=0.6' BATCH_twostage.R output/2stage_missing_fixC_binding_ar10_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=TRUE ar.factor=10 delta.factor=0' BATCH_twostage.R output/2stage_missing_fixC_binding_ar10_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar.factor=5 delta.factor=0.6' BATCH_twostage.R output/2stage_missing_fixC_nonbinding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar.factor=5 delta.factor=0' BATCH_twostage.R output/2stage_missing_fixC_nonbinding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar.factor=10 delta.factor=0.6' BATCH_twostage.R output/2stage_missing_fixC_nonbinding_ar10_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
-R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar.factor=10 delta.factor=0' BATCH_twostage.R output/2stage_missing_fixC_nonbinding_ar10_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=TRUE ar.factor=5 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_missing_fixC_binding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=TRUE ar.factor=5 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_missing_fixC_binding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=TRUE ar.factor=10 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_missing_fixC_binding_ar10_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=TRUE cNotBelowFixedc=TRUE ar.factor=10 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_missing_fixC_binding_ar10_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar.factor=5 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_missing_fixC_nonbinding_ar5_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar.factor=5 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_missing_fixC_nonbinding_ar5_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar.factor=10 delta.factor=0.6 n.method=3' BATCH_twostage.R output/2stage_missing_fixC_nonbinding_ar10_power/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
+R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar.factor=10 delta.factor=0 n.method=3' BATCH_twostage.R output/2stage_missing_fixC_nonbinding_ar10_typeI/R-$SLURM_JOB_NAME-$SLURM_ARRAY_TASK_ID-$SLURM_JOB_ID.Rout
 
 ## go to directory    ## cd c:/Users/hpl802/Documents/Github/DelayedGSD/Simulations/brice-biostat-cluster/
                       ## cd /projects/biostat01/people/hpl802/DelayedGSD/
@@ -56,7 +56,7 @@ R CMD BATCH --vanilla '--args missing=TRUE binding=FALSE cNotBelowFixedc=TRUE ar
                       ## rm -r Results/2stage_missing_fixC_nonbinding_ar10_power/*;rm -r Results/2stage_missing_fixC_nonbinding_ar10_typeI/*;
 
 ## submission command ## sbatch SUBM_twostage.slurm
-## submission output  ## Submitted batch job 3273199 (time using C-c t: onsdag 23-03-22 at 15:04) 
+## submission output  ## Submitted batch job 4337581 (time using C-c t: onsdag 23-08-09 at 16:36) 
 
 ## init               ## module module load gcc/11.2.0 R/4.1.2
                       ## cat .bash_profile (in the root directory on the server to visualize the current configuration)

@@ -17,10 +17,11 @@ if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on
     n.iter_sim <- 100
 
     if("missing" %in% ls() == FALSE){ missing <- TRUE }
-    if("binding" %in% ls() == FALSE){ binding <- FALSE }
-    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- TRUE }
+    if("binding" %in% ls() == FALSE){ binding <- TRUE }
+    if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
-    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
+    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0 }
+    if("n.method" %in% ls() == FALSE){ n.method <- NULL }
 }
 
 name <- ""
@@ -46,15 +47,17 @@ if(delta.factor>0){
 
 cat("BATCH ",name,": ",iter_sim," over ",n.iter_sim,"\n",sep="")
 cat("Arguments:\n")
-print(data.frame(missing = missing,
-                 binding = binding,
-                 cNotBelowFixedc = cNotBelowFixedc,
-                 ar.factor = ar.factor,
-                 delta.factor = delta.factor), row.names = FALSE)
+df.args <- data.frame(missing = missing,
+                      binding = binding,
+                      cNotBelowFixedc = cNotBelowFixedc,
+                      ar.factor = ar.factor,
+                      delta.factor = delta.factor)
+if(!is.null(n.method)){df.args$n.method <- n.method}
+print(df.args, row.names = FALSE)
 cat("\n")
 
 ## * Settings
-nsim <- 100 # number of simulations
+nsim <- 25 # number of simulations
 method <- 1:3 # methods used to compute the boundaries
                                         #--- to plan the trial ----
 kMax <- 3  #max number of analyses (including final)
@@ -138,9 +141,15 @@ for(iMeth in 1:length(method)){ ## iMeth <- 1
   ## plot(plannedB[[1]])
   ## coef(plannedB[[iMeth]], type = "decision")
 }
-inflationFactor <- unlist(lapply(plannedB,function(iP){iP$planned$InflationFactor}))
+if(is.null(n.method)){
+    inflationFactor <- unlist(lapply(plannedB,function(iP){iP$planned$InflationFactor}))
+}else{
+    inflationFactor <- rep(plannedB[[n.method]]$planned$InflationFactor, 3)
+}
 nGSD <- ceiling(n*inflationFactor)
 RES <- NULL
+
+cat("Sample size: ",paste(nGSD, collapse = ", "),"\n",sep="")
 
 ## * Loop
 allj <- seq(1+(iter_sim-1)*nsim, iter_sim*nsim, by = 1)
@@ -148,7 +157,7 @@ allj <- seq(1+(iter_sim-1)*nsim, iter_sim*nsim, by = 1)
 for(j in allj){ ## j <- 1 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 905686708
+  #myseedi <- 835429993
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",j," (index ",which(j==allj),") out of ",nsim))
   # }}}
@@ -228,11 +237,6 @@ for(j in allj){ ## j <- 1 ## 5
                                       export.boundary = TRUE,
                                       export.decision = TRUE))
                             )
-      }
-      ## currentGSD[[1]][[1]]
-      ## plot(currentGSD[[1]][[1]], legend.x = "bottomleft")
-  
-      for(iMeth in which(stopGSD==FALSE)){ ## iMeth <- 1
     
           ## *** decision
           dDecision <- d[which(d$t1 <= thets[iMeth,iStage] + theDelta.t*TimeFactor),]
@@ -243,7 +247,7 @@ for(j in allj){ ## j <- 1 ## 5
           iConclusion <- currentGSD.interim[[iStage]][[iMeth]]$conclusion
           if(iConclusion["interim",iStage] == "stop" && (iConclusion["reason.interim",iStage]!="futility" || binding == TRUE || delta.factor > 0)){
 
-              currentGSD.decision[[iMeth]] <- update(currentGSD.interim[[iStage]][[iMeth]], delta = lmmD, trace = FALSE)
+              currentGSD.decision[[iStage]][[iMeth]] <- update(currentGSD.interim[[iStage]][[iMeth]], delta = lmmD, trace = FALSE)
               ## plot(currentGSD[[iMeth]])
       
               countNA <- rowSums(is.na(dDecision[,paste0("X",2:(kMax+1))]))

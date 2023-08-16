@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt  7 2022 (16:40) 
 ## Version: 
-## Last-Updated: feb 20 2023 (14:27) 
+## Last-Updated: aug 10 2023 (18:44) 
 ##           By: Brice Ozenne
-##     Update #: 71
+##     Update #: 72
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -136,7 +136,7 @@ res2stage <- do.call(rbind,lapply(name.2stage, function(iName){ ## iName <- name
     data.table(legend.2stage[name.2stage==iName,-1], eval(parse(text = iName)))
 }))
 res2stage$computation.time <- NULL
-res2stage$file <- NULL
+##res2stage$file <- NULL
 res2stage$sigma <- NULL
 res2stage$ar <- as.numeric(res2stage$ar)
 
