@@ -21,7 +21,7 @@ library(testthat)
 plannedB <- CalcBoundaries(kMax=3,
                            alpha=0.025,
                            beta=0.2,
-                           InfoR.i=c(0.5,0.75,1.0),
+                           InfoR.i=c(0.5,0.75),
                            InfoR.d=c(0.55,0.8,1),
                            rho_alpha=2,
                            rho_beta=2,
@@ -66,7 +66,7 @@ test_that("I(1st interim)>Imax, I(1st decison)>Imax",{
                      "Fbound" = c(-Inf, NA, NA), 
                      "Ebound" = c(Inf, NA, NA), 
                      "statistic.interim" = c(3.432607, NA, NA), 
-                     "Cbound" = as.numeric(c(NA, NA, NA)),
+                     "Cbound" = as.logical(c(NA, NA, NA)),
                      "statistic.decision" = c(NA, NA, NA))
     expect_equivalent(GS, coef(GSD.interim1, type = "boundary"), tol = 1e-5)
 
@@ -82,7 +82,7 @@ test_that("I(1st interim)>Imax, I(1st decison)>Imax",{
 debug.plannedB <- CalcBoundaries(kMax = 2,  
                                  alpha = 0.025, 
                                  beta = 0.2,  
-                                 InfoR.i = c(0.58, 1.00),  
+                                 InfoR.i = c(0.58),  
                                  InfoR.d = c(0.68,1),  
                                  rho_alpha = 2,  
                                  rho_beta = 2,  
@@ -132,12 +132,12 @@ confint(debug.GSDF)
 GSD.3t <- CalcBoundaries(kMax=3,  ## max number of analyses (including final)
                          alpha=0.025,  ## type I error
                          beta=0.2,  ## type II error
-                         InfoR.i=c(0.5,0.75,1),  ## planned or observed information rates
+                         InfoR.i=c(0.5,0.75),  ## planned or observed information rates
                          rho_alpha=2,  ## rho parameter for alpha error spending function
                          rho_beta=2,  ## rho parameter for beta error spending function
                          method=1,  ## use method 1 or 2 from paper H&J
                          delta=1.5,  ## effect that the study is powered for
-                         InfoR.d=c(0.55,0.8))
+                         InfoR.d=c(0.55,0.8,1))
 
 set.seed(1322)
 GD <- GenData(n=82*2,delta=1.3,ar=5)  ## generate data with all data for in case trial completes
