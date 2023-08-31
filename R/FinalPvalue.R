@@ -327,15 +327,9 @@ FinalPvalue <- function(Info.d,
                                       upper = c(iUk,uk[k]),
                                       mean = theta[iIndex_interim],
                                       sigma = sigmaZm[iIndex_interim,iIndex_interim,drop=FALSE])
-<<<<<<< HEAD
       
       ## prob to stop for futility at interim and conclude a more extreme result 
       pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic_nocor),   
-=======
-
-        ## prob to stop for futility at interim and conclude a more extreme result 
-      pval <- pval + mvtnorm::pmvnorm(lower = c(iLk,-Inf,statistic - shift),   
->>>>>>> 611ec9b88865e277cf9e5126ab6dc67a59075726
                                       upper = c(iUk,lk_orig[k],Inf),
                                       mean = theta[iIndex],
                                       sigma = sigmaZm[iIndex,iIndex,drop=FALSE])

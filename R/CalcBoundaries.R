@@ -114,7 +114,8 @@ CalcBoundaries <- function(kMax = 2,
     cMin <- ifelse(cNotBelowFixedc,stats::qnorm(1-alpha),-Inf)
     
     if(!cNotBelowFixedc & method==3){
-      stop("Method 3 requires cNotBelowFixedc=TRUE")
+      warning("Method 3 requires cNotBelowFixedc=TRUE, setting cNotBelowFixedc=TRUE")
+      cNotBelowFixedc <- TRUE
     }
     
     ## ## ** remove boundaries corresponding to stage that will not be reached
