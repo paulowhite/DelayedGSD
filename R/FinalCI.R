@@ -84,6 +84,6 @@ FinalCI <- function(Info.d,
         attr(out,"error") <- c(lower = lbnd$f.root, upper = ubnd$f.root)
         attr(out,"iter") <- c(lower = lbnd$iter, upper = ubnd$iter)
     }
-browser()
+
   return(out)
 }
