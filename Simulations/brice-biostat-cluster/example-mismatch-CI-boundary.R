@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 13 2023 (09:28) 
 ## Version: 
-## Last-Updated: aug 10 2023 (18:32) 
+## Last-Updated: sep  8 2023 (10:39) 
 ##           By: Brice Ozenne
-##     Update #: 31
+##     Update #: 35
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -136,6 +136,42 @@ summary(debug1.GSDD)
 ## I confint.delayedGSD(x, method = c("ML", "MUE")) :
 ##   Possibly incorrect evaluation of the MUE lower, estimate.
 ## Mismatch in the optimization process in term of confidence level: 0.943991718560957, 0.246603974336232. 
+
+## ** debug
+
+mycalcP <- function(delta){
+
+    ## proba of continuing
+    term1 <- mvtnorm::pmvnorm(lower = -Inf,  
+                              upper = 2.416131,
+                              mean = delta * 3.423778,
+                              sigma = matrix(1,1,1))
+
+    ## proba of stopping for futility and concluding more extreme (ck.unrestricted ...)
+    term2 <-  mvtnorm::pmvnorm(lower = c(-Inf, 1.78949646),
+                               upper = c(0.35897526, Inf),
+                               mean = delta * c(3.42377794, 4.07208844),
+                               sigma = cbind(c(1, 0.84079164), 
+                                             c(0.84079164, 1)
+                                             )
+                               )
+
+    ## proba of stopping for efficacy and concluding more extreme (ck.unrestricted ...)
+    term3 <- mvtnorm::pmvnorm(lower = c(2.41613056, 1.78949646),  
+                              upper = c(Inf, Inf),
+                              mean = delta * c(3.42377794, 4.07208844),
+                              sigma = cbind(c(1, 0.84079164), 
+                                            c(0.84079164, 1)
+                                            ))
+
+    return(term1 + term2 + term3)
+}
+
+mycalcP(0)
+
+seqDelta <- seq(-5,5, length.out = 100)
+sapply(seqDelta,mycalcP)
+
 
 ## * Example 2
 seed2 <- 996631745

@@ -15,6 +15,9 @@ library(ggplot2)
 #+END_SRC
 
 #+RESULTS:
+: data.table 1.14.2 using 4 threads (see ?getDTthreads).  Latest news: r-datatable.com
+: Advarselsbesked:
+: pakke 'ggplot2' blev bygget under R version 4.2.3
 
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
@@ -254,6 +257,73 @@ print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits =
 18: 10000   FALSE typeI    TRUE FALSE  5         0.68        66.54      1.77      31.0
 #+end_example
 
+Relative frequency of stopping for with a threshold below 1.96:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res2stage[decision %in% c("efficacy","futility"),
+          .(.N, rejection = 100*mean(decision=="efficacy"), rejectionBelow196 = 100*mean((statistic<qnorm(0.975))*(decision=="efficacy"))), 
+          by = c("scenario","missing","method","binding","fixC","ar","hypo")]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+    scenario missing method binding  fixC ar  hypo     N rejection rejectionBelow196
+ 1:        1    TRUE      1    TRUE FALSE 10 power 10000     81.00              0.85
+ 2:        1    TRUE      2    TRUE FALSE 10 power 10000     80.93              0.84
+ 3:        1    TRUE      3    TRUE FALSE 10 power 10000     80.43              0.00
+ 4:        2    TRUE      1    TRUE FALSE 10 typeI 10000      2.42              0.18
+ 5:        2    TRUE      2    TRUE FALSE 10 typeI 10000      2.39              0.17
+ 6:        2    TRUE      3    TRUE FALSE 10 typeI 10000      2.37              0.00
+ 7:        3    TRUE      1    TRUE FALSE  5 power 10000     80.53              0.45
+ 8:        3    TRUE      2    TRUE FALSE  5 power 10000     80.53              0.45
+ 9:        3    TRUE      3    TRUE FALSE  5 power 10000     80.14              0.00
+10:        4    TRUE      1    TRUE FALSE  5 typeI 10000      2.40              0.08
+11:        4    TRUE      2    TRUE FALSE  5 typeI 10000      2.40              0.08
+12:        4    TRUE      3    TRUE FALSE  5 typeI 10000      2.35              0.00
+13:        5    TRUE      1    TRUE  TRUE 10 power 10000     80.15              0.00
+14:        5    TRUE      2    TRUE  TRUE 10 power 10000     80.35              0.00
+15:        5    TRUE      3    TRUE  TRUE 10 power 10000     80.43              0.00
+16:        6    TRUE      1    TRUE  TRUE 10 typeI 10000      2.24              0.00
+17:        6    TRUE      2    TRUE  TRUE 10 typeI 10000      2.22              0.00
+18:        6    TRUE      3    TRUE  TRUE 10 typeI 10000      2.37              0.00
+19:        7    TRUE      1    TRUE  TRUE  5 power 10000     80.08              0.00
+20:        7    TRUE      2    TRUE  TRUE  5 power 10000     80.20              0.00
+21:        7    TRUE      3    TRUE  TRUE  5 power 10000     80.14              0.00
+22:        8    TRUE      1    TRUE  TRUE  5 typeI 10000      2.32              0.00
+23:        8    TRUE      2    TRUE  TRUE  5 typeI 10000      2.31              0.00
+24:        8    TRUE      3    TRUE  TRUE  5 typeI 10000      2.35              0.00
+25:        9    TRUE      1   FALSE  TRUE 10 power 10000     79.86              0.00
+26:        9    TRUE      2   FALSE  TRUE 10 power 10000     80.12              0.00
+27:        9    TRUE      3   FALSE  TRUE 10 power 10000     80.26              0.00
+28:       10    TRUE      1   FALSE  TRUE 10 typeI 10000      2.45              0.00
+29:       10    TRUE      2   FALSE  TRUE 10 typeI 10000      2.47              0.00
+30:       10    TRUE      3   FALSE  TRUE 10 typeI 10000      2.57              0.00
+31:       11    TRUE      1   FALSE  TRUE  5 power 10000     79.93              0.00
+32:       11    TRUE      2   FALSE  TRUE  5 power 10000     80.04              0.00
+33:       11    TRUE      3   FALSE  TRUE  5 power 10000     80.06              0.00
+34:       12    TRUE      1   FALSE  TRUE  5 typeI 10000      2.63              0.00
+35:       12    TRUE      2   FALSE  TRUE  5 typeI 10000      2.64              0.00
+36:       12    TRUE      3   FALSE  TRUE  5 typeI 10000      2.66              0.00
+37:       13    TRUE      1   FALSE FALSE 10 power 10000     80.50              0.64
+38:       13    TRUE      2   FALSE FALSE 10 power 10000     80.44              0.64
+39:       13    TRUE      3   FALSE FALSE 10 power 10000     80.26              0.00
+40:       14    TRUE      1   FALSE FALSE 10 typeI 10000      2.53              0.08
+41:       14    TRUE      2   FALSE FALSE 10 typeI 10000      2.53              0.08
+42:       14    TRUE      3   FALSE FALSE 10 typeI 10000      2.57              0.00
+43:       15    TRUE      1   FALSE FALSE  5 power 10000     80.37              0.44
+44:       15    TRUE      2   FALSE FALSE  5 power 10000     80.36              0.44
+45:       15    TRUE      3   FALSE FALSE  5 power 10000     80.06              0.00
+46:       16    TRUE      1   FALSE FALSE  5 typeI 10000      2.68              0.05
+47:       16    TRUE      2   FALSE FALSE  5 typeI 10000      2.68              0.05
+48:       16    TRUE      3   FALSE FALSE  5 typeI 10000      2.66              0.00
+49:       17   FALSE      1    TRUE FALSE  5 power 10000     80.31              0.42
+50:       17   FALSE      2    TRUE FALSE  5 power 10000     80.30              0.43
+51:       17   FALSE      3    TRUE FALSE  5 power 10000     79.92              0.00
+52:       18   FALSE      1    TRUE FALSE  5 typeI 10000      2.46              0.08
+53:       18   FALSE      2    TRUE FALSE  5 typeI 10000      2.46              0.08
+54:       18   FALSE      3    TRUE FALSE  5 typeI 10000      2.45              0.00
+    scenario missing method binding  fixC ar  hypo     N rejection rejectionBelow196
+#+end_example
+
 \clearpage
 
 * Bias (True effect: 0.6 under the alternative)
@@ -381,7 +451,7 @@ ggsave(gg.E %+% dt.estimate[scenario == 1] + theme(legend.position = "bottom"),
 #+END_SRC
 
 #+RESULTS:
-: [1m[22mSaving 10 x 6.38 in image
+: [1m[22mSaving 10 x 7 in image
 
 #+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
 #+CAPTION: Naive and Median unbiased estimate distribution over all simulations. Each row correspond to a different scenario
@@ -796,6 +866,40 @@ dcast(res2stage.width, hypo + missing + ar + binding + fixC ~ method.char, value
 16: typeI    TRUE 10   FALSE  TRUE 1.0183637 1.0101640 1.049882
 17: typeI    TRUE 10    TRUE FALSE 1.0459447 1.0453954 1.056218
 18: typeI    TRUE 10    TRUE  TRUE 1.0461003 1.0478314 1.056215
+#+end_example
+
+Average ratio between the length of the MUE CIs vs. the ML CIs
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res2stage.length <- res2stage[decision %in% c("futility","efficacy"),
+                                .(N = .N,
+                                  length_MUE = mean(upper_MUE-lower_MUE, na.rm = TRUE),
+                                  length_ML = mean(upper_ML-lower_ML, na.rm = TRUE),
+                                  length_ratio = mean((upper_MUE-lower_MUE)/(upper_ML-lower_ML), na.rm = TRUE)),
+                                by = c("method.char","missing","binding","fixC","ar","hypo")]
+dcast(res2stage.length, hypo + missing + ar + binding + fixC ~ method.char, value.var = "length_ratio")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC  method 1  method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE 1.0554164 1.0554324 1.057018
+ 2: power    TRUE  5   FALSE FALSE 1.0477000 1.0477317 1.043003
+ 3: power    TRUE  5   FALSE  TRUE 1.0532445 1.0529897 1.043003
+ 4: power    TRUE  5    TRUE FALSE 1.0556658 1.0557135 1.056796
+ 5: power    TRUE  5    TRUE  TRUE 1.0607293 1.0599867 1.056792
+ 6: power    TRUE 10   FALSE FALSE 1.0539283 1.0540501 1.045799
+ 7: power    TRUE 10   FALSE  TRUE 1.0695786 1.0683330 1.045809
+ 8: power    TRUE 10    TRUE FALSE 1.0641965 1.0644562 1.064036
+ 9: power    TRUE 10    TRUE  TRUE 1.0773006 1.0760174 1.064016
+10: typeI   FALSE  5    TRUE FALSE 1.0496649 1.0496083 1.053799
+11: typeI    TRUE  5   FALSE FALSE 0.9997633 0.9998237 1.019473
+12: typeI    TRUE  5   FALSE  TRUE 0.9998075 0.9997468 1.019473
+13: typeI    TRUE  5    TRUE FALSE 1.0486330 1.0486034 1.052752
+14: typeI    TRUE  5    TRUE  TRUE 1.0487063 1.0493717 1.052752
+15: typeI    TRUE 10   FALSE FALSE 1.0194380 1.0240187 1.051009
+16: typeI    TRUE 10   FALSE  TRUE 1.0196328 1.0111242 1.051015
+17: typeI    TRUE 10    TRUE FALSE 1.0497075 1.0491459 1.060913
+18: typeI    TRUE 10    TRUE  TRUE 1.0498579 1.0516113 1.060910
 #+end_example
 
 \clearpage
