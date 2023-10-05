@@ -82,12 +82,12 @@ calc_ck <- function(uk,
             f <- function(x){
                 y <- mvtnorm::pmvnorm(lower = c(lk[0:(k-1)],uk[k],-Inf),
                                       upper = c(uk[0:(k-1)],Inf,x),
-                                      mean=rep(0,k+1),
-                                      sigma= sigmaZk) - 
+                                      mean = rep(0,k+1),
+                                      sigma = sigmaZk) - 
                     mvtnorm::pmvnorm(lower = c(lk[0:(k-1)],-Inf,x),
                                      upper = c(uk[0:(k-1)],lk[k],Inf),
-                                     mean=rep(0,k+1),
-                                     sigma= sigmaZk)
+                                     mean = rep(0,k+1),
+                                     sigma = sigmaZk)                
                 as.numeric(y)
             }
         } else {
@@ -111,20 +111,27 @@ calc_ck <- function(uk,
     upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:k),1)]*1.1
     
     if(!is.null(Info.max)){
-      if(ImaxAnticipated & Info.d > Info.max){
-        lowerRoot <- -10
-      }
+        if(ImaxAnticipated & Info.d > Info.max){
+            lowerRoot <- -10
+        }
     }
-    
-    ccc <- try(stats::uniroot(f,
-                              lower = lowerRoot,
-                              upper = upperRoot)$root,
-               silent=TRUE)
-    if(inherits(ccc,"try-error")){
-        warning("uniroot produced an error, switching to dfsane")
+
+    if(is.nan(f(lowerRoot))){
+        ## cannot evaluate the probability at lowerRoot as it is too small
         ccc <- BB::dfsane(f,
                           par = (upperRoot*1.1+lowerRoot)/2,
                           control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
+    }else{
+        ccc <- try(stats::uniroot(f,
+                                  lower = lowerRoot,
+                                  upper = upperRoot)$root,
+                   silent=TRUE)
+        if(inherits(ccc,"try-error")){
+            message("uniroot produced an error, switching to dfsane")
+            ccc <- BB::dfsane(f,
+                              par = (upperRoot*1.1+lowerRoot)/2,
+                              control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
+        }
     }
     return(ccc)
 }
