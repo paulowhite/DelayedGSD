@@ -356,7 +356,7 @@ FinalPvalue <- function(Info.d,
     }else { ## is it a decision analysis after stopping at interim (interim 1:1, decision i)
         iIndex_interim <- c(index_interim[iSeq_interimM1], index_interim[k])
         iIndex <- c(iIndex_interim, index_decision[k])
-browser()
+
         if((statistic >= critval) & (ck[k]>ck.unrestricted[k]) & continuity.correction==1){
             ## continuity correction when stopping for efficacy
             correction <- mvtnorm::pmvnorm(lower = c(iLk,uk[k],ck.unrestricted[k]),  

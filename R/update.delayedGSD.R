@@ -14,6 +14,7 @@
 #' @param p.value [logical] should the p-value be computed at decision?
 #' @param ci [logical] should the confidence intervalsbe computed at decision?
 #' @param estimate [logical] should a de-biased estimate be computed at decision? WARNING: this is experiment and not reliable.
+#' @param tolerance [numeric] acceptable discrepancy to the objective level when evaluating the confidence intervals and median unbiased estimate.
 #' @param trace [logical] should the execution of the function be traced?
 #' @param continuity.correction [logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
 #' When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.
@@ -75,7 +76,7 @@
 update.delayedGSD <- function(object, delta, Info.i, Info.d, 
                               k = NULL, type.k = NULL, overrule.futility = FALSE,
                               p.value = TRUE, ci = TRUE, estimate = TRUE, continuity.correction = TRUE,
-                              trace = TRUE, ...){
+                              tolerance = 1e-3, trace = TRUE, ...){
 
     
     if(overrule.futility){        
@@ -280,7 +281,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                              method = object$method,
                              bindingFutility = object$bindingFutility,
                              cNotBelowFixedc=object$cNotBelowFixedc,
-                             continuity.correction=continuity.correction)
+                             continuity.correction=continuity.correction,
+                             tolerance=tolerance)
             delta.MUE[1,"lower"] <- resCI["lower"]
             delta.MUE[1,"upper"] <- resCI["upper"]
 
@@ -305,7 +307,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                                     method = object$method,
                                     bindingFutility = object$bindingFutility,
                                     cNotBelowFixedc=object$cNotBelowFixedc,
-                                    continuity.correction=continuity.correction)
+                                    continuity.correction=continuity.correction,
+                                    tolerance=tolerance)
             delta.MUE[1,"estimate"] <- resMUE
             if(is.null(attr(delta.MUE,"error"))){
                 attr(delta.MUE,"error") <- c(estimate = unname(attr(resMUE,"error")))

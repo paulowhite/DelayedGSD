@@ -15,6 +15,7 @@
 #' @param cNotBelowFixedc [logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
 #' @param continuity.correction [logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
 #' When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.
+#' @param tolerance [numeric] acceptable discrepancy to the objective level when evaluating the confidence intervals and median unbiased estimate.
 
 ## * FinalEstimate (code)
 #' @export
@@ -30,7 +31,8 @@ FinalEstimate <- function(Info.d,
                           method,
                           bindingFutility,
                           cNotBelowFixedc,
-                          continuity.correction){ 
+                          continuity.correction,
+                          tolerance){ 
 
     f <- function(delta){
         (FinalPvalue(Info.d=Info.d,
@@ -51,6 +53,9 @@ FinalEstimate <- function(Info.d,
     lowerBound <- estimate-2*sqrt(1/Info.d[length(Info.d)])
     upperBound <- estimate+2*sqrt(1/Info.d[length(Info.d)])
     res <- stats::optimise(f,lower=lowerBound,upper=upperBound)
+    if(abs(res$objective)>tolerance){
+        res$minimum <- NA
+    }
     attr(res$minimum,"error") <- res$objective
     return(res$minimum)
 }
