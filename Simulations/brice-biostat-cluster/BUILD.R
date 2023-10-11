@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt  7 2022 (16:40) 
 ## Version: 
-## Last-Updated: aug 10 2023 (18:44) 
+## Last-Updated: okt  6 2023 (09:46) 
 ##           By: Brice Ozenne
-##     Update #: 72
+##     Update #: 74
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -18,6 +18,7 @@
 library(data.table)
 library(ggplot2)
 
+## cd /projects/biostat01/people/hpl802/DelayedGSD/
 path <- "x:/DelayedGSD"
 path.results <- file.path(path,"Results")
 path.Bresults <- file.path(path,"Results-built")
@@ -81,7 +82,7 @@ loadRes <- function(path, tempo.file = FALSE, type = NULL,
     return(out)
 }
 
-## * Process results
+## * Process results (2 stages)
 ## ** Aggregate files and export 
 dir.2stage <- grep("2stage",list.dirs(path = path.results), value = TRUE)
 name.2stage <- stats::setNames(paste0("res2stage_",sapply(strsplit(dir.2stage, split = "2stage_"),"[",2)), dir.2stage)
@@ -148,62 +149,53 @@ if(export){
 ## unique(res2stage[,.N, by = c("scenario","method","type")]$N)
 ## [1] 10000
 
+## * Process results (3 stages)
+## ** Aggregate files and export 
+dir.3stage <- grep("3stage",list.dirs(path = path.results), value = TRUE)
+name.3stage <- stats::setNames(paste0("res3stage_",sapply(strsplit(dir.3stage, split = "3stage_"),"[",2)), dir.3stage)
 
-## * Analyse results (COBA)
-res <- dt.noFixC_power
-res$final.efficacy <- res$statistic >= res$uk | res$statistic >= res$ck
-res$final.efficacy[res$type%in%"interim"] <- NA
-
-res$final.futility <- res$statistic <= res$lk | res$statistic < res$ck
-res$final.futility[res$type%in%"interim"] <- NA
-
-nsim <- length(unique(res$seed))
-true_eff <- 0.6
-result <- NULL
-for(m in unique(res$method)){
-  res_temp <- res[res$method%in%m,]
-  result <- rbind(result,c("method"=m,
-                           "power_bnds"=sum(res_temp$final.efficacy,na.rm=T)/nsim,
-                           "power_pval"=sum(res_temp$p.value_MUE<0.025,na.rm=T)/nsim,
-                           "discrep_pval_bnds"=(sum(res_temp$p.value_MUE<0.025 & !res_temp$final.efficacy,na.rm=T)+sum(!res_temp$p.value_MUE<0.05 & res_temp$final.efficacy,na.rm=T))/nsim,
-                           "bias_MLE"=sum(res_temp$estimate_ML[res_temp$type%in%c("decision","final")],na.rm=T)/nsim-true_eff,
-                           "bias_MUE"=sum(res_temp$estimate_MUE[res_temp$type%in%c("decision","final")]>true_eff,na.rm=T)/nsim,
-                           "CI_coverage"=sum(true_eff>=res_temp$lower_MUE[res_temp$type%in%c("decision","final")] & true_eff<=res_temp$upper_MUE[res_temp$type%in%c("decision","final")],na.rm=T)/nsim
-  ))
-  #hist(res_temp$p.value_MUE)
+for(iDir in dir.3stage){ ## iDir <- dir.3stage[1]
+    iName <- name.3stage[iDir]
+    cat(which(iDir == dir.3stage),") read \'",iDir,"\' \n",
+        "     save in \'",iName,"\' \n", sep = "")
+    assign(x = iName, value = loadRes(iDir, tempo.file = TRUE))
+    if(export){
+        saveRDS(eval(parse(text=iName)), file = file.path(path.results,paste0(iName,".rds") ))
+    }
 }
-result
+
+## ** Aggregate scenario and export 
+legend.3stage <- data.frame(name = name.3stage,
+                            scenario = 1:length(name.3stage),
+                            missing = grepl("nomissing", name.3stage)== FALSE,
+                            binding = grepl("nonbinding", name.3stage)== FALSE,
+                            fixC = grepl("fixC", name.3stage),
+                            ar = gsub("ar","",sapply(strsplit(name.3stage, split = "_"), function(iVec){tail(iVec,2)[1]})),
+                            hypo = sapply(strsplit(name.3stage, split = "_"), function(iVec){tail(iVec,1)})
+                            )
+
+res3stage <- do.call(rbind,lapply(name.3stage, function(iName){ ## iName <- name.Bresults[2]
+    iValue <- eval(parse(text = iName))
+    if(is.null(iValue)){
+        return(NULL)
+    }else{
+        return(data.table(legend.3stage[name.3stage==iName,-1], iValue))
+    }
+}))
+res3stage$computation.time <- NULL
+##res3stage$file <- NULL
+res3stage$sigma <- NULL
+res3stage$ar <- as.numeric(res3stage$ar)
+
+if(export){
+    saveRDS(res3stage, file = file.path(path.Bresults,"res3stage.rds"))
+}
+
+## res3stage <- readRDS(file = file.path(path.Bresults,"res3stage.rds"))
+## unique(res3stage[,.N, by = c("scenario","method","type")]$N)
+## [1] 10000
 
 
-
-discrep <- res[res$p.value_MUE>0.025 & !is.na(res$p.value_MUE),]
-discrep <- discrep[!is.na(discrep$final.efficacy),]
-dim(discrep)
-
-discrep <- res[res$p.value_MUE<0.025 & !is.na(res$p.value_MUE),]
-discrep <- discrep[is.na(discrep$final.efficacy),]
-dim(discrep)
-table(discrep$method)
-## length(unique(paste(discrep$seed,discrep$method)))
-
-## refinement: frequency stratified by method
-
-res_temp[res_temp$seed==res_temp$seed[2],]
-
-index.NNA <- which(!is.na(res_temp$estimate_MUE))
-myestimate_MUE <- res_temp[index.NNA,estimate_MUE]
-myestimate_ML <- res_temp[index.NNA,estimate_ML]
-dt.gg <- res_temp[index.NNA,.(estimate_MUE,estimate_ML,stage)]
-dt.gg$stage <- as.factor(dt.gg$stage)
-library(ggplot2)
-ggplot(dt.gg, aes(x = estimate_ML, group = stage, color = stage, fill = stage)) + geom_histogram() + facet_wrap(~stage)
-
-
-mean(myestimate_MUE)
-mean(myestimate_ML)
-hist(myestimate_MUE, breaks = 20)
-hist(myestimate_ML, breaks = 20)
-hist(myestimate_MUE-myestimate_ML, breaks = 20)
 
 ##----------------------------------------------------------------------
 ### BUILD.R ends here

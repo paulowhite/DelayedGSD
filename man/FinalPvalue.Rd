@@ -18,20 +18,20 @@ FinalPvalue(
   method,
   bindingFutility,
   cNotBelowFixedc,
-  continuity.correction
+  continuity.correction = DelayedGSD.options()$continuity.correction
 )
 }
 \arguments{
-\item{Info.d}{Information at all decision analyses up to stage where study was stopped (excepted the final analysis)}
+\item{Info.d}{Information at all decision analyses up to stage where study was stopped (including the final analysis if stopped at final analysis)}
 
-\item{Info.i}{Information at all interim analyses up to stage where study was stopped (should include the information at the final analysis if stopped at final analysis)}
+\item{Info.i}{Information at all interim analyses up to stage where study was stopped (excluding final analysis if stopped at final analysis)}
 
 \item{ck, ck.unrestricted}{decision boundaries for all decision analyses up to stage where study was stopped (should include final boundary if stopped at final analysis).
 ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted always without.}
 
-\item{lk}{lower bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)}
+\item{lk}{lower bounds up to stage where study was stopped (should include interim boundaries only, not the boundary of the final analysis if study continued to the end)}
 
-\item{uk}{upper bounds up to stage where study was stopped (should include final boundary if stopped at final analysis)}
+\item{uk}{upper bounds up to stage where study was stopped (should include interim boundaries only, not the boundary of the final analysis if study continued to the end)}
 
 \item{reason.interim}{motivation for stopping or continuing at interim. Use to handle special cases (skipped interim because reach Imax, ...)}
 

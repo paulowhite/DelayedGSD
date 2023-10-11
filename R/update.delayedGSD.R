@@ -14,10 +14,7 @@
 #' @param p.value [logical] should the p-value be computed at decision?
 #' @param ci [logical] should the confidence intervalsbe computed at decision?
 #' @param estimate [logical] should a de-biased estimate be computed at decision? WARNING: this is experiment and not reliable.
-#' @param tolerance [numeric] acceptable discrepancy to the objective level when evaluating the confidence intervals and median unbiased estimate.
 #' @param trace [logical] should the execution of the function be traced?
-#' @param continuity.correction [logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
-#' When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.
 #' @param ... not used, for compatibility with the generic method.
 
 ## * update.delayedGSD (examples)
@@ -75,8 +72,7 @@
 #' @export
 update.delayedGSD <- function(object, delta, Info.i, Info.d, 
                               k = NULL, type.k = NULL, overrule.futility = FALSE,
-                              p.value = TRUE, ci = TRUE, estimate = TRUE, continuity.correction = TRUE,
-                              tolerance = 1e-3, trace = TRUE, ...){
+                              p.value = TRUE, ci = TRUE, estimate = TRUE, trace = TRUE, ...){
 
     
     if(overrule.futility){        
@@ -233,6 +229,14 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
     ## ** estimate
     if(type.k %in% c("decision","final")){
         if(trace>0){cat(" - correct estimate: ", sep = "")}
+
+        ## read default settings
+        options <- DelayedGSD.options()
+        continuity.correction <- options$continuity.correction
+        tolerance <- options$tolerance
+        FCT.p_value <- options$FCT.p_value
+
+        ## prepare
         delta.MUE <- data.frame(method = "MUE", stage = k, type = type.k,
                                 estimate = NA, se = NA, statistic = NA, df = NA, lower = NA, upper = NA, p.value = NA)
 
@@ -244,22 +248,24 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         lk <- object$lk
         uk <- object$uk
 
+        ## arguments
+        ls.args <- list(Info.d = Info.d[1:k],  
+                        Info.i = Info.i[1:min(k,kMax-1)],
+                        ck = ck[1:min(k,kMax)],
+                        ck.unrestricted = ck.unrestricted[1:min(k,kMax)],
+                        lk = lk[1:min(k,kMax-1)],  
+                        uk = uk[1:min(k,kMax-1)],
+                        reason.interim = object$conclusion["reason.interim",1:k],
+                        kMax = kMax, 
+                        estimate = delta[1,"estimate"],
+                        method = object$method,
+                        bindingFutility = object$bindingFutility,
+                        cNotBelowFixedc=object$cNotBelowFixedc,
+                        continuity.correction=continuity.correction)
+
         ## *** p.value
         if(p.value || ci){
-            resP <- FinalPvalue(Info.d = Info.d[1:k],  
-                                Info.i = Info.i[1:min(k,kMax-1)],
-                                ck = ck[1:min(k,kMax)],
-                                ck.unrestricted = ck.unrestricted[1:min(k,kMax)],
-                                lk = lk[1:min(k,kMax-1)],  
-                                uk = uk[1:min(k,kMax-1)],
-                                reason.interim = object$conclusion["reason.interim",1:k],
-                                kMax = kMax, 
-                                delta = 0,  
-                                estimate = delta[1,"estimate"],
-                                method = object$method,
-                                bindingFutility = object$bindingFutility,
-                                cNotBelowFixedc=object$cNotBelowFixedc,
-                                continuity.correction=continuity.correction)
+            resP <- do.call(FCT.p_value, c(ls.args, list(delta=0))) 
             if(p.value){
                 delta.MUE[1,"p.value"] <- as.double(resP)
                 attr(delta.MUE,"error") <- c(p.value = unname(attr(resP,"error")))
@@ -268,21 +274,7 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
 
         ## *** CI
         if(ci & as.double(resP) < 1){
-            resCI <- FinalCI(Info.d = Info.d[1:k],  
-                             Info.i = Info.i[1:min(k,kMax-1)],
-                             ck = ck[1:min(k,kMax)],   
-                             ck.unrestricted = ck.unrestricted[1:min(k,kMax)],   
-                             lk = lk[1:min(k,kMax-1)],  
-                             uk = uk[1:min(k,kMax-1)],  
-                             reason.interim = object$conclusion["reason.interim",1:k],
-                             kMax = kMax, 
-                             conf.level = object$conf.level,  
-                             estimate = delta[1,"estimate"],
-                             method = object$method,
-                             bindingFutility = object$bindingFutility,
-                             cNotBelowFixedc=object$cNotBelowFixedc,
-                             continuity.correction=continuity.correction,
-                             tolerance=tolerance)
+            resCI <- do.call(FinalCI, c(ls.args, list(FCT.p_value = FCT.p_value, conf.level = object$conf.level, tolerance=tolerance)))
             delta.MUE[1,"lower"] <- resCI["lower"]
             delta.MUE[1,"upper"] <- resCI["upper"]
 
@@ -295,20 +287,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
         
         ## *** Estimate
         if(estimate){
-            resMUE <- FinalEstimate(Info.d = Info.d[1:k],  
-                                    Info.i = Info.i[1:min(k,kMax-1)],
-                                    ck = ck[1:min(k,kMax)],
-                                    ck.unrestricted = ck.unrestricted[1:min(k,kMax)],   
-                                    lk = lk[1:min(k,kMax-1)],  
-                                    uk = uk[1:min(k,kMax-1)],  
-                                    reason.interim = object$conclusion["reason.interim",1:k],
-                                    kMax = kMax, 
-                                    estimate = delta[1,"estimate"],
-                                    method = object$method,
-                                    bindingFutility = object$bindingFutility,
-                                    cNotBelowFixedc=object$cNotBelowFixedc,
-                                    continuity.correction=continuity.correction,
-                                    tolerance=tolerance)
+            resMUE <- do.call(FinalEstimate, c(ls.args, list(FCT.p_value = FCT.p_value, tolerance = tolerance)))
+
             delta.MUE[1,"estimate"] <- resMUE
             if(is.null(attr(delta.MUE,"error"))){
                 attr(delta.MUE,"error") <- c(estimate = unname(attr(resMUE,"error")))

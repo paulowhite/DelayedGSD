@@ -74,7 +74,6 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
     }else{
         out$coef <- NA
     }
-
     out <- out[,c("method","stage","type","coef","estimate","se","statistic","df","p.value","lower","upper")]
     if(!is.null(method)){
         out <- out[out$method %in% method,,drop=FALSE]
@@ -82,9 +81,10 @@ confint.delayedGSD <- function(object, parm = NULL, level = NULL, method = NULL,
     rownames(out) <- NULL
     if("MUE" %in% method){
         attr(out,"error") <- attr(object$delta,"error")
-        if(!is.null(attr(out,"error")) && any(attr(out,"error")>1e-3)){
-            warning("Possibly incorrect evaluation of the MUE ",paste(names(attr(out,"error")[attr(out,"error")>1e-3]),collapse = ", "),".\n",
-                    "Mismatch in the optimization process in term of confidence level: ",paste(attr(out,"error")[attr(out,"error")>1e-3],collapse = ", "),". \n",sep="")
+        test <- na.omit(attr(out,"error"))
+        if(!is.null(test) && any(abs(test)>1e-3)){
+            warning("Possibly incorrect evaluation of the MUE ",paste(names(test[abs(test)>1e-3]),collapse = ", "),".\n",
+                    "Mismatch in the optimization process in term of confidence level: ",paste(test[abs(test)>1e-3],collapse = ", "),". \n",sep="")
         }
     }
 

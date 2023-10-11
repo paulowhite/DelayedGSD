@@ -2,17 +2,36 @@
 #+Author: 
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
-                                        # Path
+## Path
 if(Sys.info()["login"] == "bozenne"){
 }else if(Sys.info()["login"] == "hpl802"){
   setwd("x:/DelayedGSD/")
 }
 
-options(width = 120)
+options(width = 120, digits = 4)
 
 library(data.table)
 library(ggplot2)
 
+dec2pc <- function(x, digits = 2){
+  ## dec2pc(c(1/3,1/4,1/5,1/10,1/100,1/200,1/2000,1/20000,0))
+  out <- paste0(formatC(100*x, format='f', digits = digits), "%")
+  if(any(round(100*x,digits)==0)){
+    out[round(100*x,digits)==0] <- paste0("<0.",rep(0,digits-1),"1%")
+  }
+  if(any(abs(x)<1e-12)){
+    out[abs(x)<1e-12] <- "0"
+  }
+  return(out)
+}
+
+mean2pc <- function(x, digits = 2){
+  out <- dec2pc(mean(x, na.rm = TRUE), digits = digits)
+  if(any(is.na(x))){
+    out <- paste0(out," (NA: ",dec2pc(mean(is.na(x)), digits = digits),")")
+  }
+  return(out)
+}
 ciNA <- function(x, digits = 4){
   if(all(is.na(x))){
     out <- as.character(NA)
@@ -42,15 +61,26 @@ res2stage[, truth := ifelse(hypo=="power",0.6,0)]
 
 #+RESULTS:
 
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+## Load results
+res3stage <- readRDS(file.path("Results-built","res3stage.rds"))
+res3stage[, method.char := paste0("method ",method)]
+res3stage[, stage.char := factor(stage, 1:3, c("interim 1","interim 2","final"))]
+res3stage[, truth := ifelse(hypo=="power",0.6,0)]
+#+END_SRC
+
+#+RESULTS:
+
 * Rejection rate
 
+** 2 stages
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
 ## For each run, create a binary indicator for rejection for efficacy
 res2stage.rejection <- res2stage[,.(n.stage = .N, rejection = "efficacy" %in% na.omit(decision)),
                                  by = c("method.char","seed","scenario","missing","binding","fixC","ar","hypo")]
 
 ## Average over runs and method within scenario
-res2stageS.rejection <- res2stage.rejection[,.(n.sim = .N, rejectionRate = 100*mean(rejection)),
+res2stageS.rejection <- res2stage.rejection[,.(n.sim = .N, rejectionRate = dec2pc(mean(rejection))),
                                             by=c("method.char","scenario","binding","missing","fixC","ar","hypo")]
 #+END_SRC
 
@@ -58,66 +88,64 @@ res2stageS.rejection <- res2stage.rejection[,.(n.sim = .N, rejectionRate = 100*m
 
 Power by method (columns) and scenario (rows): \hfill (nominal level 80%)
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
-tablePrintH1 <- dcast(res2stageS.rejection[hypo=="power"],
+table2stage.PrintH1 <- dcast(res2stageS.rejection[hypo=="power"],
                       scenario + n.sim + missing + binding + fixC + ar ~ method.char,
                       value.var = "rejectionRate")
-print(tablePrintH1, row.names = FALSE)
+print(table2stage.PrintH1, row.names = FALSE)
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
  scenario n.sim missing binding  fixC ar method 1 method 2 method 3
-        1 10000    TRUE    TRUE FALSE 10    81.00    80.93    80.43
-        3 10000    TRUE    TRUE FALSE  5    80.53    80.53    80.14
-        5 10000    TRUE    TRUE  TRUE 10    80.15    80.35    80.43
-        7 10000    TRUE    TRUE  TRUE  5    80.08    80.20    80.14
-        9 10000    TRUE   FALSE  TRUE 10    79.86    80.12    80.26
-       11 10000    TRUE   FALSE  TRUE  5    79.93    80.04    80.06
-       13 10000    TRUE   FALSE FALSE 10    80.50    80.44    80.26
-       15 10000    TRUE   FALSE FALSE  5    80.37    80.36    80.06
-       17 10000   FALSE    TRUE FALSE  5    80.31    80.30    79.92
+        1 10000    TRUE    TRUE FALSE 10   81.00%   80.93%   80.43%
+        3 10000    TRUE    TRUE FALSE  5   80.53%   80.53%   80.14%
+        5 10000    TRUE    TRUE  TRUE 10   80.15%   80.35%   80.43%
+        7 10000    TRUE    TRUE  TRUE  5   80.08%   80.20%   80.14%
+        9 10000    TRUE   FALSE  TRUE 10   79.86%   80.12%   80.26%
+       11 10000    TRUE   FALSE  TRUE  5   79.93%   80.04%   80.06%
+       13 10000    TRUE   FALSE FALSE 10   80.50%   80.44%   80.26%
+       15 10000    TRUE   FALSE FALSE  5   80.37%   80.36%   80.06%
+       17 10000   FALSE    TRUE FALSE  5   80.31%   80.30%   79.92%
 #+end_example
 
 \bigskip
 
 Type 1 error by method (columns) and scenario (rows): \hfill (nominal level 2.5%)
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
-tablePrintH0 <- dcast(res2stageS.rejection[hypo=="typeI"],
+table2stage.PrintH0 <- dcast(res2stageS.rejection[hypo=="typeI"],
                       scenario + n.sim + missing + binding + fixC + ar ~ method.char,
                       value.var = "rejectionRate")
-print(tablePrintH0, row.names = FALSE)
+print(table2stage.PrintH0, row.names = FALSE)
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
  scenario n.sim missing binding  fixC ar method 1 method 2 method 3
-        2 10000    TRUE    TRUE FALSE 10     2.42     2.39     2.37
-        4 10000    TRUE    TRUE FALSE  5     2.40     2.40     2.35
-        6 10000    TRUE    TRUE  TRUE 10     2.24     2.22     2.37
-        8 10000    TRUE    TRUE  TRUE  5     2.32     2.31     2.35
-       10 10000    TRUE   FALSE  TRUE 10     2.45     2.47     2.57
-       12 10000    TRUE   FALSE  TRUE  5     2.63     2.64     2.66
-       14 10000    TRUE   FALSE FALSE 10     2.53     2.53     2.57
-       16 10000    TRUE   FALSE FALSE  5     2.68     2.68     2.66
-       18 10000   FALSE    TRUE FALSE  5     2.46     2.46     2.45
+        2 10000    TRUE    TRUE FALSE 10    2.42%    2.39%    2.37%
+        4 10000    TRUE    TRUE FALSE  5    2.40%    2.40%    2.35%
+        6 10000    TRUE    TRUE  TRUE 10    2.24%    2.22%    2.37%
+        8 10000    TRUE    TRUE  TRUE  5    2.32%    2.31%    2.35%
+       10 10000    TRUE   FALSE  TRUE 10    2.45%    2.47%    2.57%
+       12 10000    TRUE   FALSE  TRUE  5    2.63%    2.64%    2.66%
+       14 10000    TRUE   FALSE FALSE 10    2.53%    2.53%    2.57%
+       16 10000    TRUE   FALSE FALSE  5    2.68%    2.68%    2.66%
+       18 10000   FALSE    TRUE FALSE  5    2.46%    2.46%    2.45%
 #+end_example
 
 \clearpage
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
-## Restrict to one observation per run, when we stop:
-dt.estimate <- res2stage[decision %in% c("futility","efficacy") & !is.na(statistic),]
 ## Distribution of the p-value:
-gg.P <- ggplot(res2stage[hypo == "typeI"]) + facet_grid(scenario~method.char)
-gg.P <- gg.P + geom_density(alpha=0.25, aes(x = p.value_ML, fill = "Naive"))
-gg.P <- gg.P + geom_density(alpha=0.25, aes(x = p.value_MUE, fill = "Adjusted"))
-gg.P <- gg.P + labs(fill = "P-value", x = "Estimate", y = "Density")
-gg.P <- gg.P + theme(text = element_text(size=15), 
+gg2stage.P <- ggplot(res2stage[hypo == "typeI"]) + facet_grid(scenario~method.char)
+gg2stage.P <- gg2stage.P + geom_density(alpha=0.25, aes(x = p.value_ML, fill = "Naive"))
+gg2stage.P <- gg2stage.P + geom_density(alpha=0.25, aes(x = p.value_MUE, fill = "Adjusted"))
+gg2stage.P <- gg2stage.P + labs(fill = "P-value", x = "Estimate", y = "Density")
+gg2stage.P <- gg2stage.P + theme(text = element_text(size=15), 
                      axis.line = element_line(linewidth = 1.25),
                      axis.ticks = element_line(linewidth = 2),
                      axis.ticks.length=unit(.25, "cm"),
                      legend.key.size = unit(3,"line"))
-ggsave(gg.P, filename = file.path("report","figures","gg-pvalue-density.pdf"), height = 10, width = 12)
+ggsave(gg2stage.P, filename = file.path("report","figures","gg2stage-pvalue-density.pdf"), height = 10, width = 12)
 #+END_SRC
 
 #+RESULTS:
@@ -127,20 +155,20 @@ ggsave(gg.P, filename = file.path("report","figures","gg-pvalue-density.pdf"), h
 
 #+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
 #+CAPTION: Naive and adjusted p-value distribution over all simulations under the null. Each row correspond to a different scenario
-[[./figures/gg-pvalue-density.pdf]]
+[[./figures/gg2stage-pvalue-density.pdf]]
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
-gg.P2 <- ggplot(res2stage[hypo == "power"]) + facet_grid(scenario~method.char)
-gg.P2 <- gg.P2 + geom_density(alpha=0.25, aes(x = p.value_ML, fill = "Naive"))
-gg.P2 <- gg.P2 + geom_density(alpha=0.25, aes(x = p.value_MUE, fill = "Adjusted"))
-gg.P2 <- gg.P2 + labs(fill = "P-value", x = "Estimate", y = "Density")
-gg.P2 <- gg.P2 + coord_cartesian(xlim = c(0,0.05))
-gg.P2 <- gg.P2 + theme(text = element_text(size=15), 
+gg2stage.P2 <- ggplot(res2stage[hypo == "power"]) + facet_grid(scenario~method.char)
+gg2stage.P2 <- gg2stage.P2 + geom_density(alpha=0.25, aes(x = p.value_ML, fill = "Naive"))
+gg2stage.P2 <- gg2stage.P2 + geom_density(alpha=0.25, aes(x = p.value_MUE, fill = "Adjusted"))
+gg2stage.P2 <- gg2stage.P2 + labs(fill = "P-value", x = "Estimate", y = "Density")
+gg2stage.P2 <- gg2stage.P2 + coord_cartesian(xlim = c(0,0.05))
+gg2stage.P2 <- gg2stage.P2 + theme(text = element_text(size=15), 
                      axis.line = element_line(linewidth = 1.25),
                      axis.ticks = element_line(linewidth = 2),
                      axis.ticks.length=unit(.25, "cm"),
                      legend.key.size = unit(3,"line"))
-ggsave(gg.P2, filename = file.path("report","figures","gg-pvalue2-density.pdf"), height = 10, width = 12)
+ggsave(gg2stage.P2, filename = file.path("report","figures","gg2stage-pvalue2-density.pdf"), height = 10, width = 12)
 #+END_SRC
 
 #+RESULTS:
@@ -150,19 +178,122 @@ ggsave(gg.P2, filename = file.path("report","figures","gg-pvalue2-density.pdf"),
 
 #+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
 #+CAPTION: Naive and adjusted p-value distribution over all simulations under the alternative. Each row correspond to a different scenario
+[[./figures/gg2stage-pvalue2-density.pdf]]
+
+\clearpage
+
+** 3 stages
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+## For each run, create a binary indicator for rejection for efficacy
+res3stage.rejection <- res3stage[,.(n.stage = .N, rejection = "efficacy" %in% na.omit(decision)),
+                                 by = c("method.char","seed","scenario","missing","binding","fixC","ar","hypo")]
+
+## Average over runs and method within scenario
+res3stageS.rejection <- res3stage.rejection[,.(n.sim = .N, rejectionRate = dec2pc(mean(rejection))),
+                                            by=c("method.char","scenario","binding","missing","fixC","ar","hypo")]
+#+END_SRC
+
+#+RESULTS:
+
+Power by method (columns) and scenario (rows): \hfill (nominal level 80%)
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+table3stage.PrintH1 <- dcast(res3stageS.rejection[hypo=="power"],
+                             scenario + n.sim + missing + binding + fixC + ar ~ method.char,
+                             value.var = "rejectionRate")
+print(table3stage.PrintH1, row.names = FALSE)
+#+END_SRC
+
+#+RESULTS:
+:  scenario n.sim missing binding  fixC ar method 1 method 2 method 3
+:         1  1868    TRUE    TRUE FALSE 10   75.32%   75.32%   75.00%
+:         5  1934    TRUE    TRUE  TRUE 10   75.18%   76.01%   76.11%
+:         7   245    TRUE    TRUE  TRUE  5   75.51%   75.92%   75.92%
+:         9  2500    TRUE   FALSE  TRUE 10   74.80%   75.32%   75.00%
+:        11  2500    TRUE   FALSE  TRUE  5   74.76%   75.44%   74.68%
+:        13  2500    TRUE   FALSE FALSE 10   75.28%   75.40%   75.36%
+:        15  2500    TRUE   FALSE FALSE  5   75.12%   75.24%   75.12%
+
+\bigskip
+
+Type 1 error by method (columns) and scenario (rows): \hfill (nominal level 2.5%)
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+table3stage.PrintH0 <- dcast(res3stageS.rejection[hypo=="typeI"],
+                             scenario + n.sim + missing + binding + fixC + ar ~ method.char,
+                             value.var = "rejectionRate")
+print(table3stage.PrintH0, row.names = FALSE)
+#+END_SRC
+
+#+RESULTS:
+:  scenario n.sim missing binding  fixC ar method 1 method 2 method 3
+:         2  2481    TRUE    TRUE FALSE 10    2.94%    2.94%    2.70%
+:         4  1127    TRUE    TRUE FALSE  5    3.11%    3.11%    3.11%
+:         6  2432    TRUE    TRUE  TRUE 10    1.89%    2.14%    2.01%
+:         8  1042    TRUE    TRUE  TRUE  5    1.73%    1.92%    1.82%
+:        10  2500    TRUE   FALSE  TRUE 10    2.36%    2.40%    2.32%
+:        12  2500    TRUE   FALSE  TRUE  5    2.36%    2.28%    2.28%
+:        14  2483    TRUE   FALSE FALSE 10    3.02%    3.10%    3.10%
+:        16  2500    TRUE   FALSE FALSE  5    3.16%    3.12%    3.04%
+
+\clearpage
+
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+## Distribution of the p-value:
+gg3stage.P <- ggplot(res3stage[hypo == "typeI"]) + facet_grid(scenario~method.char)
+gg3stage.P <- gg3stage.P + geom_density(alpha=0.25, aes(x = p.value_ML, fill = "Naive"))
+gg3stage.P <- gg3stage.P + geom_density(alpha=0.25, aes(x = p.value_MUE, fill = "Adjusted"))
+gg3stage.P <- gg3stage.P + labs(fill = "P-value", x = "Estimate", y = "Density")
+gg3stage.P <- gg3stage.P + theme(text = element_text(size=15), 
+                     axis.line = element_line(linewidth = 1.25),
+                     axis.ticks = element_line(linewidth = 2),
+                     axis.ticks.length=unit(.25, "cm"),
+                     legend.key.size = unit(3,"line"))
+ggsave(gg3stage.P, filename = file.path("report","figures","gg3stage-pvalue-density.pdf"), height = 10, width = 12)
+#+END_SRC
+
+#+RESULTS:
+: Advarselsbeskeder:
+: 1: [1m[22mRemoved 96581 rows containing non-finite values (`stat_density()`). 
+: 2: [1m[22mRemoved 96581 rows containing non-finite values (`stat_density()`).
+
+#+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
+#+CAPTION: Naive and adjusted p-value distribution over all simulations under the null. Each row correspond to a different scenario
+[[./figures/gg3stage-pvalue-density.pdf]]
+
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+gg3stage.P2 <- ggplot(res3stage[hypo == "power"]) + facet_grid(scenario~method.char)
+gg3stage.P2 <- gg3stage.P2 + geom_density(alpha=0.25, aes(x = p.value_ML, fill = "Naive"))
+gg3stage.P2 <- gg3stage.P2 + geom_density(alpha=0.25, aes(x = p.value_MUE, fill = "Adjusted"))
+gg3stage.P2 <- gg3stage.P2 + labs(fill = "P-value", x = "Estimate", y = "Density")
+gg3stage.P2 <- gg3stage.P2 + coord_cartesian(xlim = c(0,0.05))
+gg3stage.P2 <- gg3stage.P2 + theme(text = element_text(size=15), 
+                     axis.line = element_line(linewidth = 1.25),
+                     axis.ticks = element_line(linewidth = 2),
+                     axis.ticks.length=unit(.25, "cm"),
+                     legend.key.size = unit(3,"line"))
+ggsave(gg3stage.P2, filename = file.path("report","figures","gg-pvalue2-density.pdf"), height = 10, width = 12)
+#+END_SRC
+
+#+RESULTS:
+: Advarselsbeskeder:
+: 1: [1m[22mRemoved 79372 rows containing non-finite values (`stat_density()`). 
+: 2: [1m[22mRemoved 79372 rows containing non-finite values (`stat_density()`).
+
+#+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
+#+CAPTION: Naive and adjusted p-value distribution over all simulations under the alternative. Each row correspond to a different scenario
 [[./figures/gg-pvalue2-density.pdf]]
 
 \clearpage
 
 * Conclusion of the trial
 
+** 2 stages
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
 res2stageS.final <- res2stage[!is.na(statistic) & type != "interim",
                               .(.N,
-                                decision.eff = 100*mean((stage == 1)*(decision == "efficacy")),
-                                decision.fut = 100*mean((stage == 1)*(decision == "futility")),
-                                final.eff = 100*mean((stage == 2)*(decision == "efficacy")),
-                                final.fut = 100*mean((stage == 2)*(decision == "futility"))),
+                                decision.eff = mean2pc((stage == 1)*(decision == "efficacy")),
+                                decision.fut = mean2pc((stage == 1)*(decision == "futility")),
+                                final.eff = mean2pc((stage == 2)*(decision == "efficacy")),
+                                final.fut = mean2pc((stage == 2)*(decision == "futility"))),
                               by = c("scenario","missing","method","binding","fixC","ar","hypo")]
 #+END_SRC
 
@@ -176,30 +307,30 @@ tablePrint <- dcast(res2stageS.final[method==1], scenario + N + missing + hypo +
                     value.var = c("decision.eff","decision.fut","final.eff","final.fut"))
 names(tablePrint) <- gsub("_1","",names(tablePrint),fixed = TRUE)
 setkeyv(tablePrint,"scenario")
-print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 3)
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")])
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
         N missing  hypo binding  fixC ar decision.eff decision.fut final.eff final.fut
- 1: 10000    TRUE power    TRUE FALSE 10        37.79         5.93     43.21      13.1
- 2: 10000    TRUE typeI    TRUE FALSE 10         0.80        71.13      1.62      26.5
- 3: 10000    TRUE power    TRUE FALSE  5        35.74         5.98     44.79      13.5
- 4: 10000    TRUE typeI    TRUE FALSE  5         0.74        69.32      1.66      28.3
- 5: 10000    TRUE power    TRUE  TRUE 10        36.94         6.78     43.21      13.1
- 6: 10000    TRUE typeI    TRUE  TRUE 10         0.62        71.31      1.62      26.5
- 7: 10000    TRUE power    TRUE  TRUE  5        35.29         6.43     44.79      13.5
- 8: 10000    TRUE typeI    TRUE  TRUE  5         0.66        69.40      1.66      28.3
- 9: 10000    TRUE power   FALSE  TRUE 10        38.05         6.57     41.81      13.6
-10: 10000    TRUE typeI   FALSE  TRUE 10         0.61         0.20      1.84      97.4
-11: 10000    TRUE power   FALSE  TRUE  5        36.35         6.15     43.58      13.9
-12: 10000    TRUE typeI   FALSE  TRUE  5         0.70         0.06      1.93      97.3
-13: 10000    TRUE power   FALSE FALSE 10        38.69         5.93     41.81      13.6
-14: 10000    TRUE typeI   FALSE FALSE 10         0.69         0.12      1.84      97.4
-15: 10000    TRUE power   FALSE FALSE  5        36.79         5.71     43.58      13.9
-16: 10000    TRUE typeI   FALSE FALSE  5         0.75         0.01      1.93      97.3
-17: 10000   FALSE power    TRUE FALSE  5        33.98         5.33     46.33      14.4
-18: 10000   FALSE typeI    TRUE FALSE  5         0.74        67.48      1.72      30.1
+ 1: 10000    TRUE power    TRUE FALSE 10       37.79%        5.93%    43.21%    13.07%
+ 2: 10000    TRUE typeI    TRUE FALSE 10        0.80%       71.13%     1.62%    26.45%
+ 3: 10000    TRUE power    TRUE FALSE  5       35.74%        5.98%    44.79%    13.49%
+ 4: 10000    TRUE typeI    TRUE FALSE  5        0.74%       69.32%     1.66%    28.28%
+ 5: 10000    TRUE power    TRUE  TRUE 10       36.94%        6.78%    43.21%    13.07%
+ 6: 10000    TRUE typeI    TRUE  TRUE 10        0.62%       71.31%     1.62%    26.45%
+ 7: 10000    TRUE power    TRUE  TRUE  5       35.29%        6.43%    44.79%    13.49%
+ 8: 10000    TRUE typeI    TRUE  TRUE  5        0.66%       69.40%     1.66%    28.28%
+ 9: 10000    TRUE power   FALSE  TRUE 10       38.05%        6.57%    41.81%    13.57%
+10: 10000    TRUE typeI   FALSE  TRUE 10        0.61%        0.20%     1.84%    97.35%
+11: 10000    TRUE power   FALSE  TRUE  5       36.35%        6.15%    43.58%    13.92%
+12: 10000    TRUE typeI   FALSE  TRUE  5        0.70%        0.06%     1.93%    97.31%
+13: 10000    TRUE power   FALSE FALSE 10       38.69%        5.93%    41.81%    13.57%
+14: 10000    TRUE typeI   FALSE FALSE 10        0.69%        0.12%     1.84%    97.35%
+15: 10000    TRUE power   FALSE FALSE  5       36.79%        5.71%    43.58%    13.92%
+16: 10000    TRUE typeI   FALSE FALSE  5        0.75%        0.01%     1.93%    97.31%
+17: 10000   FALSE power    TRUE FALSE  5       33.98%        5.33%    46.33%    14.36%
+18: 10000   FALSE typeI    TRUE FALSE  5        0.74%       67.48%     1.72%    30.06%
 #+end_example
 
 \clearpage
@@ -210,33 +341,31 @@ tablePrint <- dcast(res2stageS.final[method==2], scenario + N + missing + hypo +
                     value.var = c("decision.eff","decision.fut","final.eff","final.fut"))
 names(tablePrint) <- gsub("_2","",names(tablePrint),fixed = TRUE)
 setkeyv(tablePrint,"scenario")
-print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 3)
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")])
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
         N missing  hypo binding  fixC ar decision.eff decision.fut final.eff final.fut
- 1: 10000    TRUE power    TRUE FALSE 10        37.85         6.19     43.08      12.9
- 2: 10000    TRUE typeI    TRUE FALSE 10         0.79        71.64      1.60      26.0
- 3: 10000    TRUE power    TRUE FALSE  5        35.77         5.99     44.76      13.5
- 4: 10000    TRUE typeI    TRUE FALSE  5         0.74        69.38      1.66      28.2
- 5: 10000    TRUE power    TRUE  TRUE 10        36.69         6.24     43.66      13.4
- 6: 10000    TRUE typeI    TRUE  TRUE 10         0.59        69.61      1.63      28.2
- 7: 10000    TRUE power    TRUE  TRUE  5        35.02         6.05     45.18      13.8
- 8: 10000    TRUE typeI    TRUE  TRUE  5         0.63        68.36      1.68      29.3
- 9: 10000    TRUE power   FALSE  TRUE 10        37.85         6.04     42.27      13.8
-10: 10000    TRUE typeI   FALSE  TRUE 10         0.61         0.19      1.86      97.3
-11: 10000    TRUE power   FALSE  TRUE  5        36.18         5.84     43.86      14.1
-12: 10000    TRUE typeI   FALSE  TRUE  5         0.69         0.06      1.95      97.3
-13: 10000    TRUE power   FALSE FALSE 10        38.70         6.09     41.74      13.5
-14: 10000    TRUE typeI   FALSE FALSE 10         0.69         0.12      1.84      97.4
-15: 10000    TRUE power   FALSE FALSE  5        36.82         5.75     43.54      13.9
-16: 10000    TRUE typeI   FALSE FALSE  5         0.75         0.01      1.93      97.3
-17: 10000   FALSE power    TRUE FALSE  5        34.03         5.36     46.27      14.3
-18: 10000   FALSE typeI    TRUE FALSE  5         0.74        67.55      1.72      30.0
+ 1: 10000    TRUE power    TRUE FALSE 10       37.85%        6.19%    43.08%    12.88%
+ 2: 10000    TRUE typeI    TRUE FALSE 10        0.79%       71.64%     1.60%    25.97%
+ 3: 10000    TRUE power    TRUE FALSE  5       35.77%        5.99%    44.76%    13.48%
+ 4: 10000    TRUE typeI    TRUE FALSE  5        0.74%       69.38%     1.66%    28.22%
+ 5: 10000    TRUE power    TRUE  TRUE 10       36.69%        6.24%    43.66%    13.41%
+ 6: 10000    TRUE typeI    TRUE  TRUE 10        0.59%       69.61%     1.63%    28.17%
+ 7: 10000    TRUE power    TRUE  TRUE  5       35.02%        6.05%    45.18%    13.75%
+ 8: 10000    TRUE typeI    TRUE  TRUE  5        0.63%       68.36%     1.68%    29.33%
+ 9: 10000    TRUE power   FALSE  TRUE 10       37.85%        6.04%    42.27%    13.84%
+10: 10000    TRUE typeI   FALSE  TRUE 10        0.61%        0.19%     1.86%    97.34%
+11: 10000    TRUE power   FALSE  TRUE  5       36.18%        5.84%    43.86%    14.12%
+12: 10000    TRUE typeI   FALSE  TRUE  5        0.69%        0.06%     1.95%    97.30%
+13: 10000    TRUE power   FALSE FALSE 10       38.70%        6.09%    41.74%    13.47%
+14: 10000    TRUE typeI   FALSE FALSE 10        0.69%        0.12%     1.84%    97.35%
+15: 10000    TRUE power   FALSE FALSE  5       36.82%        5.75%    43.54%    13.89%
+16: 10000    TRUE typeI   FALSE FALSE  5        0.75%        0.01%     1.93%    97.31%
+17: 10000   FALSE power    TRUE FALSE  5       34.03%        5.36%    46.27%    14.34%
+18: 10000   FALSE typeI    TRUE FALSE  5        0.74%       67.55%     1.72%    29.99%
 #+end_example
-
-\clearpage
 
 Method 3:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
@@ -244,97 +373,201 @@ tablePrint <- dcast(res2stageS.final[method==3], scenario + N + missing + hypo +
                     value.var = c("decision.eff","decision.fut","final.eff","final.fut"))
 names(tablePrint) <- gsub("_3","",names(tablePrint),fixed = TRUE)
 setkeyv(tablePrint,"scenario")
-print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 3)
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")])
 #+END_SRC
 #+RESULTS:
 #+begin_example
         N missing  hypo binding  fixC ar decision.eff decision.fut final.eff final.fut
- 1: 10000    TRUE power    TRUE FALSE 10        40.58         6.53     39.85      13.0
- 2: 10000    TRUE typeI    TRUE FALSE 10         0.74        68.79      1.63      28.8
- 3: 10000    TRUE power    TRUE FALSE  5        36.54         6.30     43.60      13.6
- 4: 10000    TRUE typeI    TRUE FALSE  5         0.69        68.41      1.66      29.2
- 5: 10000    TRUE power    TRUE  TRUE 10        40.58         6.53     39.85      13.0
- 6: 10000    TRUE typeI    TRUE  TRUE 10         0.74        68.79      1.63      28.8
- 7: 10000    TRUE power    TRUE  TRUE  5        36.54         6.30     43.60      13.6
- 8: 10000    TRUE typeI    TRUE  TRUE  5         0.69        68.41      1.66      29.2
- 9: 10000    TRUE power   FALSE  TRUE 10        41.34         6.20     38.92      13.5
-10: 10000    TRUE typeI   FALSE  TRUE 10         0.77         0.33      1.80      97.1
-11: 10000    TRUE power   FALSE  TRUE  5        37.71         6.03     42.35      13.9
-12: 10000    TRUE typeI   FALSE  TRUE  5         0.73         0.09      1.93      97.2
-13: 10000    TRUE power   FALSE FALSE 10        41.34         6.20     38.92      13.5
-14: 10000    TRUE typeI   FALSE FALSE 10         0.77         0.33      1.80      97.1
-15: 10000    TRUE power   FALSE FALSE  5        37.71         6.03     42.35      13.9
-16: 10000    TRUE typeI   FALSE FALSE  5         0.73         0.09      1.93      97.2
-17: 10000   FALSE power    TRUE FALSE  5        34.65         5.59     45.27      14.5
-18: 10000   FALSE typeI    TRUE FALSE  5         0.68        66.54      1.77      31.0
+ 1: 10000    TRUE power    TRUE FALSE 10       40.58%        6.53%    39.85%    13.04%
+ 2: 10000    TRUE typeI    TRUE FALSE 10        0.74%       68.79%     1.63%    28.84%
+ 3: 10000    TRUE power    TRUE FALSE  5       36.54%        6.30%    43.60%    13.56%
+ 4: 10000    TRUE typeI    TRUE FALSE  5        0.69%       68.41%     1.66%    29.24%
+ 5: 10000    TRUE power    TRUE  TRUE 10       40.58%        6.53%    39.85%    13.04%
+ 6: 10000    TRUE typeI    TRUE  TRUE 10        0.74%       68.79%     1.63%    28.84%
+ 7: 10000    TRUE power    TRUE  TRUE  5       36.54%        6.30%    43.60%    13.56%
+ 8: 10000    TRUE typeI    TRUE  TRUE  5        0.69%       68.41%     1.66%    29.24%
+ 9: 10000    TRUE power   FALSE  TRUE 10       41.34%        6.20%    38.92%    13.54%
+10: 10000    TRUE typeI   FALSE  TRUE 10        0.77%        0.33%     1.80%    97.10%
+11: 10000    TRUE power   FALSE  TRUE  5       37.71%        6.03%    42.35%    13.91%
+12: 10000    TRUE typeI   FALSE  TRUE  5        0.73%        0.09%     1.93%    97.25%
+13: 10000    TRUE power   FALSE FALSE 10       41.34%        6.20%    38.92%    13.54%
+14: 10000    TRUE typeI   FALSE FALSE 10        0.77%        0.33%     1.80%    97.10%
+15: 10000    TRUE power   FALSE FALSE  5       37.71%        6.03%    42.35%    13.91%
+16: 10000    TRUE typeI   FALSE FALSE  5        0.73%        0.09%     1.93%    97.25%
+17: 10000   FALSE power    TRUE FALSE  5       34.65%        5.59%    45.27%    14.49%
+18: 10000   FALSE typeI    TRUE FALSE  5        0.68%       66.54%     1.77%    31.01%
 #+end_example
+
+\clearpage
 
 Relative frequency of stopping for with a threshold below 1.96:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
-res2stage[decision %in% c("efficacy","futility"),
-          .(.N, rejection = 100*mean(decision=="efficacy"), rejectionBelow196 = 100*mean((statistic<qnorm(0.975))*(decision=="efficacy"))), 
-          by = c("scenario","missing","method","binding","fixC","ar","hypo")]
+tablePrint <- res2stage[decision %in% c("efficacy","futility"),
+                        .(.N, rejection = mean2pc(decision=="efficacy"), rejectionBelow196 = mean2pc((statistic<qnorm(0.975))*(decision=="efficacy"))), 
+                        by = c("scenario","missing","method","binding","fixC","ar","hypo")]
+tablePrint[rejectionBelow196!="0"]
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
     scenario missing method binding  fixC ar  hypo     N rejection rejectionBelow196
- 1:        1    TRUE      1    TRUE FALSE 10 power 10000     81.00              0.85
- 2:        1    TRUE      2    TRUE FALSE 10 power 10000     80.93              0.84
- 3:        1    TRUE      3    TRUE FALSE 10 power 10000     80.43              0.00
- 4:        2    TRUE      1    TRUE FALSE 10 typeI 10000      2.42              0.18
- 5:        2    TRUE      2    TRUE FALSE 10 typeI 10000      2.39              0.17
- 6:        2    TRUE      3    TRUE FALSE 10 typeI 10000      2.37              0.00
- 7:        3    TRUE      1    TRUE FALSE  5 power 10000     80.53              0.45
- 8:        3    TRUE      2    TRUE FALSE  5 power 10000     80.53              0.45
- 9:        3    TRUE      3    TRUE FALSE  5 power 10000     80.14              0.00
-10:        4    TRUE      1    TRUE FALSE  5 typeI 10000      2.40              0.08
-11:        4    TRUE      2    TRUE FALSE  5 typeI 10000      2.40              0.08
-12:        4    TRUE      3    TRUE FALSE  5 typeI 10000      2.35              0.00
-13:        5    TRUE      1    TRUE  TRUE 10 power 10000     80.15              0.00
-14:        5    TRUE      2    TRUE  TRUE 10 power 10000     80.35              0.00
-15:        5    TRUE      3    TRUE  TRUE 10 power 10000     80.43              0.00
-16:        6    TRUE      1    TRUE  TRUE 10 typeI 10000      2.24              0.00
-17:        6    TRUE      2    TRUE  TRUE 10 typeI 10000      2.22              0.00
-18:        6    TRUE      3    TRUE  TRUE 10 typeI 10000      2.37              0.00
-19:        7    TRUE      1    TRUE  TRUE  5 power 10000     80.08              0.00
-20:        7    TRUE      2    TRUE  TRUE  5 power 10000     80.20              0.00
-21:        7    TRUE      3    TRUE  TRUE  5 power 10000     80.14              0.00
-22:        8    TRUE      1    TRUE  TRUE  5 typeI 10000      2.32              0.00
-23:        8    TRUE      2    TRUE  TRUE  5 typeI 10000      2.31              0.00
-24:        8    TRUE      3    TRUE  TRUE  5 typeI 10000      2.35              0.00
-25:        9    TRUE      1   FALSE  TRUE 10 power 10000     79.86              0.00
-26:        9    TRUE      2   FALSE  TRUE 10 power 10000     80.12              0.00
-27:        9    TRUE      3   FALSE  TRUE 10 power 10000     80.26              0.00
-28:       10    TRUE      1   FALSE  TRUE 10 typeI 10000      2.45              0.00
-29:       10    TRUE      2   FALSE  TRUE 10 typeI 10000      2.47              0.00
-30:       10    TRUE      3   FALSE  TRUE 10 typeI 10000      2.57              0.00
-31:       11    TRUE      1   FALSE  TRUE  5 power 10000     79.93              0.00
-32:       11    TRUE      2   FALSE  TRUE  5 power 10000     80.04              0.00
-33:       11    TRUE      3   FALSE  TRUE  5 power 10000     80.06              0.00
-34:       12    TRUE      1   FALSE  TRUE  5 typeI 10000      2.63              0.00
-35:       12    TRUE      2   FALSE  TRUE  5 typeI 10000      2.64              0.00
-36:       12    TRUE      3   FALSE  TRUE  5 typeI 10000      2.66              0.00
-37:       13    TRUE      1   FALSE FALSE 10 power 10000     80.50              0.64
-38:       13    TRUE      2   FALSE FALSE 10 power 10000     80.44              0.64
-39:       13    TRUE      3   FALSE FALSE 10 power 10000     80.26              0.00
-40:       14    TRUE      1   FALSE FALSE 10 typeI 10000      2.53              0.08
-41:       14    TRUE      2   FALSE FALSE 10 typeI 10000      2.53              0.08
-42:       14    TRUE      3   FALSE FALSE 10 typeI 10000      2.57              0.00
-43:       15    TRUE      1   FALSE FALSE  5 power 10000     80.37              0.44
-44:       15    TRUE      2   FALSE FALSE  5 power 10000     80.36              0.44
-45:       15    TRUE      3   FALSE FALSE  5 power 10000     80.06              0.00
-46:       16    TRUE      1   FALSE FALSE  5 typeI 10000      2.68              0.05
-47:       16    TRUE      2   FALSE FALSE  5 typeI 10000      2.68              0.05
-48:       16    TRUE      3   FALSE FALSE  5 typeI 10000      2.66              0.00
-49:       17   FALSE      1    TRUE FALSE  5 power 10000     80.31              0.42
-50:       17   FALSE      2    TRUE FALSE  5 power 10000     80.30              0.43
-51:       17   FALSE      3    TRUE FALSE  5 power 10000     79.92              0.00
-52:       18   FALSE      1    TRUE FALSE  5 typeI 10000      2.46              0.08
-53:       18   FALSE      2    TRUE FALSE  5 typeI 10000      2.46              0.08
-54:       18   FALSE      3    TRUE FALSE  5 typeI 10000      2.45              0.00
-    scenario missing method binding  fixC ar  hypo     N rejection rejectionBelow196
+ 1:        1    TRUE      1    TRUE FALSE 10 power 10000    81.00%             0.85%
+ 2:        1    TRUE      2    TRUE FALSE 10 power 10000    80.93%             0.84%
+ 3:        2    TRUE      1    TRUE FALSE 10 typeI 10000     2.42%             0.18%
+ 4:        2    TRUE      2    TRUE FALSE 10 typeI 10000     2.39%             0.17%
+ 5:        3    TRUE      1    TRUE FALSE  5 power 10000    80.53%             0.45%
+ 6:        3    TRUE      2    TRUE FALSE  5 power 10000    80.53%             0.45%
+ 7:        4    TRUE      1    TRUE FALSE  5 typeI 10000     2.40%             0.08%
+ 8:        4    TRUE      2    TRUE FALSE  5 typeI 10000     2.40%             0.08%
+ 9:       13    TRUE      1   FALSE FALSE 10 power 10000    80.50%             0.64%
+10:       13    TRUE      2   FALSE FALSE 10 power 10000    80.44%             0.64%
+11:       14    TRUE      1   FALSE FALSE 10 typeI 10000     2.53%             0.08%
+12:       14    TRUE      2   FALSE FALSE 10 typeI 10000     2.53%             0.08%
+13:       15    TRUE      1   FALSE FALSE  5 power 10000    80.37%             0.44%
+14:       15    TRUE      2   FALSE FALSE  5 power 10000    80.36%             0.44%
+15:       16    TRUE      1   FALSE FALSE  5 typeI 10000     2.68%             0.05%
+16:       16    TRUE      2   FALSE FALSE  5 typeI 10000     2.68%             0.05%
+17:       17   FALSE      1    TRUE FALSE  5 power 10000    80.31%             0.42%
+18:       17   FALSE      2    TRUE FALSE  5 power 10000    80.30%             0.43%
+19:       18   FALSE      1    TRUE FALSE  5 typeI 10000     2.46%             0.08%
+20:       18   FALSE      2    TRUE FALSE  5 typeI 10000     2.46%             0.08%
 #+end_example
+
+\clearpage
+
+** 3 stages
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+res3stageS.final <- res3stage[!is.na(statistic) & type != "interim",
+                              .(.N,
+                                dec1.eff = mean2pc((stage == 1)*(decision == "efficacy")),
+                                dec1.fut = mean2pc((stage == 1)*(decision == "futility")),
+                                dec2.eff = mean2pc((stage == 2)*(decision == "efficacy")),
+                                dec2.fut = mean2pc((stage == 2)*(decision == "futility")),
+                                final.eff = mean2pc((stage == 3)*(decision == "efficacy")),
+                                final.fut = mean2pc((stage == 3)*(decision == "futility"))),
+                              by = c("scenario","missing","method","binding","fixC","ar","hypo")]
+#+END_SRC
+
+#+RESULTS:
+
+Relative frequency of stopping for efficacy/futility at decision/final
+
+- Method 1
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+tablePrint <- dcast(res3stageS.final[method==1], scenario + N + missing + hypo + binding + fixC + ar ~ method,
+                    value.var = c("dec1.eff","dec1.fut","dec2.eff","dec2.fut","final.eff","final.fut"))
+names(tablePrint) <- gsub("_1","",names(tablePrint),fixed = TRUE)
+setkeyv(tablePrint,"scenario")
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")])
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+       N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
+ 1: 1868    TRUE power    TRUE FALSE 10    8.73%    1.93%   19.86%    3.37%    46.73%    19.38%
+ 2: 2481    TRUE typeI    TRUE FALSE 10    0.32%   26.64%    0.60%   35.95%     2.02%    34.46%
+ 3: 1127    TRUE typeI    TRUE FALSE  5    0.44%   30.26%    0.27%   36.11%     2.40%    30.52%
+ 4: 1934    TRUE power    TRUE  TRUE 10    9.31%    1.71%   19.65%    3.67%    46.23%    19.44%
+ 5: 2432    TRUE typeI    TRUE  TRUE 10    0.08%   25.82%    0.16%   36.06%     1.64%    36.23%
+ 6:  245    TRUE power    TRUE  TRUE  5   14.29%    2.04%   13.47%    6.12%    47.76%    16.33%
+ 7: 1042    TRUE typeI    TRUE  TRUE  5    0.19%   27.45%        0   37.04%     1.54%    33.78%
+ 8: 2500    TRUE power   FALSE  TRUE 10    9.84%    1.88%   21.20%    3.60%    43.76%    19.72%
+ 9: 2500    TRUE typeI   FALSE  TRUE 10    0.20%    0.04%    0.44%    0.12%     1.72%    97.48%
+10: 2500    TRUE power   FALSE  TRUE  5   10.32%    1.80%   21.04%    3.32%    43.40%    20.12%
+11: 2500    TRUE typeI   FALSE  TRUE  5    0.08%    0.04%    0.52%        0     1.76%    97.60%
+12: 2500    TRUE power   FALSE FALSE 10    9.36%    1.48%   20.68%    3.56%    45.24%    19.68%
+13: 2483    TRUE typeI   FALSE FALSE 10    0.36%    0.12%    0.20%    0.04%     2.46%    96.82%
+14: 2500    TRUE power   FALSE FALSE  5    9.92%    1.80%   20.64%    3.56%    44.56%    19.52%
+15: 2500    TRUE typeI   FALSE FALSE  5    0.44%        0    0.40%        0     2.32%    96.84%
+#+end_example
+
+- Method 2
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+tablePrint <- dcast(res3stageS.final[method==2], scenario + N + missing + hypo + binding + fixC + ar ~ method,
+                    value.var = c("dec1.eff","dec1.fut","dec2.eff","dec2.fut","final.eff","final.fut"))
+names(tablePrint) <- gsub("_2","",names(tablePrint),fixed = TRUE)
+setkeyv(tablePrint,"scenario")
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 3)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+       N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
+ 1: 1868    TRUE power    TRUE FALSE 10    8.73%    1.93%   19.86%    3.37%    46.73%    19.38%
+ 2: 2481    TRUE typeI    TRUE FALSE 10    0.32%   26.68%    0.60%   35.99%     2.02%    34.38%
+ 3: 1127    TRUE typeI    TRUE FALSE  5    0.44%   30.35%    0.27%   36.02%     2.40%    30.52%
+ 4: 1934    TRUE power    TRUE  TRUE 10    9.46%    1.60%   20.42%    3.41%    46.12%    18.98%
+ 5: 2432    TRUE typeI    TRUE  TRUE 10    0.12%   24.96%    0.16%   35.44%     1.85%    37.46%
+ 6:  245    TRUE power    TRUE  TRUE  5   13.88%    2.04%   13.06%    6.53%    48.98%    15.51%
+ 7: 1042    TRUE typeI    TRUE  TRUE  5    0.19%   26.97%    0.10%   37.04%     1.63%    34.07%
+ 8: 2500    TRUE power   FALSE  TRUE 10    9.92%    1.76%   21.44%    3.40%    43.96%    19.52%
+ 9: 2500    TRUE typeI   FALSE  TRUE 10    0.24%    0.04%    0.44%    0.08%     1.72%    97.48%
+10: 2500    TRUE power   FALSE  TRUE  5   10.36%    2.00%   21.32%    3.04%    43.76%    19.52%
+11: 2500    TRUE typeI   FALSE  TRUE  5    0.08%    0.08%    0.52%        0     1.68%    97.64%
+12: 2500    TRUE power   FALSE FALSE 10    9.36%    1.48%   20.72%    3.44%    45.32%    19.68%
+13: 2483    TRUE typeI   FALSE FALSE 10    0.36%    0.12%    0.20%        0     2.54%    96.78%
+14: 2500    TRUE power   FALSE FALSE  5    9.92%    1.80%   20.40%    3.28%    44.92%    19.68%
+15: 2500    TRUE typeI   FALSE FALSE  5    0.44%        0    0.32%        0     2.36%    96.88%
+#+end_example
+
+\clearpage
+
+- Method 3
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+tablePrint <- dcast(res3stageS.final[method==3], scenario + N + missing + hypo + binding + fixC + ar ~ method,
+                    value.var = c("dec1.eff","dec1.fut","dec2.eff","dec2.fut","final.eff","final.fut"))
+names(tablePrint) <- gsub("_3","",names(tablePrint),fixed = TRUE)
+setkeyv(tablePrint,"scenario")
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 3)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+       N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
+ 1: 1868    TRUE power    TRUE FALSE 10    8.94%    2.19%   20.77%    3.43%    45.29%    19.38%
+ 2: 2481    TRUE typeI    TRUE FALSE 10    0.24%   25.39%    0.48%   35.99%     1.98%    35.91%
+ 3: 1127    TRUE typeI    TRUE FALSE  5    0.35%   30.08%    0.27%   35.67%     2.48%    31.14%
+ 4: 1934    TRUE power    TRUE  TRUE 10    9.82%    1.55%   21.15%    3.46%    45.14%    18.87%
+ 5: 2432    TRUE typeI    TRUE  TRUE 10    0.08%   24.71%    0.21%   35.57%     1.73%    37.71%
+ 6:  245    TRUE power    TRUE  TRUE  5   14.69%    2.04%   13.88%    6.12%    47.35%    15.92%
+ 7: 1042    TRUE typeI    TRUE  TRUE  5    0.19%   27.06%        0   37.04%     1.63%    34.07%
+ 8: 2500    TRUE power   FALSE  TRUE 10   10.40%    1.80%   21.80%    3.32%    42.80%    19.88%
+ 9: 2500    TRUE typeI   FALSE  TRUE 10    0.20%    0.04%    0.44%    0.16%     1.68%    97.48%
+10: 2500    TRUE power   FALSE  TRUE  5   10.64%    1.80%   21.04%    3.36%    43.00%    20.16%
+11: 2500    TRUE typeI   FALSE  TRUE  5    0.12%    0.04%    0.48%        0     1.68%    97.68%
+12: 2500    TRUE power   FALSE FALSE 10   10.36%    1.68%   21.36%    3.48%    43.64%    19.48%
+13: 2483    TRUE typeI   FALSE FALSE 10    0.32%    0.16%    0.20%    0.04%     2.58%    96.70%
+14: 2500    TRUE power   FALSE FALSE  5    9.96%    1.84%   20.68%    3.20%    44.48%    19.84%
+15: 2500    TRUE typeI   FALSE FALSE  5    0.44%    0.04%    0.32%    0.04%     2.28%    96.88%
+#+end_example
+
+Relative frequency of stopping for with a threshold below 1.96:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+tablePrint <- res3stage[decision %in% c("efficacy","futility"),
+                        .(.N, rejection = mean2pc(decision=="efficacy"), rejectionBelow196 = mean2pc((statistic<qnorm(0.975))*(decision=="efficacy"))), 
+                        by = c("scenario","missing","method","binding","fixC","ar","hypo")]
+tablePrint[rejectionBelow196!=0]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+    scenario missing method binding  fixC ar  hypo    N rejection rejectionBelow196
+ 1:        1    TRUE      1    TRUE FALSE 10 power 1868    75.32%             0.64%
+ 2:        1    TRUE      2    TRUE FALSE 10 power 1868    75.32%             0.64%
+ 3:        2    TRUE      1    TRUE FALSE 10 typeI 2481     2.94%             0.24%
+ 4:        2    TRUE      2    TRUE FALSE 10 typeI 2481     2.94%             0.24%
+ 5:        4    TRUE      1    TRUE FALSE  5 typeI 1127     3.11%             0.09%
+ 6:        4    TRUE      2    TRUE FALSE  5 typeI 1127     3.11%             0.09%
+ 7:       13    TRUE      1   FALSE FALSE 10 power 2500    75.28%             0.36%
+ 8:       13    TRUE      2   FALSE FALSE 10 power 2500    75.40%             0.32%
+ 9:       14    TRUE      1   FALSE FALSE 10 typeI 2483     3.02%             0.04%
+10:       14    TRUE      2   FALSE FALSE 10 typeI 2483     3.10%             0.04%
+11:       15    TRUE      1   FALSE FALSE  5 power 2500    75.12%             0.16%
+12:       15    TRUE      2   FALSE FALSE  5 power 2500    75.24%             0.16%
+13:       16    TRUE      1   FALSE FALSE  5 typeI 2500     3.16%             0.08%
+14:       16    TRUE      2   FALSE FALSE  5 typeI 2500     3.12%             0.08%
+#+end_example
+
 
 \clearpage
 
@@ -342,7 +575,12 @@ res2stage[decision %in% c("efficacy","futility"),
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
 true_eff <- 0.6
+#+END_SRC
 
+#+RESULTS:
+
+** 2 stages
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
 ## For each run, error made by each estimator
 res2stage[, truth := c(0,true_eff)[(hypo=="power")+1]]
 res2stage.bias <- res2stage[decision %in% c("futility","efficacy"),
@@ -374,30 +612,30 @@ tablePrint <- dcast(res2stageS.bias,
                     value.var = c("bias_MLE","bias_MUE"))
 setkeyv(tablePrint,"scenario")
 names(tablePrint) <- gsub("_","",names(tablePrint),fixed = TRUE)
-print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 3)
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 2)
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-     hypo missing binding  fixC ar  biasMLE1  biasMLE2  biasMLE3  biasMUE1  biasMUE2 biasMUE3
- 1: power    TRUE    TRUE FALSE 10  0.013450  0.013150  0.014680  0.005983  0.005659  0.00218
- 2: typeI    TRUE    TRUE FALSE 10 -0.017939 -0.017844 -0.018560 -0.004484 -0.004412 -0.00508
- 3: power    TRUE    TRUE FALSE  5  0.022570  0.022551  0.023584  0.010450  0.010477  0.00870
- 4: typeI    TRUE    TRUE FALSE  5 -0.030342 -0.030312 -0.030651 -0.011844 -0.011798 -0.01238
- 5: power    TRUE    TRUE  TRUE 10  0.013450  0.014032  0.014680  0.001094  0.001687  0.00217
- 6: typeI    TRUE    TRUE  TRUE 10 -0.017939 -0.018711 -0.018560 -0.005373 -0.006062 -0.00508
- 7: power    TRUE    TRUE  TRUE  5  0.022570  0.023089  0.023584  0.007878  0.008275  0.00870
- 8: typeI    TRUE    TRUE  TRUE  5 -0.030342 -0.030850 -0.030651 -0.012252 -0.012829 -0.01238
- 9: power    TRUE   FALSE  TRUE 10  0.014326  0.014903  0.015285  0.037532  0.035615  0.03135
-10: typeI    TRUE   FALSE  TRUE 10  0.000186  0.000192  0.000511  0.000991  0.000981  0.00263
-11: power    TRUE   FALSE  TRUE  5  0.023657  0.024021  0.024379  0.042787  0.041614  0.04039
-12: typeI    TRUE   FALSE  TRUE  5  0.000912  0.000853  0.001008  0.001112  0.001062  0.00136
-13: power    TRUE   FALSE FALSE 10  0.014326  0.014160  0.015285  0.036631  0.037167  0.03139
-14: typeI    TRUE   FALSE FALSE 10  0.000186  0.000186  0.000511  0.000793  0.000783  0.00264
-15: power    TRUE   FALSE FALSE  5  0.023657  0.023651  0.024379  0.041744  0.041949  0.04040
-16: typeI    TRUE   FALSE FALSE  5  0.000912  0.000912  0.001008  0.000964  0.000962  0.00137
-17: power   FALSE    TRUE FALSE  5  0.022836  0.022775  0.023807  0.011971  0.011956  0.01001
-18: typeI   FALSE    TRUE FALSE  5 -0.029516 -0.029448 -0.029915 -0.011048 -0.011005 -0.01162
+     hypo missing binding  fixC ar biasMLE1 biasMLE2 biasMLE3 biasMUE1 biasMUE2 biasMUE3
+ 1: power    TRUE    TRUE FALSE 10  0.01345  0.01315  0.01468  0.00598  0.00566  0.00221
+ 2: typeI    TRUE    TRUE FALSE 10 -0.01794 -0.01784 -0.01856 -0.00453 -0.00448 -0.00510
+ 3: power    TRUE    TRUE FALSE  5  0.02257  0.02255  0.02358  0.01045  0.01048  0.00870
+ 4: typeI    TRUE    TRUE FALSE  5 -0.03034 -0.03031 -0.03065 -0.01190 -0.01185 -0.01243
+ 5: power    TRUE    TRUE  TRUE 10  0.01345  0.01403  0.01468  0.00110  0.00169  0.00221
+ 6: typeI    TRUE    TRUE  TRUE 10 -0.01794 -0.01871 -0.01856 -0.00542 -0.00609 -0.00510
+ 7: power    TRUE    TRUE  TRUE  5  0.02257  0.02309  0.02358  0.00788  0.00827  0.00870
+ 8: typeI    TRUE    TRUE  TRUE  5 -0.03034 -0.03085 -0.03065 -0.01230 -0.01288 -0.01243
+ 9: power    TRUE   FALSE  TRUE 10  0.01433  0.01490  0.01529  0.03456  0.03325  0.03453
+10: typeI    TRUE   FALSE  TRUE 10  0.00019  0.00019  0.00051 -0.00076 -0.00068  0.00077
+11: power    TRUE   FALSE  TRUE  5  0.02366  0.02402  0.02438  0.04130  0.04038  0.04201
+12: typeI    TRUE   FALSE  TRUE  5  0.00091  0.00085  0.00101  0.00052  0.00047  0.00091
+13: power    TRUE   FALSE FALSE 10  0.01433  0.01416  0.01529  0.03552  0.03589  0.03453
+14: typeI    TRUE   FALSE FALSE 10  0.00019  0.00019  0.00051 -0.00020 -0.00021  0.00077
+15: power    TRUE   FALSE FALSE  5  0.02366  0.02365  0.02438  0.04186  0.04202  0.04201
+16: typeI    TRUE   FALSE FALSE  5  0.00091  0.00091  0.00101  0.00087  0.00087  0.00091
+17: power   FALSE    TRUE FALSE  5  0.02284  0.02277  0.02381  0.01197  0.01196  0.01001
+18: typeI   FALSE    TRUE FALSE  5 -0.02952 -0.02945 -0.02992 -0.01111 -0.01106 -0.01168
 #+end_example
 #+LaTeX: \end{adjustwidth}
 
@@ -409,30 +647,122 @@ tablePrint <- dcast(res2stageS.bias,
                     value.var = c("mbias_MLE","mbias_MUE"))
 setkeyv(tablePrint,"scenario")
 names(tablePrint) <- gsub("_","",names(tablePrint),fixed = TRUE)
-print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 3)
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 2)
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
      hypo missing binding  fixC ar mbiasMLE1 mbiasMLE2 mbiasMLE3 mbiasMUE1 mbiasMUE2 mbiasMUE3
- 1: power    TRUE    TRUE FALSE 10    0.0261    0.0260    0.0301   -0.0024   -0.0025   -0.0054
- 2: typeI    TRUE    TRUE FALSE 10   -0.0173   -0.0170   -0.0202    0.0011    0.0009   -0.0001
- 3: power    TRUE    TRUE FALSE  5    0.0405    0.0405    0.0432   -0.0034   -0.0033   -0.0053
- 4: typeI    TRUE    TRUE FALSE  5   -0.0330   -0.0329   -0.0345    0.0007    0.0007    0.0008
- 5: power    TRUE    TRUE  TRUE 10    0.0261    0.0265    0.0301   -0.0105   -0.0101   -0.0054
- 6: typeI    TRUE    TRUE  TRUE 10   -0.0173   -0.0197   -0.0202    0.0011   -0.0006   -0.0001
- 7: power    TRUE    TRUE  TRUE  5    0.0405    0.0407    0.0432   -0.0077   -0.0065   -0.0053
- 8: typeI    TRUE    TRUE  TRUE  5   -0.0330   -0.0346   -0.0345    0.0007    0.0009    0.0008
- 9: power    TRUE   FALSE  TRUE 10    0.0326    0.0332    0.0327    0.0390    0.0345    0.0277
-10: typeI    TRUE   FALSE  TRUE 10   -0.0009   -0.0009   -0.0009   -0.0008   -0.0008    0.0014
-11: power    TRUE   FALSE  TRUE  5    0.0462    0.0459    0.0489    0.0338    0.0315    0.0294
-12: typeI    TRUE   FALSE  TRUE  5   -0.0009   -0.0010   -0.0009   -0.0008   -0.0010    0.0003
-13: power    TRUE   FALSE FALSE 10    0.0326    0.0324    0.0327    0.0390    0.0403    0.0277
-14: typeI    TRUE   FALSE FALSE 10   -0.0009   -0.0009   -0.0009   -0.0008   -0.0008    0.0014
-15: power    TRUE   FALSE FALSE  5    0.0462    0.0464    0.0489    0.0337    0.0342    0.0294
-16: typeI    TRUE   FALSE FALSE  5   -0.0009   -0.0009   -0.0009   -0.0008   -0.0008    0.0003
-17: power   FALSE    TRUE FALSE  5    0.0383    0.0383    0.0400   -0.0026   -0.0025   -0.0047
-18: typeI   FALSE    TRUE FALSE  5   -0.0329   -0.0327   -0.0353    0.0044    0.0044    0.0035
+ 1: power    TRUE    TRUE FALSE 10    0.0261    0.0260    0.0301  -0.00240  -0.00250  -0.00535
+ 2: typeI    TRUE    TRUE FALSE 10   -0.0173   -0.0170   -0.0202   0.00100   0.00075  -0.00015
+ 3: power    TRUE    TRUE FALSE  5    0.0405    0.0405    0.0432  -0.00340  -0.00330  -0.00530
+ 4: typeI    TRUE    TRUE FALSE  5   -0.0330   -0.0329   -0.0345   0.00055   0.00055   0.00065
+ 5: power    TRUE    TRUE  TRUE 10    0.0261    0.0265    0.0301  -0.01050  -0.01010  -0.00535
+ 6: typeI    TRUE    TRUE  TRUE 10   -0.0173   -0.0197   -0.0202   0.00100  -0.00065  -0.00015
+ 7: power    TRUE    TRUE  TRUE  5    0.0405    0.0407    0.0432  -0.00770  -0.00650  -0.00530
+ 8: typeI    TRUE    TRUE  TRUE  5   -0.0330   -0.0346   -0.0345   0.00055   0.00075   0.00065
+ 9: power    TRUE   FALSE  TRUE 10    0.0326    0.0332    0.0327   0.02772   0.02517   0.02868
+10: typeI    TRUE   FALSE  TRUE 10   -0.0009   -0.0009   -0.0009  -0.00190  -0.00185  -0.00025
+11: power    TRUE   FALSE  TRUE  5    0.0462    0.0459    0.0489   0.02621   0.02512   0.02820
+12: typeI    TRUE   FALSE  TRUE  5   -0.0009   -0.0010   -0.0009  -0.00130  -0.00140  -0.00015
+13: power    TRUE   FALSE FALSE 10    0.0326    0.0324    0.0327   0.03094   0.03184   0.02868
+14: typeI    TRUE   FALSE FALSE 10   -0.0009   -0.0009   -0.0009  -0.00150  -0.00140  -0.00025
+15: power    TRUE   FALSE FALSE  5    0.0462    0.0464    0.0489   0.02832   0.02865   0.02820
+16: typeI    TRUE   FALSE FALSE  5   -0.0009   -0.0009   -0.0009  -0.00105  -0.00105  -0.00015
+17: power   FALSE    TRUE FALSE  5    0.0383    0.0383    0.0400  -0.00265  -0.00255  -0.00485
+18: typeI   FALSE    TRUE FALSE  5   -0.0329   -0.0327   -0.0353   0.00420   0.00420   0.00330
+#+end_example
+
+#+LaTeX: \end{adjustwidth}
+
+\clearpage
+
+** 3 stages
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+## For each run, error made by each estimator
+res3stage[, truth := c(0,true_eff)[(hypo=="power")+1]]
+res3stage.bias <- res3stage[decision %in% c("futility","efficacy"),
+                            .(N = .N,
+                              bias_MLE = estimate_ML-truth,
+                              bias_MUE = estimate_MUE-truth,
+                              mbias_MLE = (estimate_ML>truth) - 0.5,
+                              mbias_MUE = (estimate_MUE>truth) - 0.5),
+                            by = c("method","scenario","seed","missing","binding","fixC","ar","hypo")]
+all(res3stage.bias$N==1)
+
+res3stageS.bias <- res3stage.bias[,.(N = .N,
+                                     bias_MLE = mean(bias_MLE, na.rm = TRUE),
+                                     bias_MUE = mean(bias_MUE, na.rm = TRUE),
+                                     mbias_MLE = mean(mbias_MLE, na.rm = TRUE),
+                                     mbias_MUE = mean(mbias_MUE, na.rm = TRUE)),
+                                  by=c("method","scenario","missing","binding","fixC","ar","hypo")]
+#+END_SRC
+
+#+RESULTS:
+: [1] TRUE
+
+Bias per estimator and method[fn::e.g. \texttt{biasMLE1} mixed model
+estimator (treatment effect), method 1 (boundaries)]:
+#+LaTeX: \begin{adjustwidth}{-1cm}{-1cm}
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+tablePrint <- dcast(res3stageS.bias,
+                    hypo + scenario + missing + binding + fixC + ar ~ method,
+                    value.var = c("bias_MLE","bias_MUE"))
+setkeyv(tablePrint,"scenario")
+names(tablePrint) <- gsub("_","",names(tablePrint),fixed = TRUE)
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 2)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing binding  fixC ar biasMLE1 biasMLE2 biasMLE3 biasMUE1 biasMUE2 biasMUE3
+ 1: power    TRUE    TRUE FALSE 10   0.0191   0.0191   0.0201   0.0181   0.0179   0.0133
+ 2: typeI    TRUE    TRUE FALSE 10  -0.0278  -0.0276  -0.0263  -0.0233  -0.0230  -0.0245
+ 3: typeI    TRUE    TRUE FALSE  5  -0.0688  -0.0690  -0.0693  -0.0528  -0.0531  -0.0541
+ 4: power    TRUE    TRUE  TRUE 10   0.0197   0.0202   0.0217   0.0187   0.0211   0.0200
+ 5: typeI    TRUE    TRUE  TRUE 10  -0.0341  -0.0336  -0.0340  -0.0252  -0.0240  -0.0253
+ 6: power    TRUE    TRUE  TRUE  5   0.0167   0.0148   0.0177   0.0354   0.0190   0.0157
+ 7: typeI    TRUE    TRUE  TRUE  5  -0.0547  -0.0539  -0.0542  -0.0342  -0.0350  -0.0361
+ 8: power    TRUE   FALSE  TRUE 10   0.0251   0.0254   0.0262   0.0561   0.0553   0.0523
+ 9: typeI    TRUE   FALSE  TRUE 10   0.0085   0.0081   0.0085   0.0100   0.0096   0.0101
+10: power    TRUE   FALSE  TRUE  5   0.0377   0.0377   0.0374   0.0569   0.0570   0.0547
+11: typeI    TRUE   FALSE  TRUE  5   0.0087   0.0085   0.0088   0.0092   0.0091   0.0092
+12: power    TRUE   FALSE FALSE 10   0.0266   0.0268   0.0296   0.0539   0.0538   0.0536
+13: typeI    TRUE   FALSE FALSE 10   0.0111   0.0106   0.0106   0.0130   0.0124   0.0130
+14: power    TRUE   FALSE FALSE  5   0.0416   0.0419   0.0428   0.0605   0.0593   0.0584
+15: typeI    TRUE   FALSE FALSE  5   0.0126   0.0122   0.0125   0.0137   0.0132   0.0134
+#+end_example
+#+LaTeX: \end{adjustwidth}
+
+Median bias [fn::Relative frequency at which the estimate is greater than the truth minus 0.5] per estimator and method:
+#+LaTeX: \begin{adjustwidth}{-1cm}{-1cm}
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+tablePrint <- dcast(res3stageS.bias,
+                    hypo + scenario + missing + binding + fixC + ar ~ method,
+                    value.var = c("mbias_MLE","mbias_MUE"))
+setkeyv(tablePrint,"scenario")
+names(tablePrint) <- gsub("_","",names(tablePrint),fixed = TRUE)
+print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits = 2)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing binding  fixC ar mbiasMLE1 mbiasMLE2 mbiasMLE3 mbiasMUE1 mbiasMUE2 mbiasMUE3
+ 1: power    TRUE    TRUE FALSE 10     0.034     0.034     0.038    0.0134    0.0134    0.0054
+ 2: typeI    TRUE    TRUE FALSE 10    -0.022    -0.022    -0.020    0.0147    0.0151    0.0139
+ 3: typeI    TRUE    TRUE FALSE  5    -0.072    -0.072    -0.075   -0.0138   -0.0129   -0.0138
+ 4: power    TRUE    TRUE  TRUE 10     0.028     0.029     0.029    0.0031    0.0041    0.0057
+ 5: typeI    TRUE    TRUE  TRUE 10    -0.029    -0.033    -0.032    0.0086    0.0095    0.0074
+ 6: power    TRUE    TRUE  TRUE  5    -0.018    -0.014    -0.018   -0.0347   -0.0347   -0.0429
+ 7: typeI    TRUE    TRUE  TRUE  5    -0.054    -0.047    -0.057   -0.0106   -0.0106   -0.0134
+ 8: power    TRUE   FALSE  TRUE 10     0.039     0.038     0.040    0.0520    0.0576    0.0484
+ 9: typeI    TRUE   FALSE  TRUE 10     0.022     0.023     0.020    0.0228    0.0232    0.0220
+10: power    TRUE   FALSE  TRUE  5     0.048     0.050     0.046    0.0372    0.0428    0.0352
+11: typeI    TRUE   FALSE  TRUE  5     0.023     0.023     0.021    0.0228    0.0236    0.0212
+12: power    TRUE   FALSE FALSE 10     0.034     0.030     0.036    0.0460    0.0444    0.0408
+13: typeI    TRUE   FALSE FALSE 10     0.018     0.015     0.015    0.0171    0.0151    0.0159
+14: power    TRUE   FALSE FALSE  5     0.044     0.040     0.042    0.0452    0.0392    0.0384
+15: typeI    TRUE   FALSE FALSE  5     0.018     0.015     0.015    0.0180    0.0152    0.0156
 #+end_example
 
 #+LaTeX: \end{adjustwidth}
@@ -441,25 +771,91 @@ print(tablePrint[,.SD,.SDcols = setdiff(names(tablePrint),"scenario")], digits =
 
 * Distribution of the estimates
 
+** 2 stages
 Distribution of the estimates:
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
 ## Restrict to one observation per run, when we stop:
-dt.estimate <- res2stage[decision %in% c("futility","efficacy") & !is.na(statistic),]
+dt2stage.estimate <- res2stage[decision %in% c("futility","efficacy") & !is.na(statistic),]
 ## Distribution of the estimate:
-gg.E <- ggplot(dt.estimate) + facet_grid(scenario~method.char)
-gg.E <- gg.E + geom_density(alpha=0.25, aes(x = estimate_ML, fill = "Naive"))
-gg.E <- gg.E + geom_density(alpha=0.25, aes(x = estimate_MUE, fill = "Median unbiased"))
-gg.E <- gg.E + labs(fill = "Estimator", x = "Estimate", y = "Density")
-gg.E <- gg.E + geom_vline(aes(xintercept = truth), color = "purple")
-gg.E <- gg.E + theme(text = element_text(size=15), 
-                     axis.line = element_line(linewidth = 1.25),
-                     axis.ticks = element_line(linewidth = 2),
-                     axis.ticks.length=unit(.25, "cm"),
-                     legend.key.size = unit(3,"line"))
+gg2stage.E <- ggplot(dt2stage.estimate) + facet_grid(scenario~method.char)
+gg2stage.E <- gg2stage.E + geom_density(alpha=0.25, aes(x = estimate_ML, fill = "Naive"))
+gg2stage.E <- gg2stage.E + geom_density(alpha=0.25, aes(x = estimate_MUE, fill = "Median unbiased"))
+gg2stage.E <- gg2stage.E + labs(fill = "Estimator", x = "Estimate", y = "Density")
+gg2stage.E <- gg2stage.E + geom_vline(aes(xintercept = truth), color = "purple")
+gg2stage.E <- gg2stage.E + theme(text = element_text(size=15), 
+                                 axis.line = element_line(linewidth = 1.25),
+                                 axis.ticks = element_line(linewidth = 2),
+                                 axis.ticks.length=unit(.25, "cm"),
+                                 legend.key.size = unit(3,"line"))
 
-ggsave(gg.E, filename = file.path("report","figures","gg-estimate-density.pdf"), height = 10, width = 12)
-ggsave(gg.E %+% dt.estimate[scenario == 1] + theme(legend.position = "bottom"),
-       filename = file.path("report","figures","gg-estimate-density-scenario1.pdf"), width = 10)
+ggsave(gg2stage.E, filename = file.path("report","figures","gg2stage-estimate-density.pdf"), height = 10, width = 12)
+ggsave(gg2stage.E %+% dt2stage.estimate[scenario == 1] + theme(legend.position = "bottom"),
+       filename = file.path("report","figures","gg2stage-estimate-density-scenario1.pdf"), width = 10)
+#+END_SRC
+
+#+RESULTS:
+: Advarselsbesked:
+: [1m[22mRemoved 7470 rows containing non-finite values (`stat_density()`).
+: [1m[22mSaving 10 x 7 in image
+: Advarselsbesked:
+: [1m[22mRemoved 1 rows containing non-finite values (`stat_density()`).
+
+#+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
+#+CAPTION: Naive and Median unbiased estimate distribution over all simulations. Each row correspond to a different scenario
+[[./figures/gg2stage-estimate-density.pdf]]
+
+#+ATTR_LaTeX: :width \textwidth :options trim={0 0 0 0} :placement [!h]
+#+CAPTION: Same but specific to scenario 1
+[[./figures/gg2stage-estimate-density-scenario1.pdf]]
+
+\clearpage
+
+Distribution of the median unbiased estimate conditional to the stage:
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+gg2stage.estimateC <- ggplot(dt2stage.estimate, aes(x = estimate_MUE, fill = stage.char, group = stage.char))
+gg2stage.estimateC <- gg2stage.estimateC + geom_density(alpha=0.25) + facet_grid(scenario~method.char)
+gg2stage.estimateC <- gg2stage.estimateC + labs(x = "estimate", fill = "stage", y = "Density")
+gg2stage.estimateC <- gg2stage.estimateC + theme(text = element_text(size=15), 
+                                     axis.line = element_line(linewidth = 1.25),
+                                     axis.ticks = element_line(linewidth = 2),
+                                     axis.ticks.length=unit(.25, "cm"),
+                                     legend.key.size = unit(3,"line"))
+
+ggsave(gg2stage.estimateC, filename = file.path("report","figures","gg2stage-estimateC-density.pdf"),
+       height = 10, width = 12)
+#+END_SRC
+
+#+RESULTS:
+: Advarselsbesked:
+: [1m[22mRemoved 7470 rows containing non-finite values (`stat_density()`).
+
+#+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
+#+CAPTION: Median unbiased estimate distribution conditional to the stage. Each row correspond to a different scenario.
+[[./figures/gg2stage-estimateC-density.pdf]]
+
+\clearpage
+
+** 3 stages
+
+Distribution of the estimates:
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+## Restrict to one observation per run, when we stop:
+dt3stage.estimate <- res3stage[decision %in% c("futility","efficacy") & !is.na(statistic),]
+## Distribution of the estimate:
+gg3stage.E <- ggplot(dt3stage.estimate) + facet_grid(scenario~method.char)
+gg3stage.E <- gg3stage.E + geom_density(alpha=0.25, aes(x = estimate_ML, fill = "Naive"))
+gg3stage.E <- gg3stage.E + geom_density(alpha=0.25, aes(x = estimate_MUE, fill = "Median unbiased"))
+gg3stage.E <- gg3stage.E + labs(fill = "Estimator", x = "Estimate", y = "Density")
+gg3stage.E <- gg3stage.E + geom_vline(aes(xintercept = truth), color = "purple")
+gg3stage.E <- gg3stage.E + theme(text = element_text(size=15), 
+                                 axis.line = element_line(linewidth = 1.25),
+                                 axis.ticks = element_line(linewidth = 2),
+                                 axis.ticks.length=unit(.25, "cm"),
+                                 legend.key.size = unit(3,"line"))
+
+ggsave(gg3stage.E, filename = file.path("report","figures","gg3stage-estimate-density.pdf"), height = 10, width = 12)
+ggsave(gg3stage.E %+% dt3stage.estimate[scenario == 1] + theme(legend.position = "bottom"),
+       filename = file.path("report","figures","gg3stage-estimate-density-scenario1.pdf"), width = 10)
 #+END_SRC
 
 #+RESULTS:
@@ -467,26 +863,26 @@ ggsave(gg.E %+% dt.estimate[scenario == 1] + theme(legend.position = "bottom"),
 
 #+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
 #+CAPTION: Naive and Median unbiased estimate distribution over all simulations. Each row correspond to a different scenario
-[[./figures/gg-estimate-density.pdf]]
+[[./figures/gg3stage-estimate-density.pdf]]
 
 #+ATTR_LaTeX: :width \textwidth :options trim={0 0 0 0} :placement [!h]
 #+CAPTION: Same but specific to scenario 1
-[[./figures/gg-estimate-density-scenario1.pdf]]
+[[./figures/gg3stage-estimate-density-scenario1.pdf]]
 
 \clearpage
 
 Distribution of the median unbiased estimate conditional to the stage:
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
-gg.estimateC <- ggplot(dt.estimate, aes(x = estimate_MUE, fill = stage.char, group = stage.char))
-gg.estimateC <- gg.estimateC + geom_density(alpha=0.25) + facet_grid(scenario~method.char)
-gg.estimateC <- gg.estimateC + labs(x = "estimate", fill = "stage", y = "Density")
-gg.estimateC <- gg.estimateC + theme(text = element_text(size=15), 
+gg3stage.estimateC <- ggplot(dt3stage.estimate, aes(x = estimate_MUE, fill = stage.char, group = stage.char))
+gg3stage.estimateC <- gg3stage.estimateC + geom_density(alpha=0.25) + facet_grid(scenario~method.char)
+gg3stage.estimateC <- gg3stage.estimateC + labs(x = "estimate", fill = "stage", y = "Density")
+gg3stage.estimateC <- gg3stage.estimateC + theme(text = element_text(size=15), 
                                      axis.line = element_line(linewidth = 1.25),
                                      axis.ticks = element_line(linewidth = 2),
                                      axis.ticks.length=unit(.25, "cm"),
                                      legend.key.size = unit(3,"line"))
 
-ggsave(gg.estimateC, filename = file.path("report","figures","gg-estimateC-density.pdf"),
+ggsave(gg3stage.estimateC, filename = file.path("report","figures","gg3stage-estimateC-density.pdf"),
        height = 10, width = 12)
 #+END_SRC
 
@@ -494,11 +890,13 @@ ggsave(gg.estimateC, filename = file.path("report","figures","gg-estimateC-densi
 
 #+ATTR_LaTeX: :width 1\textwidth :options trim={0 0 0 0} :placement [!h]
 #+CAPTION: Median unbiased estimate distribution conditional to the stage. Each row correspond to a different scenario.
-[[./figures/gg-estimateC-density.pdf]]
+[[./figures/gg3stage-estimateC-density.pdf]]
 
 \clearpage
 
 * Special cases
+
+** 2 stages
 
 Reason for stopping (efficacy, futility, Imax reached), continuing the
 trial (decreasing information, no boundary crossed), or concluding
@@ -559,26 +957,83 @@ stop for futility at interim 1                  0    0    0    0    0    0    0 
 
 \clearpage
 
+** 3 stages
+
+Reason for stopping (efficacy, futility, Imax reached), continuing the
+trial (decreasing information, no boundary crossed), or concluding
+(stop for futility at interim):
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+ftable(reason = res3stage[scenario %in% 1:8,reason],
+       method = res3stage[scenario %in% 1:8,method],
+       scenario = res3stage[scenario %in% 1:8,scenario])
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+                                    scenario    1    2    4    5    6    7    8
+reason                       method                                            
+efficacy                     1                529   20    9  566   10   69    5
+                             2                529   20    9  584   12   67    7
+                             3                566   22    9  609   12   71    5
+futility                     1                104 1556  747   98 1501   19  669
+                             2                104 1558  747   91 1464   20  663
+                             3                 94 1519  739   87 1461   19  665
+no boundary crossed          1               2904 2717 1152 2991 2723  362 1122
+                             2               2904 2714 1151 2979 2778  364 1131
+                             3               2868 2785 1163 2952 2788  359 1130
+stop for futility at interim 1                  0    0    0    0    0    0    0
+                             2                  0    0    0    0    0    0    0
+                             3                  2    1    0    0    0    0    0
+#+end_example
+
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+ftable(reason = res3stage[scenario %in% 9:18,reason],
+       method = res3stage[scenario %in% 9:18,method],
+       scenario = res3stage[scenario %in% 9:18,scenario])
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+                           scenario    9   10   11   12   13   14   15   16
+reason              method                                                 
+efficacy            1                782   20  794   16  749   18  764   21
+                    2                792   20  798   17  750   17  758   19
+                    3                814   21  802   16  804   18  770   21
+futility            1                131 2200  118 2242  128 2248  134 2282
+                    2                121 2148  120 2242  125 2243  127 2278
+                    3                119 2110  119 2216  118 2181  122 2257
+no boundary crossed 1               3794 2774 3785 2739 3852 2688 3809 2686
+                    2               3795 2825 3773 2737 3854 2694 3822 2692
+                    3               3762 2863 3768 2764 3777 2755 3813 2710
+#+end_example
+
+\clearpage
+
 * Reversal probability
+
+** 2 stages
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
 ## Indicator of reversal
-res2stage.reversal <- res2stage[, .(N = .N,
-                                    futility2efficacy = (stage[1] == 1)*(reason[1] == "futility")*(stage[2] == 1)*(decision[2] == "efficacy"),
-                                    efficacy2futility = (stage[1] == 1)*(reason[1] == "efficacy")*(stage[2] == 1)*(decision[2] == "futility")),
-                                by = c("method","seed","scenario","missing","binding","fixC","ar","hypo")]
-res2stage.reversal[is.na(futility2efficacy), futility2efficacy := 0]
-res2stage.reversal[is.na(efficacy2futility), efficacy2futility := 0]
+res2stage.reversal <- res2stage[,.(N=.N,
+                                   stopInterim = c(.SD[type=="interim"&decision=="stop",reason],"none")[1],
+                                   decision = c(.SD[type=="decision",decision],"none")[1],
+                                   futility2efficacy = FALSE,
+                                   efficacy2futility = FALSE),
+                                by = c("method","scenario","seed","missing","binding","fixC","ar","hypo")]
+res2stage.reversal[(stopInterim == "futility") & (decision == "efficacy"), futility2efficacy := TRUE]
+res2stage.reversal[(stopInterim == "efficacy") & (decision == "futility"), efficacy2futility := TRUE]
 #+END_SRC
 
 #+RESULTS:
 
+
 Percentage of time we observe a reversal:
-#+LaTeX: \begin{adjustwidth}{-1cm}{-1cm}
+
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
 res2stageS.reversal <- res2stage.reversal[, .(N = .N,
-                                              fu2eff = 100*mean(futility2efficacy),
-                                              eff2fu = 100*mean(efficacy2futility)),
+                                              fu2eff = mean2pc(futility2efficacy),
+                                              eff2fu = mean2pc(efficacy2futility)),
                                           by = c("method","scenario","missing","binding","fixC","ar","hypo")]
 tablePrint <- dcast(res2stageS.reversal, scenario + N + hypo + missing + ar + binding + fixC ~ method, value.var = c("fu2eff","eff2fu"))
 print(tablePrint[order(tablePrint$scenario),.SD,.SDcols = setdiff(names(tablePrint),"scenario")])
@@ -587,27 +1042,70 @@ print(tablePrint[order(tablePrint$scenario),.SD,.SDcols = setdiff(names(tablePri
 #+RESULTS:
 #+begin_example
         N  hypo missing ar binding  fixC fu2eff_1 fu2eff_2 fu2eff_3 eff2fu_1 eff2fu_2 eff2fu_3
- 1: 10000 power    TRUE 10    TRUE FALSE     0.57     0.61        0     0.17     0.20     1.07
- 2: 10000 typeI    TRUE 10    TRUE FALSE     0.10     0.09        0     0.11     0.11     0.34
- 3: 10000 power    TRUE  5    TRUE FALSE     0.08     0.08        0     0.07     0.07     0.67
- 4: 10000 typeI    TRUE  5    TRUE FALSE     0.02     0.02        0     0.02     0.02     0.13
- 5: 10000 power    TRUE 10    TRUE  TRUE     0.22     0.16        0     0.67     0.65     1.07
- 6: 10000 typeI    TRUE 10    TRUE  TRUE     0.02     0.01        0     0.21     0.21     0.34
- 7: 10000 power    TRUE  5    TRUE  TRUE     0.02     0.02        0     0.46     0.45     0.67
- 8: 10000 typeI    TRUE  5    TRUE  TRUE     0.00     0.00        0     0.08     0.08     0.13
- 9: 10000 power    TRUE 10   FALSE  TRUE     0.14     0.11        0     0.58     0.55     1.04
-10: 10000 typeI    TRUE 10   FALSE  TRUE     0.00     0.00        0     0.20     0.19     0.33
-11: 10000 power    TRUE  5   FALSE  TRUE     0.01     0.01        0     0.46     0.44     0.60
-12: 10000 typeI    TRUE  5   FALSE  TRUE     0.00     0.00        0     0.06     0.06     0.09
-13: 10000 power    TRUE 10   FALSE FALSE     0.41     0.42        0     0.21     0.22     1.04
-14: 10000 typeI    TRUE 10   FALSE FALSE     0.00     0.00        0     0.12     0.12     0.33
-15: 10000 power    TRUE  5   FALSE FALSE     0.03     0.03        0     0.04     0.04     0.60
-16: 10000 typeI    TRUE  5   FALSE FALSE     0.00     0.00        0     0.01     0.01     0.09
-17: 10000 power   FALSE  5    TRUE FALSE     0.06     0.07        0     0.04     0.04     0.63
-18: 10000 typeI   FALSE  5    TRUE FALSE     0.01     0.01        0     0.01     0.01     0.12
+ 1: 10000 power    TRUE 10    TRUE FALSE    0.57%    0.61%        0    0.17%    0.20%    1.07%
+ 2: 10000 typeI    TRUE 10    TRUE FALSE    0.10%    0.09%        0    0.11%    0.11%    0.34%
+ 3: 10000 power    TRUE  5    TRUE FALSE    0.08%    0.08%        0    0.07%    0.07%    0.67%
+ 4: 10000 typeI    TRUE  5    TRUE FALSE    0.02%    0.02%        0    0.02%    0.02%    0.13%
+ 5: 10000 power    TRUE 10    TRUE  TRUE    0.22%    0.16%        0    0.67%    0.65%    1.07%
+ 6: 10000 typeI    TRUE 10    TRUE  TRUE    0.02%    0.01%        0    0.21%    0.21%    0.34%
+ 7: 10000 power    TRUE  5    TRUE  TRUE    0.02%    0.02%        0    0.46%    0.45%    0.67%
+ 8: 10000 typeI    TRUE  5    TRUE  TRUE        0        0        0    0.08%    0.08%    0.13%
+ 9: 10000 power    TRUE 10   FALSE  TRUE    0.14%    0.11%        0    0.58%    0.55%    1.04%
+10: 10000 typeI    TRUE 10   FALSE  TRUE        0        0        0    0.20%    0.19%    0.33%
+11: 10000 power    TRUE  5   FALSE  TRUE    0.01%    0.01%        0    0.46%    0.44%    0.60%
+12: 10000 typeI    TRUE  5   FALSE  TRUE        0        0        0    0.06%    0.06%    0.09%
+13: 10000 power    TRUE 10   FALSE FALSE    0.41%    0.42%        0    0.21%    0.22%    1.04%
+14: 10000 typeI    TRUE 10   FALSE FALSE        0        0        0    0.12%    0.12%    0.33%
+15: 10000 power    TRUE  5   FALSE FALSE    0.03%    0.03%        0    0.04%    0.04%    0.60%
+16: 10000 typeI    TRUE  5   FALSE FALSE        0        0        0    0.01%    0.01%    0.09%
+17: 10000 power   FALSE  5    TRUE FALSE    0.06%    0.07%        0    0.04%    0.04%    0.63%
+18: 10000 typeI   FALSE  5    TRUE FALSE    0.01%    0.01%        0    0.01%    0.01%    0.12%
 #+end_example
 
-#+LaTeX: \end{adjustwidth}
+\clearpage
+
+** 3 stages
+#+BEGIN_SRC R :exports none :results output :session *R* :cache no
+## Indicator of reversal
+res3stage.reversal <- res3stage[,.(N=.N,
+                                   stopInterim = c(.SD[type=="interim"&decision=="stop",reason],"none")[1],
+                                   decision = c(.SD[type=="decision",decision],"none")[1],
+                                   futility2efficacy = FALSE,
+                                   efficacy2futility = FALSE),
+                                by = c("method","scenario","seed","missing","binding","fixC","ar","hypo")]
+res3stage.reversal[(stopInterim == "futility") & (decision == "efficacy"), futility2efficacy := TRUE]
+res3stage.reversal[(stopInterim == "efficacy") & (decision == "futility"), efficacy2futility := TRUE]
+#+END_SRC
+
+Percentage of time we observe a reversal:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res3stageS.reversal <- res3stage.reversal[, .(N = .N,
+                                              fu2eff = mean2pc(futility2efficacy),
+                                              eff2fu = mean2pc(efficacy2futility)),
+                                          by = c("method","scenario","missing","binding","fixC","ar","hypo")]
+tablePrint <- dcast(res3stageS.reversal, scenario + N + hypo + missing + ar + binding + fixC ~ method, value.var = c("fu2eff","eff2fu"))
+print(tablePrint[order(tablePrint$scenario),.SD,.SDcols = setdiff(names(tablePrint),"scenario")])
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+       N  hypo missing ar binding  fixC fu2eff_1 fu2eff_2 fu2eff_3 eff2fu_1 eff2fu_2 eff2fu_3
+ 1: 1868 power    TRUE 10    TRUE FALSE    0.32%    0.32%        0    0.05%    0.05%    0.59%
+ 2: 2481 typeI    TRUE 10    TRUE FALSE    0.20%    0.20%        0    0.08%    0.08%    0.16%
+ 3: 1127 typeI    TRUE  5    TRUE FALSE        0        0        0    0.09%    0.09%    0.18%
+ 4: 1934 power    TRUE 10    TRUE  TRUE        0        0        0    0.31%    0.31%    0.52%
+ 5: 2432 typeI    TRUE 10    TRUE  TRUE        0        0        0    0.16%    0.21%    0.21%
+ 6:  245 power    TRUE  5    TRUE  TRUE        0        0        0    0.41%    0.41%    0.41%
+ 7: 1042 typeI    TRUE  5    TRUE  TRUE        0        0        0    0.29%    0.38%    0.29%
+ 8: 2500 power    TRUE 10   FALSE  TRUE    0.04%        0        0    0.28%    0.32%    0.36%
+ 9: 2500 typeI    TRUE 10   FALSE  TRUE        0        0        0    0.16%    0.12%    0.20%
+10: 2500 power    TRUE  5   FALSE  TRUE        0        0        0    0.40%    0.24%    0.40%
+11: 2500 typeI    TRUE  5   FALSE  TRUE        0        0        0    0.04%    0.08%    0.04%
+12: 2500 power    TRUE 10   FALSE FALSE    0.12%    0.12%        0    0.04%    0.04%    0.44%
+13: 2483 typeI    TRUE 10   FALSE FALSE        0        0        0    0.16%    0.12%    0.20%
+14: 2500 power    TRUE  5   FALSE FALSE        0        0        0        0        0    0.16%
+15: 2500 typeI    TRUE  5   FALSE FALSE        0        0        0        0        0    0.08%
+#+end_example
 
 
 \clearpage
@@ -615,10 +1113,11 @@ print(tablePrint[order(tablePrint$scenario),.SD,.SDcols = setdiff(names(tablePri
 * Logical consistency of p-values/CIs
 
 ** Mismatch p-value / boundaries
+*** 2 stages
 
 When concluding for futility:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
-res2stage.PmismatchFU <- res2stage[decision=="futility",.(N = .N, mismatch = 100*mean(p.value_MUE<0.025, na.rm=TRUE)),
+res2stage.PmismatchFU <- res2stage[decision=="futility",.(N = .N, mismatch = mean2pc(p.value_MUE<0.025)),
                                   by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
 res2stageW.PmismatchFU <- dcast(res2stage.PmismatchFU, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
 res2stageW.PmismatchFU[order(scenario),.SD,.SDcols = setdiff(names(res2stageW.PmismatchFU),"scenario")]
@@ -649,7 +1148,7 @@ res2stageW.PmismatchFU[order(scenario),.SD,.SDcols = setdiff(names(res2stageW.Pm
 
 When concluding for efficacy:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
-res2stage.PmismatchEFF <- res2stage[decision=="efficacy",.(N = .N, mismatch = 100*mean(p.value_MUE>0.025, na.rm=TRUE)),
+res2stage.PmismatchEFF <- res2stage[decision=="efficacy",.(N = .N, mismatch = mean2pc(p.value_MUE>0.025)),
                                   by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
 res2stageW.PmismatchEFF <- dcast(res2stage.PmismatchEFF, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
 res2stageW.PmismatchEFF[order(scenario),.SD,.SDcols = setdiff(names(res2stageW.PmismatchEFF),"scenario")]
@@ -680,11 +1179,73 @@ res2stageW.PmismatchEFF[order(scenario),.SD,.SDcols = setdiff(names(res2stageW.P
 
 \clearpage
 
-** Mismatch confidence intervals / boundaries
+*** 3 stages
 
 When concluding for futility:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
-res2stage.CImismatchFU <- res2stage[decision=="futility",.(N = .N, mismatch = 100*mean(lower_MUE>0, na.rm=TRUE)),
+res3stage.PmismatchFU <- res3stage[decision=="futility",.(N = .N, mismatch = mean2pc(p.value_MUE<0.025)),
+                                  by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
+res3stageW.PmismatchFU <- dcast(res3stage.PmismatchFU, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
+res3stageW.PmismatchFU[order(scenario),.SD,.SDcols = setdiff(names(res3stageW.PmismatchFU),"scenario")]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power    TRUE 10    TRUE FALSE        0        0        0
+ 2: typeI    TRUE 10    TRUE FALSE        0        0        0
+ 3: typeI    TRUE  5    TRUE FALSE        0        0        0
+ 4: power    TRUE 10    TRUE  TRUE        0        0        0
+ 5: typeI    TRUE 10    TRUE  TRUE        0        0        0
+ 6: power    TRUE  5    TRUE  TRUE        0        0        0
+ 7: typeI    TRUE  5    TRUE  TRUE        0        0        0
+ 8: power    TRUE 10   FALSE  TRUE        0    0.16%        0
+ 9: typeI    TRUE 10   FALSE  TRUE        0        0        0
+10: power    TRUE  5   FALSE  TRUE        0        0        0
+11: typeI    TRUE  5   FALSE  TRUE        0        0        0
+12: power    TRUE 10   FALSE FALSE        0        0        0
+13: typeI    TRUE 10   FALSE FALSE        0        0        0
+14: power    TRUE  5   FALSE FALSE        0        0        0
+15: typeI    TRUE  5   FALSE FALSE        0        0        0
+#+end_example
+
+When concluding for efficacy:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res3stage.PmismatchEFF <- res3stage[decision=="efficacy",.(N = .N, mismatch = mean2pc(p.value_MUE>0.025)),
+                                  by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
+res3stageW.PmismatchEFF <- dcast(res3stage.PmismatchEFF, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
+res3stageW.PmismatchEFF[order(scenario),.SD,.SDcols = setdiff(names(res3stageW.PmismatchEFF),"scenario")]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power    TRUE 10    TRUE FALSE        0        0        0
+ 2: typeI    TRUE 10    TRUE FALSE        0        0        0
+ 3: typeI    TRUE  5    TRUE FALSE        0        0        0
+ 4: power    TRUE 10    TRUE  TRUE        0        0        0
+ 5: typeI    TRUE 10    TRUE  TRUE        0        0        0
+ 6: power    TRUE  5    TRUE  TRUE        0        0        0
+ 7: typeI    TRUE  5    TRUE  TRUE        0        0        0
+ 8: power    TRUE 10   FALSE  TRUE        0        0        0
+ 9: typeI    TRUE 10   FALSE  TRUE        0        0        0
+10: power    TRUE  5   FALSE  TRUE        0        0        0
+11: typeI    TRUE  5   FALSE  TRUE        0        0        0
+12: power    TRUE 10   FALSE FALSE        0    0.05%        0
+13: typeI    TRUE 10   FALSE FALSE        0        0        0
+14: power    TRUE  5   FALSE FALSE        0    0.05%        0
+15: typeI    TRUE  5   FALSE FALSE        0        0        0
+#+end_example
+
+\clearpage
+
+** Mismatch confidence intervals / boundaries
+
+*** 2 stages 
+
+When concluding for futility:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res2stage.CImismatchFU <- res2stage[decision=="futility",.(N = .N, mismatch = mean2pc(lower_MUE>0)),
                                   by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
 res2stageW.CImismatchFU <- dcast(res2stage.CImismatchFU, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
 res2stageW.CImismatchFU[order(scenario),.SD,.SDcols = setdiff(names(res2stageW.CImismatchFU),"scenario")]
@@ -692,29 +1253,120 @@ res2stageW.CImismatchFU[order(scenario),.SD,.SDcols = setdiff(names(res2stageW.C
 
 #+RESULTS:
 #+begin_example
-     hypo missing ar binding  fixC method 1 method 2  method 3
- 1: power    TRUE 10    TRUE FALSE        0        0 0.0000000
- 2: typeI    TRUE 10    TRUE FALSE        0        0 0.0000000
- 3: power    TRUE  5    TRUE FALSE        0        0 0.0000000
- 4: typeI    TRUE  5    TRUE FALSE        0        0 0.0000000
- 5: power    TRUE 10    TRUE  TRUE        0        0 0.0000000
- 6: typeI    TRUE 10    TRUE  TRUE        0        0 0.0000000
- 7: power    TRUE  5    TRUE  TRUE        0        0 0.0000000
- 8: typeI    TRUE  5    TRUE  TRUE        0        0 0.0000000
- 9: power    TRUE 10   FALSE  TRUE        0        0 7.8484438
-10: typeI    TRUE 10   FALSE  TRUE        0        0 0.1747533
-11: power    TRUE  5   FALSE  TRUE        0        0 4.1322314
-12: typeI    TRUE  5   FALSE  TRUE        0        0 0.0821946
-13: power    TRUE 10   FALSE FALSE        0        0 7.8484438
-14: typeI    TRUE 10   FALSE FALSE        0        0 0.1747533
-15: power    TRUE  5   FALSE FALSE        0        0 4.1322314
-16: typeI    TRUE  5   FALSE FALSE        0        0 0.0821946
-17: power   FALSE  5    TRUE FALSE        0        0 0.0000000
-18: typeI   FALSE  5    TRUE FALSE        0        0 0.0000000
+     hypo missing ar binding  fixC       method 1       method 2       method 3
+ 1: power    TRUE 10    TRUE FALSE              0              0  0 (NA: 0.05%)
+ 2: typeI    TRUE 10    TRUE FALSE              0              0              0
+ 3: power    TRUE  5    TRUE FALSE              0              0              0
+ 4: typeI    TRUE  5    TRUE FALSE              0              0              0
+ 5: power    TRUE 10    TRUE  TRUE              0              0  0 (NA: 0.05%)
+ 6: typeI    TRUE 10    TRUE  TRUE              0              0              0
+ 7: power    TRUE  5    TRUE  TRUE              0              0              0
+ 8: typeI    TRUE  5    TRUE  TRUE              0              0              0
+ 9: power    TRUE 10   FALSE  TRUE 0 (NA: 32.62%) 0 (NA: 30.38%) 0 (NA: 31.41%)
+10: typeI    TRUE 10   FALSE  TRUE  0 (NA: 0.21%)  0 (NA: 0.19%)  0 (NA: 0.34%)
+11: power    TRUE  5   FALSE  TRUE 0 (NA: 30.64%) 0 (NA: 29.26%) 0 (NA: 30.24%)
+12: typeI    TRUE  5   FALSE  TRUE  0 (NA: 0.06%)  0 (NA: 0.06%)  0 (NA: 0.09%)
+13: power    TRUE 10   FALSE FALSE 0 (NA: 30.41%) 0 (NA: 31.13%) 0 (NA: 31.41%)
+14: typeI    TRUE 10   FALSE FALSE  0 (NA: 0.12%)  0 (NA: 0.12%)  0 (NA: 0.34%)
+15: power    TRUE  5   FALSE FALSE 0 (NA: 29.09%) 0 (NA: 29.28%) 0 (NA: 30.24%)
+16: typeI    TRUE  5   FALSE FALSE  0 (NA: 0.01%)  0 (NA: 0.01%)  0 (NA: 0.09%)
+17: power   FALSE  5    TRUE FALSE              0              0              0
+18: typeI   FALSE  5    TRUE FALSE              0              0              0
 #+end_example
 
+When concluding for efficacy:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res2stage.CImismatchEFF <- res2stage[decision=="efficacy",.(N = .N, mismatch = mean2pc(lower_MUE<0)),
+                                  by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
+res2stageW.CImismatchEFF <- dcast(res2stage.CImismatchEFF, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
+res2stageW.CImismatchEFF[order(scenario),.SD,.SDcols = setdiff(names(res2stageW.CImismatchEFF),"scenario")]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC      method 1      method 2      method 3
+ 1: power    TRUE 10    TRUE FALSE 0 (NA: 0.02%) 0 (NA: 0.02%) 0 (NA: 0.01%)
+ 2: typeI    TRUE 10    TRUE FALSE             0             0             0
+ 3: power    TRUE  5    TRUE FALSE             0             0             0
+ 4: typeI    TRUE  5    TRUE FALSE             0             0             0
+ 5: power    TRUE 10    TRUE  TRUE 0 (NA: 0.02%) 0 (NA: 0.02%) 0 (NA: 0.01%)
+ 6: typeI    TRUE 10    TRUE  TRUE             0             0             0
+ 7: power    TRUE  5    TRUE  TRUE             0             0             0
+ 8: typeI    TRUE  5    TRUE  TRUE             0             0             0
+ 9: power    TRUE 10   FALSE  TRUE 0 (NA: 0.03%) 0 (NA: 0.02%) 0 (NA: 0.01%)
+10: typeI    TRUE 10   FALSE  TRUE             0             0             0
+11: power    TRUE  5   FALSE  TRUE 0 (NA: 0.01%) 0 (NA: 0.02%) 0 (NA: 0.02%)
+12: typeI    TRUE  5   FALSE  TRUE             0             0             0
+13: power    TRUE 10   FALSE FALSE 0 (NA: 0.02%) 0 (NA: 0.02%) 0 (NA: 0.01%)
+14: typeI    TRUE 10   FALSE FALSE             0             0             0
+15: power    TRUE  5   FALSE FALSE 0 (NA: 0.01%) 0 (NA: 0.01%) 0 (NA: 0.02%)
+16: typeI    TRUE  5   FALSE FALSE             0             0             0
+17: power   FALSE  5    TRUE FALSE 0 (NA: 0.02%) 0 (NA: 0.02%) 0 (NA: 0.03%)
+18: typeI   FALSE  5    TRUE FALSE             0             0             0
+#+end_example
+
+*** 3 stages 
+
+When concluding for futility:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res3stage.CImismatchFU <- res3stage[decision=="futility",.(N = .N, mismatch = mean2pc(lower_MUE>0)),
+                                  by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
+res3stageW.CImismatchFU <- dcast(res3stage.CImismatchFU, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
+res3stageW.CImismatchFU[order(scenario),.SD,.SDcols = setdiff(names(res3stageW.CImismatchFU),"scenario")]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC           method 1       method 2           method 3
+ 1: power    TRUE 10    TRUE FALSE                  0              0                  0
+ 2: typeI    TRUE 10    TRUE FALSE                  0              0                  0
+ 3: typeI    TRUE  5    TRUE FALSE                  0              0                  0
+ 4: power    TRUE 10    TRUE  TRUE                  0              0                  0
+ 5: typeI    TRUE 10    TRUE  TRUE                  0              0                  0
+ 6: power    TRUE  5    TRUE  TRUE                  0              0                  0
+ 7: typeI    TRUE  5    TRUE  TRUE                  0              0                  0
+ 8: power    TRUE 10   FALSE  TRUE 0.20% (NA: 21.43%) 0 (NA: 20.42%) 1.97% (NA: 18.88%)
+ 9: typeI    TRUE 10   FALSE  TRUE      0 (NA: 0.12%)  0 (NA: 0.08%)  0.16% (NA: 0.04%)
+10: power    TRUE  5   FALSE  TRUE     0 (NA: 19.65%) 0 (NA: 20.36%) 2.51% (NA: 18.33%)
+11: typeI    TRUE  5   FALSE  TRUE      0 (NA: 0.04%)  0 (NA: 0.04%)              0.04%
+12: power    TRUE 10   FALSE FALSE     0 (NA: 20.39%) 0 (NA: 20.00%) 2.99% (NA: 18.51%)
+13: typeI    TRUE 10   FALSE FALSE      0 (NA: 0.17%)  0 (NA: 0.12%)  0.04% (NA: 0.17%)
+14: power    TRUE  5   FALSE FALSE     0 (NA: 21.54%) 0 (NA: 20.52%) 0.80% (NA: 19.61%)
+15: typeI    TRUE  5   FALSE FALSE                  0              0              0.08%
+#+end_example
+
+When concluding for efficacy:
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res3stage.CImismatchEFF <- res3stage[decision=="efficacy",.(N = .N, mismatch = mean2pc(lower_MUE<0)),
+                                  by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
+res3stageW.CImismatchEFF <- dcast(res3stage.CImismatchEFF, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
+res3stageW.CImismatchEFF[order(scenario),.SD,.SDcols = setdiff(names(res3stageW.CImismatchEFF),"scenario")]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power    TRUE 10    TRUE FALSE        0        0        0
+ 2: typeI    TRUE 10    TRUE FALSE        0        0        0
+ 3: typeI    TRUE  5    TRUE FALSE        0        0        0
+ 4: power    TRUE 10    TRUE  TRUE        0        0        0
+ 5: typeI    TRUE 10    TRUE  TRUE        0        0        0
+ 6: power    TRUE  5    TRUE  TRUE        0        0        0
+ 7: typeI    TRUE  5    TRUE  TRUE        0        0        0
+ 8: power    TRUE 10   FALSE  TRUE        0        0        0
+ 9: typeI    TRUE 10   FALSE  TRUE        0        0        0
+10: power    TRUE  5   FALSE  TRUE        0        0        0
+11: typeI    TRUE  5   FALSE  TRUE        0        0        0
+12: power    TRUE 10   FALSE FALSE        0        0        0
+13: typeI    TRUE 10   FALSE FALSE        0        0        0
+14: power    TRUE  5   FALSE FALSE        0        0        0
+15: typeI    TRUE  5   FALSE FALSE        0        0        0
+#+end_example
+
+
+*** debug NA (2 stage)                                           :noexport:
 This only occurs with method 3 for non-binding futility rules and
-concluding futility. Moreover in all occurence, recruitement in the
+concluding futility. Moreover in all occurences, recruitement in the
 trial was stopped after the first interim and conclusion was reached at decision:
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
 ## find scenario & seed where mismatch occurs
@@ -833,40 +1485,9 @@ res2stage[paste0(scenario,"-",seed) %in% mismatchF.scenarseed & method == 2 & ty
 : 1: efficacy 9-996631745
 : 2: futility 9-657706742
 
-
-When concluding for efficacy:
-#+BEGIN_SRC R :exports results :results output :session *R* :cache no
-res2stage.CImismatchEFF <- res2stage[decision=="efficacy",.(N = .N, mismatch = 100*mean(lower_MUE<0, na.rm=TRUE)),
-                                  by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
-res2stageW.CImismatchEFF <- dcast(res2stage.CImismatchEFF, scenario + hypo + missing + ar + binding + fixC ~ method.char, value.var = "mismatch")
-res2stageW.CImismatchEFF[order(scenario),.SD,.SDcols = setdiff(names(res2stageW.CImismatchEFF),"scenario")]
-#+END_SRC
-
-#+RESULTS:
-#+begin_example
-     hypo missing ar binding  fixC method 1 method 2 method 3
- 1: power    TRUE 10    TRUE FALSE        0        0        0
- 2: typeI    TRUE 10    TRUE FALSE        0        0        0
- 3: power    TRUE  5    TRUE FALSE        0        0        0
- 4: typeI    TRUE  5    TRUE FALSE        0        0        0
- 5: power    TRUE 10    TRUE  TRUE        0        0        0
- 6: typeI    TRUE 10    TRUE  TRUE        0        0        0
- 7: power    TRUE  5    TRUE  TRUE        0        0        0
- 8: typeI    TRUE  5    TRUE  TRUE        0        0        0
- 9: power    TRUE 10   FALSE  TRUE        0        0        0
-10: typeI    TRUE 10   FALSE  TRUE        0        0        0
-11: power    TRUE  5   FALSE  TRUE        0        0        0
-12: typeI    TRUE  5   FALSE  TRUE        0        0        0
-13: power    TRUE 10   FALSE FALSE        0        0        0
-14: typeI    TRUE 10   FALSE FALSE        0        0        0
-15: power    TRUE  5   FALSE FALSE        0        0        0
-16: typeI    TRUE  5   FALSE FALSE        0        0        0
-17: power   FALSE  5    TRUE FALSE        0        0        0
-18: typeI   FALSE  5    TRUE FALSE        0        0        0
-#+end_example
-
 ** Range of p-values
 
+*** 2 stages
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
 res2.stage.rangep <- res2stage[,.(range.p_MUE = paste0("[",paste(round(range(p.value_MUE, na.rm = TRUE),4), collapse = ";"),"]")),
                                by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
@@ -899,37 +1520,68 @@ res2W.stage.rangep[order(scenario),.SD,.SDcols = setdiff(names(res2W.stage.range
 
 \clearpage
 
+*** 3 stages
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res3.stage.rangep <- res3stage[,.(range.p_MUE = paste0("[",paste(round(range(p.value_MUE, na.rm = TRUE),4), collapse = ";"),"]")),
+                               by = c("method.char","scenario","missing","binding","fixC","ar","hypo")]
+res3W.stage.rangep <- dcast(res3.stage.rangep, scenario+missing+binding+fixC+ar+hypo~method.char, value.var = "range.p_MUE")
+res3W.stage.rangep[order(scenario),.SD,.SDcols = setdiff(names(res3W.stage.rangep),"scenario")]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+    missing binding  fixC ar  hypo        method 1        method 2        method 3
+ 1:    TRUE    TRUE FALSE 10 power      [0;0.9417]      [0;0.9417]      [0;0.9426]
+ 2:    TRUE    TRUE FALSE 10 typeI  [1e-04;0.9998]  [1e-04;0.9998]  [4e-04;0.9998]
+ 3:    TRUE    TRUE FALSE  5 typeI  [1e-04;0.9998]  [1e-04;0.9998]  [3e-04;0.9998]
+ 4:    TRUE    TRUE  TRUE 10 power  [3e-04;0.9071]  [3e-04;0.8993]  [1e-04;0.9091]
+ 5:    TRUE    TRUE  TRUE 10 typeI [0.0013;0.9995] [0.0014;0.9995] [0.0012;0.9995]
+ 6:    TRUE    TRUE  TRUE  5 power  [1e-04;0.8871]  [1e-04;0.8987]      [0;0.8873]
+ 7:    TRUE    TRUE  TRUE  5 typeI  [9e-04;0.9975]  [9e-04;0.9979]  [9e-04;0.9975]
+ 8:    TRUE   FALSE  TRUE 10 power       [3e-04;1]       [2e-04;1]           [0;1]
+ 9:    TRUE   FALSE  TRUE 10 typeI       [8e-04;1]       [8e-04;1]       [7e-04;1]
+10:    TRUE   FALSE  TRUE  5 power       [1e-04;1]           [0;1]           [0;1]
+11:    TRUE   FALSE  TRUE  5 typeI      [0.0012;1]      [0.0012;1]      [0.0012;1]
+12:    TRUE   FALSE FALSE 10 power           [0;1]           [0;1]           [0;1]
+13:    TRUE   FALSE FALSE 10 typeI       [7e-04;1]       [7e-04;1]       [8e-04;1]
+14:    TRUE   FALSE FALSE  5 power           [0;1]           [0;1]           [0;1]
+15:    TRUE   FALSE FALSE  5 typeI  [1e-04;0.9999]  [1e-04;0.9998]  [1e-04;0.9999]
+#+end_example
+
+\clearpage 
+
 * Coverage
 
+** 2 stages
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
 res2stage.coverage <- res2stage[decision %in% c("futility","efficacy"),
                                 .(N = .N,
-                                  coverage = 100*mean( (lower_MUE <= truth) & (truth <= upper_MUE), na.rm = TRUE)),
+                                  coverage = mean2pc( (lower_MUE <= truth) & (truth <= upper_MUE))),
                                 by = c("method.char","missing","binding","fixC","ar","hypo")]
 dcast(res2stage.coverage, hypo + missing + ar + binding + fixC ~ method.char, value.var = "coverage")
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
-     hypo missing ar binding  fixC method 1 method 2 method 3
- 1: power   FALSE  5    TRUE FALSE 94.79000 94.79000 94.92000
- 2: power    TRUE  5   FALSE FALSE 95.86382 95.86207 95.66505
- 3: power    TRUE  5   FALSE  TRUE 96.30458 96.26486 95.66505
- 4: power    TRUE  5    TRUE FALSE 94.74000 94.74000 94.87000
- 5: power    TRUE  5    TRUE  TRUE 95.08000 95.08000 94.87000
- 6: power    TRUE 10   FALSE FALSE 95.98172 96.04941 95.75968
- 7: power    TRUE 10   FALSE  TRUE 96.79139 96.75297 95.75968
- 8: power    TRUE 10    TRUE FALSE 94.84000 94.82000 95.12000
- 9: power    TRUE 10    TRUE  TRUE 95.73000 95.65000 95.12000
-10: typeI   FALSE  5    TRUE FALSE 95.14000 95.14000 95.15000
-11: typeI    TRUE  5   FALSE FALSE 94.86949 94.86949 95.39954
-12: typeI    TRUE  5   FALSE  TRUE 94.91695 94.90745 95.39954
-13: typeI    TRUE  5    TRUE FALSE 94.82000 94.82000 94.87000
-14: typeI    TRUE  5    TRUE  TRUE 94.90000 94.91000 94.87000
-15: typeI    TRUE 10   FALSE FALSE 95.01402 95.01402 96.04407
-16: typeI    TRUE 10   FALSE  TRUE 95.09116 95.07162 96.04407
-17: typeI    TRUE 10    TRUE FALSE 95.16000 95.19000 95.21000
-18: typeI    TRUE 10    TRUE  TRUE 95.34000 95.36000 95.21000
+     hypo missing ar binding  fixC           method 1           method 2           method 3
+ 1: power   FALSE  5    TRUE FALSE 94.79% (NA: 0.02%) 94.79% (NA: 0.02%) 94.92% (NA: 0.02%)
+ 2: power    TRUE  5   FALSE FALSE 95.86% (NA: 5.72%) 95.86% (NA: 5.76%) 95.67% (NA: 5.48%)
+ 3: power    TRUE  5   FALSE  TRUE 96.30% (NA: 6.16%) 96.26% (NA: 5.86%) 95.67% (NA: 5.48%)
+ 4: power    TRUE  5    TRUE FALSE             94.74%             94.74%             94.87%
+ 5: power    TRUE  5    TRUE  TRUE             95.08%             95.08%             94.87%
+ 6: power    TRUE 10   FALSE FALSE 95.90% (NA: 5.95%) 95.89% (NA: 6.11%) 95.74% (NA: 5.30%)
+ 7: power    TRUE 10   FALSE  TRUE 96.69% (NA: 6.59%) 96.71% (NA: 6.06%) 95.74% (NA: 5.30%)
+ 8: power    TRUE 10    TRUE FALSE 94.84% (NA: 0.02%) 94.82% (NA: 0.02%) 95.12% (NA: 0.02%)
+ 9: power    TRUE 10    TRUE  TRUE 95.73% (NA: 0.02%) 95.65% (NA: 0.02%) 95.12% (NA: 0.02%)
+10: typeI   FALSE  5    TRUE FALSE 95.13% (NA: 0.15%) 95.13% (NA: 0.15%) 95.14% (NA: 0.17%)
+11: typeI    TRUE  5   FALSE FALSE 94.87% (NA: 0.01%) 94.87% (NA: 0.01%) 94.96% (NA: 0.09%)
+12: typeI    TRUE  5   FALSE  TRUE 94.92% (NA: 0.06%) 94.91% (NA: 0.06%) 94.96% (NA: 0.09%)
+13: typeI    TRUE  5    TRUE FALSE 94.81% (NA: 0.13%) 94.81% (NA: 0.13%) 94.86% (NA: 0.13%)
+14: typeI    TRUE  5    TRUE  TRUE 94.89% (NA: 0.13%) 94.90% (NA: 0.11%) 94.86% (NA: 0.13%)
+15: typeI    TRUE 10   FALSE FALSE 95.01% (NA: 0.12%) 95.01% (NA: 0.12%) 95.29% (NA: 0.33%)
+16: typeI    TRUE 10   FALSE  TRUE 95.09% (NA: 0.20%) 95.07% (NA: 0.19%) 95.29% (NA: 0.33%)
+17: typeI    TRUE 10    TRUE FALSE 95.16% (NA: 0.09%) 95.19% (NA: 0.10%) 95.20% (NA: 0.13%)
+18: typeI    TRUE 10    TRUE  TRUE 95.34% (NA: 0.09%) 95.36% (NA: 0.07%) 95.20% (NA: 0.13%)
 #+end_example
 
 Average width of the confidence intervals
@@ -945,25 +1597,25 @@ dcast(res2stage.width, hypo + missing + ar + binding + fixC ~ method.char, value
 
 #+RESULTS:
 #+begin_example
-     hypo missing ar binding  fixC  method 1  method 2 method 3
- 1: power   FALSE  5    TRUE FALSE 1.0517981 1.0518066 1.053592
- 2: power    TRUE  5   FALSE FALSE 1.0355785 1.0355525 1.030753
- 3: power    TRUE  5   FALSE  TRUE 1.0410966 1.0414270 1.030753
- 4: power    TRUE  5    TRUE FALSE 1.0513207 1.0513607 1.052634
- 5: power    TRUE  5    TRUE  TRUE 1.0570088 1.0563598 1.052629
- 6: power    TRUE 10   FALSE FALSE 1.0469276 1.0468858 1.039428
- 7: power    TRUE 10   FALSE  TRUE 1.0634581 1.0625586 1.039438
- 8: power    TRUE 10    TRUE FALSE 1.0624494 1.0626858 1.062576
- 9: power    TRUE 10    TRUE  TRUE 1.0765867 1.0753692 1.062555
-10: typeI   FALSE  5    TRUE FALSE 1.0431774 1.0431218 1.046821
-11: typeI    TRUE  5   FALSE FALSE 0.9997886 0.9998440 1.018905
-12: typeI    TRUE  5   FALSE  TRUE 0.9996979 0.9996859 1.018905
-13: typeI    TRUE  5    TRUE FALSE 1.0416221 1.0415882 1.045180
-14: typeI    TRUE  5    TRUE  TRUE 1.0416986 1.0423673 1.045180
-15: typeI    TRUE 10   FALSE FALSE 1.0182710 1.0227130 1.049875
-16: typeI    TRUE 10   FALSE  TRUE 1.0183637 1.0101640 1.049882
-17: typeI    TRUE 10    TRUE FALSE 1.0459447 1.0453954 1.056218
-18: typeI    TRUE 10    TRUE  TRUE 1.0461003 1.0478314 1.056215
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE   1.0517   1.0517    1.054
+ 2: power    TRUE  5   FALSE FALSE   1.0355   1.0355    1.037
+ 3: power    TRUE  5   FALSE  TRUE   1.0406   1.0406    1.037
+ 4: power    TRUE  5    TRUE FALSE   1.0512   1.0512    1.053
+ 5: power    TRUE  5    TRUE  TRUE   1.0569   1.0562    1.053
+ 6: power    TRUE 10   FALSE FALSE   1.0465   1.0463    1.048
+ 7: power    TRUE 10   FALSE  TRUE   1.0603   1.0603    1.048
+ 8: power    TRUE 10    TRUE FALSE   1.0623   1.0625    1.062
+ 9: power    TRUE 10    TRUE  TRUE   1.0764   1.0752    1.062
+10: typeI   FALSE  5    TRUE FALSE   1.0427   1.0427    1.046
+11: typeI    TRUE  5   FALSE FALSE   0.9995   0.9994    1.012
+12: typeI    TRUE  5   FALSE  TRUE   0.9994   0.9995    1.012
+13: typeI    TRUE  5    TRUE FALSE   1.0412   1.0411    1.045
+14: typeI    TRUE  5    TRUE  TRUE   1.0413   1.0420    1.045
+15: typeI    TRUE 10   FALSE FALSE   0.9927   0.9926    1.040
+16: typeI    TRUE 10   FALSE  TRUE   0.9926   0.9935    1.040
+17: typeI    TRUE 10    TRUE FALSE   1.0456   1.0450    1.056
+18: typeI    TRUE 10    TRUE  TRUE   1.0457   1.0475    1.056
 #+end_example
 
 Average ratio between the length of the MUE CIs vs. the ML CIs
@@ -979,30 +1631,123 @@ dcast(res2stage.length, hypo + missing + ar + binding + fixC ~ method.char, valu
 
 #+RESULTS:
 #+begin_example
-     hypo missing ar binding  fixC  method 1  method 2 method 3
- 1: power   FALSE  5    TRUE FALSE 1.0554164 1.0554324 1.057018
- 2: power    TRUE  5   FALSE FALSE 1.0477000 1.0477317 1.043003
- 3: power    TRUE  5   FALSE  TRUE 1.0532445 1.0529897 1.043003
- 4: power    TRUE  5    TRUE FALSE 1.0556658 1.0557135 1.056796
- 5: power    TRUE  5    TRUE  TRUE 1.0607293 1.0599867 1.056792
- 6: power    TRUE 10   FALSE FALSE 1.0539283 1.0540501 1.045799
- 7: power    TRUE 10   FALSE  TRUE 1.0695786 1.0683330 1.045809
- 8: power    TRUE 10    TRUE FALSE 1.0641965 1.0644562 1.064036
- 9: power    TRUE 10    TRUE  TRUE 1.0773006 1.0760174 1.064016
-10: typeI   FALSE  5    TRUE FALSE 1.0496649 1.0496083 1.053799
-11: typeI    TRUE  5   FALSE FALSE 0.9997633 0.9998237 1.019473
-12: typeI    TRUE  5   FALSE  TRUE 0.9998075 0.9997468 1.019473
-13: typeI    TRUE  5    TRUE FALSE 1.0486330 1.0486034 1.052752
-14: typeI    TRUE  5    TRUE  TRUE 1.0487063 1.0493717 1.052752
-15: typeI    TRUE 10   FALSE FALSE 1.0194380 1.0240187 1.051009
-16: typeI    TRUE 10   FALSE  TRUE 1.0196328 1.0111242 1.051015
-17: typeI    TRUE 10    TRUE FALSE 1.0497075 1.0491459 1.060913
-18: typeI    TRUE 10    TRUE  TRUE 1.0498579 1.0516113 1.060910
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE   1.0553   1.0553    1.057
+ 2: power    TRUE  5   FALSE FALSE   1.0476   1.0476    1.049
+ 3: power    TRUE  5   FALSE  TRUE   1.0528   1.0524    1.049
+ 4: power    TRUE  5    TRUE FALSE   1.0555   1.0556    1.057
+ 5: power    TRUE  5    TRUE  TRUE   1.0606   1.0598    1.057
+ 6: power    TRUE 10   FALSE FALSE   1.0534   1.0533    1.055
+ 7: power    TRUE 10   FALSE  TRUE   1.0669   1.0664    1.055
+ 8: power    TRUE 10    TRUE FALSE   1.0640   1.0643    1.064
+ 9: power    TRUE 10    TRUE  TRUE   1.0771   1.0759    1.064
+10: typeI   FALSE  5    TRUE FALSE   1.0489   1.0488    1.053
+11: typeI    TRUE  5   FALSE FALSE   0.9994   0.9994    1.013
+12: typeI    TRUE  5   FALSE  TRUE   0.9994   0.9995    1.013
+13: typeI    TRUE  5    TRUE FALSE   1.0478   1.0478    1.052
+14: typeI    TRUE  5    TRUE  TRUE   1.0479   1.0486    1.052
+15: typeI    TRUE 10   FALSE FALSE   0.9928   0.9926    1.041
+16: typeI    TRUE 10   FALSE  TRUE   0.9928   0.9937    1.041
+17: typeI    TRUE 10    TRUE FALSE   1.0492   1.0486    1.060
+18: typeI    TRUE 10    TRUE  TRUE   1.0493   1.0511    1.060
 #+end_example
 
 \clearpage
 
-* Percentage of missing values
+** 3 stages
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res3stage.coverage <- res3stage[decision %in% c("futility","efficacy"),
+                                .(N = .N,
+                                  coverage = mean2pc( (lower_MUE <= truth) & (truth <= upper_MUE))),
+                                by = c("method.char","missing","binding","fixC","ar","hypo")]
+dcast(res3stage.coverage, hypo + missing + ar + binding + fixC ~ method.char, value.var = "coverage")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC           method 1           method 2           method 3
+ 1: power    TRUE  5   FALSE FALSE 95.44% (NA: 5.36%) 95.24% (NA: 5.08%) 95.16% (NA: 4.88%)
+ 2: power    TRUE  5   FALSE  TRUE 96.17% (NA: 4.96%) 96.21% (NA: 5.00%) 95.85% (NA: 4.64%)
+ 3: power    TRUE  5    TRUE  TRUE             90.20%             91.02%             90.61%
+ 4: power    TRUE 10   FALSE FALSE 96.00% (NA: 5.04%) 95.88% (NA: 4.92%) 95.64% (NA: 4.56%)
+ 5: power    TRUE 10   FALSE  TRUE 96.19% (NA: 5.40%) 96.00% (NA: 5.04%) 95.89% (NA: 4.72%)
+ 6: power    TRUE 10    TRUE FALSE             94.65%             94.65%             94.43%
+ 7: power    TRUE 10    TRUE  TRUE             95.09%             94.83%             95.04%
+ 8: typeI    TRUE  5   FALSE FALSE             94.52%             94.36%             94.40%
+ 9: typeI    TRUE  5   FALSE  TRUE 95.28% (NA: 0.04%) 95.24% (NA: 0.04%)             95.24%
+10: typeI    TRUE  5    TRUE FALSE             93.97%             93.97%             93.97%
+11: typeI    TRUE  5    TRUE  TRUE             95.68%             95.49%             95.59%
+12: typeI    TRUE 10   FALSE FALSE 94.68% (NA: 0.16%) 94.40% (NA: 0.12%) 94.51% (NA: 0.16%)
+13: typeI    TRUE 10   FALSE  TRUE 95.27% (NA: 0.12%) 95.16% (NA: 0.08%) 95.32% (NA: 0.04%)
+14: typeI    TRUE 10    TRUE FALSE             94.60%             94.60%             94.88%
+15: typeI    TRUE 10    TRUE  TRUE             95.60%             95.35%             95.48%
+#+end_example
+
+Average width of the confidence intervals
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res3stage.width <- res3stage[decision %in% c("futility","efficacy"),
+                             .(N = .N,
+                               width.naive = mean(upper_ML-lower_ML, na.rm = TRUE),
+                               width.MUE = mean(upper_MUE-lower_MUE, na.rm = TRUE)),
+                             by = c("method.char","missing","binding","fixC","ar","hypo")]
+res3stage.width[, width.ratio := width.MUE/width.naive]
+dcast(res3stage.width, hypo + missing + ar + binding + fixC ~ method.char, value.var = "width.ratio")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power    TRUE  5   FALSE FALSE   1.0476   1.0476   1.0473
+ 2: power    TRUE  5   FALSE  TRUE   1.0501   1.0489   1.0436
+ 3: power    TRUE  5    TRUE  TRUE   1.0590   1.0594   1.0605
+ 4: power    TRUE 10   FALSE FALSE   1.0723   1.0723   1.0699
+ 5: power    TRUE 10   FALSE  TRUE   1.0774   1.0779   1.0713
+ 6: power    TRUE 10    TRUE FALSE   1.0862   1.0860   1.0883
+ 7: power    TRUE 10    TRUE  TRUE   1.0930   1.0927   1.0907
+ 8: typeI    TRUE  5   FALSE FALSE   0.9970   0.9971   0.9989
+ 9: typeI    TRUE  5   FALSE  TRUE   0.9959   0.9965   0.9987
+10: typeI    TRUE  5    TRUE FALSE   1.0812   1.0799   1.0837
+11: typeI    TRUE  5    TRUE  TRUE   1.0822   1.0822   1.0859
+12: typeI    TRUE 10   FALSE FALSE   0.9938   0.9937   1.0065
+13: typeI    TRUE 10   FALSE  TRUE   0.9937   0.9945   1.0063
+14: typeI    TRUE 10    TRUE FALSE   1.1219   1.1220   1.1268
+15: typeI    TRUE 10    TRUE  TRUE   1.1223   1.1214   1.1273
+#+end_example
+
+Average ratio between the length of the MUE CIs vs. the ML CIs
+#+BEGIN_SRC R :exports results :results output :session *R* :cache no
+res3stage.length <- res3stage[decision %in% c("futility","efficacy"),
+                                .(N = .N,
+                                  length_MUE = mean(upper_MUE-lower_MUE, na.rm = TRUE),
+                                  length_ML = mean(upper_ML-lower_ML, na.rm = TRUE),
+                                  length_ratio = mean((upper_MUE-lower_MUE)/(upper_ML-lower_ML), na.rm = TRUE)),
+                                by = c("method.char","missing","binding","fixC","ar","hypo")]
+dcast(res3stage.length, hypo + missing + ar + binding + fixC ~ method.char, value.var = "length_ratio")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power    TRUE  5   FALSE FALSE   1.0561   1.0559   1.0556
+ 2: power    TRUE  5   FALSE  TRUE   1.0576   1.0573   1.0513
+ 3: power    TRUE  5    TRUE  TRUE   1.0588   1.0596   1.0605
+ 4: power    TRUE 10   FALSE FALSE   1.0746   1.0745   1.0722
+ 5: power    TRUE 10   FALSE  TRUE   1.0801   1.0802   1.0738
+ 6: power    TRUE 10    TRUE FALSE   1.0830   1.0828   1.0850
+ 7: power    TRUE 10    TRUE  TRUE   1.0894   1.0891   1.0873
+ 8: typeI    TRUE  5   FALSE FALSE   0.9967   0.9968   0.9989
+ 9: typeI    TRUE  5   FALSE  TRUE   0.9960   0.9965   0.9988
+10: typeI    TRUE  5    TRUE FALSE   1.0851   1.0837   1.0881
+11: typeI    TRUE  5    TRUE  TRUE   1.0853   1.0854   1.0897
+12: typeI    TRUE 10   FALSE FALSE   0.9939   0.9938   1.0069
+13: typeI    TRUE 10   FALSE  TRUE   0.9937   0.9944   1.0065
+14: typeI    TRUE 10    TRUE FALSE   1.1218   1.1219   1.1269
+15: typeI    TRUE 10    TRUE  TRUE   1.1224   1.1214   1.1275
+#+end_example
+
+\clearpage
+
+* Percentage of missing values (2 stages)
 
 #+BEGIN_SRC R :exports none :results output :session *R* :cache no
 res2stage.nXinterim <- res2stage[,.(N = .N, nX1 = unique(nX1.interim), nX2 = unique(nX2.interim), nX3 = unique(nX3.interim)),
@@ -1059,7 +1804,7 @@ res2stageS.nXinterim[method==1]
 
 \clearpage
 
-* Information
+* Information (2 stages)
 
 Percentage of information for method 1[fn::average over the reached stages]:
 #+BEGIN_SRC R :exports results :results output :session *R* :cache no
@@ -1074,25 +1819,25 @@ print(tablePrint, row.names = FALSE)
 
 #+RESULTS:
 #+begin_example
- scenario missing binding  fixC ar  interim decision     final
-        1    TRUE    TRUE FALSE 10 54.63712 75.34460 102.69691
-        2    TRUE    TRUE FALSE 10 54.63712 74.98217 102.36588
-        3    TRUE    TRUE FALSE  5 53.26864 64.03618 102.73604
-        4    TRUE    TRUE FALSE  5 53.26864 63.58436 102.37416
-        5    TRUE    TRUE  TRUE 10 54.63712 75.34460 102.69691
-        6    TRUE    TRUE  TRUE 10 54.63712 74.98217 102.36588
-        7    TRUE    TRUE  TRUE  5 53.26864 64.03618 102.73604
-        8    TRUE    TRUE  TRUE  5 53.26864 63.58436 102.37416
-        9    TRUE   FALSE  TRUE 10 54.50012 74.96442 102.53821
-       10    TRUE   FALSE  TRUE 10 54.50012 75.17490 103.12700
-       11    TRUE   FALSE  TRUE  5 53.15854 63.71662 102.62539
-       12    TRUE   FALSE  TRUE  5 53.15854 64.60960 103.12516
-       13    TRUE   FALSE FALSE 10 54.50012 74.96442 102.53821
-       14    TRUE   FALSE FALSE 10 54.50012 75.17490 103.12700
-       15    TRUE   FALSE FALSE  5 53.15854 63.71662 102.62539
-       16    TRUE   FALSE FALSE  5 53.15854 64.60960 103.12516
-       17   FALSE    TRUE FALSE  5 52.06840 63.77019  99.96969
-       18   FALSE    TRUE FALSE  5 52.06840 63.21929  99.62860
+ scenario missing binding  fixC ar interim decision  final
+        1    TRUE    TRUE FALSE 10   54.64    75.34 102.70
+        2    TRUE    TRUE FALSE 10   54.64    74.98 102.37
+        3    TRUE    TRUE FALSE  5   53.27    64.04 102.74
+        4    TRUE    TRUE FALSE  5   53.27    63.58 102.37
+        5    TRUE    TRUE  TRUE 10   54.64    75.34 102.70
+        6    TRUE    TRUE  TRUE 10   54.64    74.98 102.37
+        7    TRUE    TRUE  TRUE  5   53.27    64.04 102.74
+        8    TRUE    TRUE  TRUE  5   53.27    63.58 102.37
+        9    TRUE   FALSE  TRUE 10   54.50    74.96 102.54
+       10    TRUE   FALSE  TRUE 10   54.50    75.17 103.13
+       11    TRUE   FALSE  TRUE  5   53.16    63.72 102.63
+       12    TRUE   FALSE  TRUE  5   53.16    64.61 103.13
+       13    TRUE   FALSE FALSE 10   54.50    74.96 102.54
+       14    TRUE   FALSE FALSE 10   54.50    75.17 103.13
+       15    TRUE   FALSE FALSE  5   53.16    63.72 102.63
+       16    TRUE   FALSE FALSE  5   53.16    64.61 103.13
+       17   FALSE    TRUE FALSE  5   52.07    63.77  99.97
+       18   FALSE    TRUE FALSE  5   52.07    63.22  99.63
 #+end_example
 
 Similar results for other methods.
@@ -1185,7 +1930,7 @@ res2stage[scenario == 10,][1]
 #+LATEX_HEADER: \RequirePackage{colortbl} % arrayrulecolor to mix colors
 #+LATEX_HEADER: \RequirePackage{setspace} % to modify the space between lines - incompatible with footnote in beamer
 #+LaTeX_HEADER:\renewcommand{\baselinestretch}{1.1}
-#+LATEX_HEADER:\geometry{top=1cm}
+#+LATEX_HEADER:\geometry{top=2cm,bottom=3cm,left=1.5cm,right=1.5cm}
 #+LATEX_HEADER: \RequirePackage{changepage}
 
 #+LATEX_HEADER: \RequirePackage{colortbl} % arrayrulecolor to mix colors

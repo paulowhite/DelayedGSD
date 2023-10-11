@@ -38,9 +38,9 @@ Method2(
 
 \item{Info.max}{maximum information needed for given beta (type II-error), delta (expected difference), alpha (type I-error) and Kmax. It can be given if it is known. Otherwise it is computed from the  values given for alpha, beta, delta and Kmax.}
 
-\item{InfoR.i}{Expected or observed (wherever possible) information rates at the interim and final analyses 1:Kmax}
+\item{InfoR.i}{Expected or observed (wherever possible) information rates at the interim analyses 1:(Kmax-1)}
 
-\item{InfoR.d}{Expected or observed information rates at all potential decision analyses 1:(Kmax-1)}
+\item{InfoR.d}{Expected or observed information rates at all potential decision analyses and final analyses 1:Kmax}
 
 \item{delta}{expected effect under the alternative (should be on the scale of the test statistc for which If and Info.max relate to one over the variance, e.g. delta=expected log(Hazard ratio))}
 

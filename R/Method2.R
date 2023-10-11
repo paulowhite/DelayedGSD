@@ -153,7 +153,7 @@ Method2 <- function(rho_alpha=2,
     }
     ## }}}
     if(is.null(Info.max)){
-                                        #browser()
+                                        ## browser()
         ## {{{ Compute Info.max from If and the other arguments (Recursive calls to the function)
         if(Trace){
             cat("\n We start the search of the value for coef=Info.max/If. \n \n")
@@ -197,6 +197,7 @@ Method2 <- function(rho_alpha=2,
                 if(Trace){
                     cat("\n Step :",nwhile,"(out of max.", nWhileMax,")")
                 }
+                
                 xx <- Method2(rho_alpha=rho_alpha,
                               rho_beta=rho_beta,
                               alpha=alpha,
@@ -323,7 +324,6 @@ Method2 <- function(rho_alpha=2,
         }else{
           TheLowerValues <- rep(-Inf,k-1)
         }
-        
           try(uk[k] <- uniroot(function(x){pmvnorm(lower = c(TheLowerValues,x),
                                                    upper = c(uk[1:(k-1)],Inf),
                                                    mean=rep(0,k),
@@ -361,7 +361,7 @@ Method2 <- function(rho_alpha=2,
           }
           if(k==Kmax){
               lk[k] <- uk[k] # just to handle cases in which there is no root
-            
+
                   try(lk[k] <- uniroot(function(x){pmvnorm(lower = c(lk[1:(k-1)],-Inf),
                                                            upper = c(uk[1:(k-1)],x),
                                                            mean=thetheta[1:k],
@@ -390,8 +390,6 @@ Method2 <- function(rho_alpha=2,
   }
   ## }}}
   
-  #browser()  
-    
   ck.unrestricted[Kmax] <- uk[Kmax]
   ck[Kmax] <- max(uk[Kmax],cMin)  
     

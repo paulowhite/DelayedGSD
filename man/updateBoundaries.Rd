@@ -18,9 +18,9 @@ updateBoundaries(
 \arguments{
 \item{object}{Object of type \code{delayedGSD}, typically output from \code{\link{CalcBoundaries}}.}
 
-\item{Info.i}{[numeric vector of size k] Optional argument used to update the information at interim or final (only past or current information).}
+\item{Info.i}{[numeric vector of size k] Optional argument used to update the information at interim (only past or current information).}
 
-\item{Info.d}{[numeric vector of size k] Optional argument used to update the information at decision (observed or predicted information).}
+\item{Info.d}{[numeric vector of size k] Optional argument used to update the information at decision or final (observed or predicted information).}
 
 \item{k}{[integer] Index of the analysis.}
 

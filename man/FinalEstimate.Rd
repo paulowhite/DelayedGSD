@@ -17,7 +17,9 @@ FinalEstimate(
   method,
   bindingFutility,
   cNotBelowFixedc,
-  continuity.correction
+  continuity.correction,
+  tolerance,
+  FCT.p_value
 )
 }
 \arguments{
@@ -46,6 +48,8 @@ ck is possibly with restriction (when cNotBelowFixedc=TRUE) and ck.unrestricted 
 
 \item{continuity.correction}{[logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
 When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.}
+
+\item{tolerance}{[numeric] acceptable discrepancy to the objective level when evaluating the confidence intervals and median unbiased estimate.}
 }
 \description{
 calculate de-biased estimate

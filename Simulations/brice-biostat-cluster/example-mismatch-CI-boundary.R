@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 13 2023 (09:28) 
 ## Version: 
-## Last-Updated: okt  5 2023 (17:57) 
+## Last-Updated: okt  6 2023 (17:37) 
 ##           By: Brice Ozenne
-##     Update #: 68
+##     Update #: 70
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,7 +19,7 @@ library(DelayedGSD)
 library(ggplot2)
 
 
-## * Setting
+## * Setting (for scenario 9)
 binding <- FALSE
 fixC <- TRUE
 ar <- 10
@@ -54,7 +54,7 @@ planned.M3 <- CalcBoundaries(kMax = 2,
 ## * Example 1 (stopping for efficacy)
 
 ## ** generate data
-seed1 <- 341365344 ##  413883402 or 341365344
+seed1 <- 413883402 ##  413883402 or 341365344
 df1.sim <- GenData(n = max(nGSD), 
                    N.fw = 2,
                    rand.block = c(1,1,0,0),
@@ -79,6 +79,7 @@ thets1 <- df1.sim$t3[ceiling(unique(nGSD)*PropForInterim)] ## df1.sim$t3[ceiling
 ## ** interim
 debug1.lmmI <- analyzeData(SelectData(df1.sim,t=thets1),
                            ddf = "nlme", data.decision = sum(df1.sim$t1 <= thets1 + 1.50001*14), getinfo = TRUE, trace = TRUE)
+
 debug1.IM2 <- update(planned.M2, delta = debug1.lmmI, trace = TRUE)
 summary(debug1.IM2)
 debug1.IM3 <- update(planned.M3, delta = debug1.lmmI, trace = TRUE)
@@ -186,8 +187,8 @@ calcP_new(delta = 0, object = debug1.DM3)
 
 seqDelta <- seq(-5,5, length.out = 100)
 dfW1.seq <- as.data.frame(do.call(rbind,lapply(seqDelta, function(iD){ ## iD <- 2
-    iOut2 <- calcP_futility(delta = iD, object = debug1.DM2)
-    iOut3 <- calcP_futility(delta = iD, object = debug1.DM3)
+    iOut2 <- calcP_new(delta = iD, object = debug1.DM2)
+    iOut3 <- calcP_new(delta = iD, object = debug1.DM3)
 
     iVec2 <- setNames(c(iD,2,iOut2,attr(iOut2,"terms")),
                      c("delta","method","p.value",paste0("term",1:3)))

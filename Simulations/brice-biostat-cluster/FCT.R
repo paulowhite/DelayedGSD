@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: aug  1 2022 (15:45) 
 ## Version: 
-## Last-Updated: aug  9 2023 (11:16) 
+## Last-Updated: okt 10 2023 (13:11) 
 ##           By: Brice Ozenne
-##     Update #: 126
+##     Update #: 129
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -48,7 +48,7 @@ exportGSD <- function(object,
                       decision = NA,
                       reason = NA,
                       sigma = NA)
-    
+
     ## ** check user input
     if(identical(object,NA)){
        return(out) 

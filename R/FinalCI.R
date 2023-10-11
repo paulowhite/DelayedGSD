@@ -18,6 +18,7 @@
 #' @param continuity.correction [logical] whether to add the probability of stopping between ck and ck.uncorrected to ensure continuity of the p-value across stages.
 #' When used the p-value will always be greater than this probability of stopping bettwen ck and ck.uncorrected.
 #' @param tolerance [numeric] acceptable discrepancy to the objective level when evaluating the confidence intervals and median unbiased estimate.
+#' @param FCT.p_value [function] function used to compute the p-value.
 
 ## * FinalCI (code)
 #' @export
@@ -36,46 +37,43 @@ FinalCI <- function(Info.d,
                     bindingFutility,
                     cNotBelowFixedc,
                     continuity.correction,
-                    tolerance){
+                    tolerance,
+                    FCT.p_value){
 
-    alpha <- 1-conf.level
+    alpha <- 1 - conf.level
 
     f <- function(delta){
-        FinalPvalue(Info.d=Info.d,
-                    Info.i=Info.i,
-                    ck=ck,
-                    ck.unrestricted=ck.unrestricted,
-                    lk=lk,
-                    uk=uk,
-                    reason.interim=reason.interim,
-                    kMax=kMax,
-                    estimate=estimate,
-                    delta=delta,
-                    method=method,
-                    bindingFutility=bindingFutility,
-                    cNotBelowFixedc=cNotBelowFixedc,
-                    continuity.correction=continuity.correction) - alpha/2
+        do.call(FCT.p_value, list(Info.d=Info.d,
+                                  Info.i=Info.i,
+                                  ck=ck,
+                                  ck.unrestricted=ck.unrestricted,
+                                  lk=lk,
+                                  uk=uk,
+                                  reason.interim=reason.interim,
+                                  kMax=kMax,
+                                  estimate=estimate,
+                                  delta=delta,
+                                  method=method,
+                                  bindingFutility=bindingFutility,
+                                  cNotBelowFixedc=cNotBelowFixedc,
+                                  continuity.correction=continuity.correction)
+                )
     }
 
-    g <- function(delta){
-        1-FinalPvalue(Info.d=Info.d,
-                      Info.i=Info.i,
-                      ck=ck,
-                      ck.unrestricted=ck.unrestricted,
-                      lk=lk,
-                      uk=uk,
-                      reason.interim=reason.interim,
-                      kMax=kMax,
-                      estimate=estimate,
-                      delta=delta,
-                      method=method,
-                      bindingFutility=bindingFutility,
-                      cNotBelowFixedc=cNotBelowFixedc,
-                      continuity.correction=continuity.correction) - alpha/2
-    }
+    lowerBound <- c(estimate - 4*sqrt(1/Info.d[length(Info.d)]),
+                    estimate - 0.5*sqrt(1/Info.d[length(Info.d)]))
+    upperBound <- c(estimate + 0.5*sqrt(1/Info.d[length(Info.d)]),
+                    estimate + 4*sqrt(1/Info.d[length(Info.d)]))
+
     if(optimizer=="optimise"){
-        lbnd <- stats::optimise(function(x){f(x)^2},lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]), tol = 1e-10)
-        ubnd <- stats::optimise(function(x){g(x)^2},lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]), tol = 1e-10)
+        lbnd <- stats::optimise(function(x){(f(x) - alpha/2)^2},
+                                lower = lowerBound[1],
+                                upper = upperBound[1],
+                                tol = 1e-10)
+        ubnd <- stats::optimise(function(x){(1 - f(x) - alpha/2)^2},
+                                lower = lowerBound[2],
+                                upper = upperBound[2],
+                                tol = 1e-10)
         if(abs(lbnd$objective)>tolerance){
             lbnd$minimum <- NA
         }
@@ -85,8 +83,14 @@ FinalCI <- function(Info.d,
         out <- c(lower = lbnd$minimum, upper = ubnd$minimum)
         attr(out,"error") <- c(lower = lbnd$objective, upper = ubnd$objective)
     }else if(optimizer=="uniroot"){
-        lbnd <- stats::uniroot(f,lower=estimate-4*sqrt(1/Info.d[length(Info.d)]),upper=estimate+0.5*sqrt(1/Info.d[length(Info.d)]), tol = 1e-10)
-        ubnd <- stats::uniroot(g,lower=estimate-0.5*sqrt(1/Info.d[length(Info.d)]),upper=estimate+4*sqrt(1/Info.d[length(Info.d)]), tol = 1e-10)
+        lbnd <- stats::uniroot(function(x){(f(x) - alpha/2)^2},
+                               lower = lowerBound[1],
+                               upper = upperBound[1],
+                               tol = 1e-10)
+        ubnd <- stats::uniroot(function(x){(1 - f(x) - alpha/2)^2},
+                               lower = lowerBound[2],
+                               upper = upperBound[2],
+                               tol = 1e-10)
         out <- c(lower = lbnd$root, upper = ubnd$root)
         attr(out,"error") <- c(lower = lbnd$f.root, upper = ubnd$f.root)
         attr(out,"iter") <- c(lower = lbnd$iter, upper = ubnd$iter)

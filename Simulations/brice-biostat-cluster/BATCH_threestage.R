@@ -19,8 +19,8 @@ if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on
     if("missing" %in% ls() == FALSE){ missing <- TRUE }
     if("binding" %in% ls() == FALSE){ binding <- TRUE }
     if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
-    if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
-    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0 }
+    if("ar.factor" %in% ls() == FALSE){ ar.factor <- 5 }
+    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
     if("n.method" %in% ls() == FALSE){ n.method <- NULL }
 }
 
@@ -57,7 +57,7 @@ print(df.args, row.names = FALSE)
 cat("\n")
 
 ## * Settings
-nsim <- 25 # number of simulations
+nsim <- 100 # number of simulations
 method <- 1:3 # methods used to compute the boundaries
                                         #--- to plan the trial ----
 kMax <- 3  #max number of analyses (including final)
@@ -288,6 +288,7 @@ for(j in allj){ ## j <- 1 ## 5
       
       countNA <- rowSums(is.na(dFinal[,paste0("X",2:(kMax+1))]))
 
+      ## confint(currentGSD.final[[iMeth]], method = c("ML","MUE"))
       outMerge <- rbind(outMerge,
                         cbind(time = max(dFinal$t4),
                               completeData = sum(countNA==0),

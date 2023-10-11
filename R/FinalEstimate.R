@@ -32,28 +32,36 @@ FinalEstimate <- function(Info.d,
                           bindingFutility,
                           cNotBelowFixedc,
                           continuity.correction,
-                          tolerance){ 
+                          tolerance,
+                          FCT.p_value){ 
 
     f <- function(delta){
-        (FinalPvalue(Info.d=Info.d,
-                     Info.i=Info.i,
-                     ck=ck,
-                     ck.unrestricted=ck.unrestricted,
-                     lk=lk,
-                     uk=uk,
-                     reason.interim=reason.interim,
-                     kMax=kMax,
-                     estimate=estimate,
-                     delta=delta,
-                     method=method,
-                     bindingFutility=bindingFutility,
-                     cNotBelowFixedc=cNotBelowFixedc,
-                     continuity.correction=continuity.correction) - 0.5)^2
+        do.call(FCT.p_value, list(Info.d=Info.d,
+                                  Info.i=Info.i,
+                                  ck=ck,
+                                  ck.unrestricted=ck.unrestricted,
+                                  lk=lk,
+                                  uk=uk,
+                                  reason.interim=reason.interim,
+                                  kMax=kMax,
+                                  estimate=estimate,
+                                  delta=delta,
+                                  method=method,
+                                  bindingFutility=bindingFutility,
+                                  cNotBelowFixedc=cNotBelowFixedc,
+                                  continuity.correction=continuity.correction)
+                )
     }
-    lowerBound <- estimate-2*sqrt(1/Info.d[length(Info.d)])
-    upperBound <- estimate+2*sqrt(1/Info.d[length(Info.d)])
-    res <- stats::optimise(f,lower=lowerBound,upper=upperBound)
-    if(abs(res$objective)>tolerance){
+
+    lowerBound <- estimate - 2*sqrt(1/Info.d[length(Info.d)])
+    upperBound <- estimate + 2*sqrt(1/Info.d[length(Info.d)])
+    res <- try(stats::optimise(function(x){(f(x) - 0.5)^2},
+                               lower = lowerBound,
+                               upper = upperBound))
+    if(inherits(res,"try-error")){
+        res <- list(minimum = NA,
+                    objective = NA)
+    }else if(is.na(res$objective) || abs(res$objective)>tolerance){
         res$minimum <- NA
     }
     attr(res$minimum,"error") <- res$objective

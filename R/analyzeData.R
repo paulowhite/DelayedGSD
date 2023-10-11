@@ -100,7 +100,7 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
         }else if(inherits(data.decision,"numeric") || inherits(data.decision,"integer")){
             out <- c(out,getInformation(m, name.coef = "Z1", data = long, newdata = NULL, details = TRUE))
             if(data.decision < out$sample.size["total"]){
-                stop("Argument \'data.decision\' should be larger than the number of patients (=",out.info$sample.size["total"],") in the dataset. \n")
+                stop("Argument \'data.decision\' should be larger than the number of patients (=",out$sample.size["total"],") in the dataset. \n")
             }
             out$information["decision"] <- (data.decision/out$sample.size["total"])*as.double(out$information["decision"])
             out$sample.size["decision"] <- data.decision
@@ -111,7 +111,7 @@ analyzeData <- function(data, ddf = "nlme", getinfo = TRUE, data.decision = NULL
     
         if(any(abs(out$Info$interim$vcov - stats::vcov(m))>1e-10)){
             warning("Something went wrong when extracting the variance covariance matrix from gls \n",
-                    "largest discrepancy between getInformation and gls: ",max(abs(out.info$interim$vcov - stats::vcov(m))))
+                    "largest discrepancy between getInformation and gls: ",max(abs(out$Info$interim$vcov - stats::vcov(m))))
      
         }
     }

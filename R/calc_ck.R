@@ -49,20 +49,20 @@ calc_ck <- function(uk,
       
         if(bindingFutility){
             f <- function(x){
-                y <- mvtnorm::pmvnorm(lower = c(lk[0:(k-1)],x),
-                                      upper = c(uk[0:(k-1)],Inf),
-                                      mean=rep(0,k),
-                                      sigma= sigmaZk) - (alpha-ErrorSpend(I = Info.all[k-1], rho = rho_alpha,beta_or_alpha = alpha, Info.max = Info.max))
+                y <- pmvnorm2(lower = c(lk[0:(k-1)],x),
+                              upper = c(uk[0:(k-1)],Inf),
+                              mean=rep(0,k),
+                              sigma= sigmaZk) - (alpha-ErrorSpend(I = Info.all[k-1], rho = rho_alpha,beta_or_alpha = alpha, Info.max = Info.max))
                 as.numeric(y)
             }
         } else {
             lk2 <- rep(-Inf,length(lk))
         
             f <- function(x){
-                y <- mvtnorm::pmvnorm(lower = c(lk2[0:(k-1)],x),
-                                      upper = c(uk[0:(k-1)],Inf),
-                                      mean=rep(0,k),
-                                      sigma= sigmaZk) - (alpha-ErrorSpend(I = Info.all[k-1], rho = rho_alpha,beta_or_alpha = alpha, Info.max = Info.max))
+                y <- pmvnorm2(lower = c(lk2[0:(k-1)],x),
+                              upper = c(uk[0:(k-1)],Inf),
+                              mean=rep(0,k),
+                              sigma= sigmaZk) - (alpha-ErrorSpend(I = Info.all[k-1], rho = rho_alpha,beta_or_alpha = alpha, Info.max = Info.max))                
                 as.numeric(y)
             }
         }
@@ -80,28 +80,28 @@ calc_ck <- function(uk,
       
         if(bindingFutility){
             f <- function(x){
-                y <- mvtnorm::pmvnorm(lower = c(lk[0:(k-1)],uk[k],-Inf),
-                                      upper = c(uk[0:(k-1)],Inf,x),
-                                      mean = rep(0,k+1),
-                                      sigma = sigmaZk) - 
-                    mvtnorm::pmvnorm(lower = c(lk[0:(k-1)],-Inf,x),
-                                     upper = c(uk[0:(k-1)],lk[k],Inf),
-                                     mean = rep(0,k+1),
-                                     sigma = sigmaZk)                
+                y <- pmvnorm2(lower = c(lk[0:(k-1)],uk[k],-Inf),
+                              upper = c(uk[0:(k-1)],Inf,x),
+                              mean = rep(0,k+1),
+                              sigma = sigmaZk) - 
+                    pmvnorm2(lower = c(lk[0:(k-1)],-Inf,x),
+                             upper = c(uk[0:(k-1)],lk[k],Inf),
+                             mean = rep(0,k+1),
+                             sigma = sigmaZk)
                 as.numeric(y)
             }
         } else {
             lk2 <- rep(-Inf,length(lk))
         
             f <- function(x){
-                y <- mvtnorm::pmvnorm(lower = c(lk2[0:(k-1)],uk[k],-Inf),
-                                      upper = c(uk[0:(k-1)],Inf,x),
-                                      mean=rep(0,k+1),
-                                      sigma= sigmaZk) - 
-                    mvtnorm::pmvnorm(lower = c(lk2[0:(k-1)],-Inf,x),
-                                     upper = c(uk[0:(k-1)],lk[k],Inf),
-                                     mean=rep(0,k+1),
-                                     sigma= sigmaZk)
+                y <- pmvnorm2(lower = c(lk2[0:(k-1)],uk[k],-Inf),
+                              upper = c(uk[0:(k-1)],Inf,x),
+                              mean=rep(0,k+1),
+                              sigma= sigmaZk) - 
+                    pmvnorm2(lower = c(lk2[0:(k-1)],-Inf,x),
+                             upper = c(uk[0:(k-1)],lk[k],Inf),
+                             mean=rep(0,k+1),
+                             sigma= sigmaZk)
                 as.numeric(y)
             }
         }
@@ -121,7 +121,7 @@ calc_ck <- function(uk,
         ccc <- BB::dfsane(f,
                           par = (upperRoot*1.1+lowerRoot)/2,
                           control = list(maxit = 1000, tol = 1e-7), quiet = TRUE)$par
-    }else{
+    }else{        
         ccc <- try(stats::uniroot(f,
                                   lower = lowerRoot,
                                   upper = upperRoot)$root,

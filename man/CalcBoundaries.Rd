@@ -8,13 +8,13 @@ CalcBoundaries(
   kMax = 2,
   alpha = 0.025,
   beta = 0.2,
-  InfoR.i = c(0.5, 1),
+  InfoR.i = 0.5,
   rho_alpha = 2,
   rho_beta = 2,
   method = 1,
   cNotBelowFixedc = FALSE,
   delta = 1.5,
-  InfoR.d = 0.55,
+  InfoR.d = c(0.55, 1),
   bindingFutility = TRUE,
   alternative = "greater",
   conf.level = 1 - 2 * alpha,
@@ -31,7 +31,7 @@ CalcBoundaries(
 
 \item{beta}{type II error}
 
-\item{InfoR.i}{planned or observed information rates at interim analysis, including the final analysis.}
+\item{InfoR.i}{planned or observed information rates at the interim analyses 1:(Kmax-1)}
 
 \item{rho_alpha}{rho parameter for alpha error spending function}
 
@@ -43,7 +43,7 @@ CalcBoundaries(
 
 \item{delta}{effect that the study is powered for}
 
-\item{InfoR.d}{(expected) information rate at each decision analysis (i.e. when stopping at an interim analysis). Should not include the final analysis.}
+\item{InfoR.d}{(expected) information rate at each decision analysis, including the final analysis.}
 
 \item{bindingFutility}{[logical]  whether the futility stopping rule is binding.}
 
@@ -66,13 +66,13 @@ Calculate boundaries (interim and decision) for a group sequential design with d
 myBound <- CalcBoundaries(kMax=2,
               alpha=0.025,  
               beta=0.2,  
-              InfoR.i=c(0.5,1),
+              InfoR.i=c(0.5),
               rho_alpha=2,
               rho_beta=2,
               method=2,
               cNotBelowFixedc=TRUE,
               delta=1.5,
-              InfoR.d=0.55)
+              InfoR.d=c(0.55,1))
 myBound
 plot(myBound)
 
@@ -80,14 +80,14 @@ plot(myBound)
 myBound <- CalcBoundaries(kMax=3,
               alpha=0.025,  
               beta=0.1,  
-              InfoR.i=c(3.5,6.75,12)/12,
+              InfoR.i=c(3.5,6.75)/12,
               rho_alpha=1.345,
               rho_beta=1.345,
               method=1, ## has been changed from 2 to 1
               cNotBelowFixedc=TRUE,
               bindingFutility=FALSE,
               delta=1,
-              InfoR.d=c(5.5,8.75)/12)
+              InfoR.d=c(5.5,8.75,12)/12)
 myBound
 plot(myBound)
 }

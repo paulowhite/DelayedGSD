@@ -153,12 +153,12 @@ FinalPvalue <- function(Info.d,
                         method,  
                         bindingFutility,
                         cNotBelowFixedc,
-                        continuity.correction){
+                        continuity.correction = DelayedGSD.options()$continuity.correction){
     
   
     requireNamespace("mvtnorm")
   
-  #browser()
+    ## browser()
   
     ## ** reconstruct test statistic
     k <- length(Info.d)
@@ -406,7 +406,169 @@ FinalPvalue <- function(Info.d,
                         
         }
     }
-    
+
+    ## ** Give another try if the pvalue is NA
+    if(is.na(pval)){
+        pval <- FinalPvalue2(Info.d = Info.d,  
+                             Info.i = Info.i,  
+                             ck = ck,
+                             ck.unrestricted = ck,   
+                             lk = lk,  
+                             uk = uk,
+                             reason.interim = reason.interim,
+                             kMax = kMax, 
+                             delta = delta,  
+                             estimate = estimate,
+                             method = method,  
+                             bindingFutility = bindingFutility,
+                             cNotBelowFixedc = cNotBelowFixedc,
+                             continuity.correction = continuity.correction)
+    }
+
+    ## ** export
     return(unname(min(pval,1)))
+}
+
+## * FinalPvalue2 (code)
+FinalPvalue2 <- function(Info.d,  
+                         Info.i,  
+                         ck,
+                         ck.unrestricted,   
+                         lk,  
+                         uk,
+                         reason.interim,
+                         kMax, 
+                         delta=0,  
+                         estimate,
+                         method,  
+                         bindingFutility,
+                         cNotBelowFixedc,
+                         continuity.correction){
+
+    requireNamespace("mvtnorm")
+
+    ## ** extract 
+    stage <- length(Info.d)
+
+    ## ** prepare
+
+    ## statistic
+    statistic <- estimate * sqrt(Info.d[stage])
+    Fstatistic <- statistic - max(0, statistic - ck.unrestricted[stage]) + max(0, statistic - ck[stage])
+    
+    ## information
+    Info.vec <- c(Info.i,Info.d)
+    Info.type <- c(rep("interim",length(Info.i)),
+                   rep("decision",min(stage,kMax-1)),
+                   rep("final",1))[1:length(Info.vec)]
+    Info.indexInterim <- which(Info.type=="interim")
+    Info.indexDecision <- which(Info.type=="decision")
+    Info.indexFinal <- which(Info.type=="final")
+        
+    Info.matrix <- diag(1, length(Info.vec))
+    Info.matrix[lower.tri(Info.matrix)] <- sqrt((1/Info.vec) %*% t(Info.vec))[lower.tri(Info.matrix)]
+    Info.matrix[upper.tri(Info.matrix)] <- t(Info.matrix)[upper.tri(Info.matrix)]
+
+    ## futility bounds
+    if(bindingFutility){
+        lk.continue <- lk
+    }else{
+        lk.continue <- rep(-Inf,length(lk))
+    }
+
+    ## ** evaluate p-value at each stage
+    ls.pvalue <- lapply(1:stage, function(iStage){ ## iStage <- 1
+
+        if(identical(reason.interim[iStage],"decreasing information")){ ## SPECIAL CASE: decreasing information from on interim analysis to another interim analysis
+
+            iOut <- 0
+            attr(iOut,"reason") <- "decreasing information"
+
+        }else{
+
+            ## previous interim analyses
+            if(iStage==1){
+                iSeq_interimM1 <- NULL
+            }else{ ## index of previous interim that are not skipped
+                iSeq_interimM1 <- intersect(1:(iStage-1),which(!identical(reason.interim[1:(iStage-1)],"decreasing information")))
+            }
+            
+            if(iStage==kMax || identical(reason.interim[iStage],"Imax reached")){ ## SPECIAL CASE: no interim (either final analysis or decision after skipping interim)
+
+                iIndex <- c(Info.indexInterim[iSeq_interimM1], c(Info.indexDecision,Info.indexFinal)[iStage])
+
+                iOut <- pmvnorm2(lower = c(lk.continue[iSeq_interimM1], Fstatistic),  
+                                 upper = c(uk[iSeq_interimM1],                 Inf),
+                                 mean = delta * sqrt(Info.vec[iIndex]),
+                                 sigma = Info.matrix[iIndex,iIndex,drop=FALSE])
+                attr(iOut,"terms") <- stats::setNames(c(0,as.numeric(iOut),0), c("continue","efficacy","reversal"))
+            }else{ ## NORMAL CASE
+                ## (and special case decreasing information between interim and decision analysis?)
+                iIndex_interim <- c(Info.indexInterim[iSeq_interimM1], Info.indexInterim[iStage])
+                iIndex <- c(iIndex_interim, Info.indexDecision[iStage])
+
+                if(iStage == stage){
+                    iStatistic <- Fstatistic
+                    
+                    ## 1- prob to continue (and therefore have a more extreme result than stopping now for futility)
+                    if((iStatistic < ck[stage]) || (method == 3 && identical(reason.interim[stage],"futility"))){
+                        iTerm1 <- pmvnorm2(lower = lk.continue[c(iSeq_interimM1,stage)],  
+                                           upper = uk[c(iSeq_interimM1,stage)],
+                                           mean = delta * sqrt(Info.vec[iIndex_interim]),
+                                           sigma = Info.matrix[iIndex_interim,iIndex_interim,drop=FALSE])                        
+                    }else{
+                        iTerm1 <- 0
+                    }
+                    
+                }else{
+                    iStatistic <- ck.unrestricted[iStage]
+                    iTerm1 <- 0
+                }
+                
+                ## 2- probability to stop for efficacy and conclude more extreme efficacy
+                if(method == 3 && iStage == stage && identical(reason.interim[stage],"futility")){
+                    iTerm2 <- pmvnorm2(lower = c(lk.continue[iSeq_interimM1], uk[iStage], min(statistic, ck.unrestricted[stage])),  
+                                      upper = c(uk[iSeq_interimM1],                 Inf,        Inf),
+                                      mean = delta * sqrt(Info.vec[iIndex]),
+                                      sigma = Info.matrix[iIndex,iIndex,drop=FALSE])
+                }else{
+                    iTerm2 <- pmvnorm2(lower = c(lk.continue[iSeq_interimM1], uk[iStage], iStatistic),  
+                                      upper = c(uk[iSeq_interimM1],                 Inf,        Inf),
+                                      mean = delta * sqrt(Info.vec[iIndex]),
+                                      sigma = Info.matrix[iIndex,iIndex,drop=FALSE])
+                }
+
+                ## 3- probability to stop for futility and conclude more extreme efficacy
+                if(method %in% c(1,2) || (iStage == stage && iStatistic < ck[stage])){
+                    iTerm3 <- pmvnorm2(lower = c(lk.continue[c(iSeq_interimM1)],       -Inf, iStatistic),   
+                                       upper = c(uk[iSeq_interimM1],             lk[iStage],        Inf),
+                                       mean = delta * sqrt(Info.vec[iIndex]),
+                                       sigma = Info.matrix[iIndex,iIndex,drop=FALSE])
+
+                }else if(method == 3 && iStage == stage && identical(reason.interim[stage],"futility")){
+                    iTerm3 <- pmvnorm2(lower = c(lk.continue[c(iSeq_interimM1)],       -Inf, statistic),  ## no correction (i.e. -ck+ck.unrestricted) 
+                                       upper = c(uk[iSeq_interimM1],             lk[iStage],        Inf),
+                                       mean = delta * sqrt(Info.vec[iIndex]),
+                                       sigma = Info.matrix[iIndex,iIndex,drop=FALSE])
+                }else{
+                    iTerm3 <- 0
+                }
+
+                iOut <- unname(iTerm1 + iTerm2 + iTerm3)
+                attr(iOut, "terms") <- stats::setNames(c(iTerm1,iTerm2,iTerm3), c("continue","efficacy","reversal"))
+            }
+        }
+        return(iOut)
+
+    })
+
+    ## ** export
+    out <- Reduce("+",ls.pvalue)
+    attr(out,"error") <- try(sapply(ls.pvalue,attr,"error"), silent = TRUE)
+    attr(out,"msg") <- try(sapply(ls.pvalue,attr,"msg"), silent = TRUE)
+    attr(out,"terms") <- try(do.call(rbind,lapply(ls.pvalue,attr,"terms")), silent = TRUE)
+
+    return(out)
+
 }
 
