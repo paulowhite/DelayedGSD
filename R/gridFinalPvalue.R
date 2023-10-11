@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 21 2023 (09:42) 
 ## Version: 
-## Last-Updated: aug  4 2023 (11:39) 
+## Last-Updated: okt 11 2023 (17:26) 
 ##           By: Brice Ozenne
-##     Update #: 79
+##     Update #: 89
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -118,6 +118,8 @@ gridFinalPvalue <- function(object,
                             digits = 2){
 
     ## ** normalize arguments
+    options <- DelayedGSD.options()
+    FCT.p_value <- options$FCT.p_value
     seq.futility <- sort(seq.futility)
     seq.kMax <- sort(seq.kMax)
     seq.efficacy <- sort(seq.efficacy)
@@ -181,8 +183,8 @@ gridFinalPvalue <- function(object,
         stop("kMax should be strictly greater than 1. \n")
     }
 
-    if(cNotBelowFixedc==FALSE & missing(continuity.correction)){
-        continuity.correction <- 0 ## does not matter, only used when cNotBelowFixedc=TRUE
+    if(missing(continuity.correction)){
+        continuity.correction <- options$continuity.correction
     }
 
     ## ** grid of values
@@ -235,23 +237,25 @@ gridFinalPvalue <- function(object,
 
     ## ** evaluate p-value over the domain
     calcP <- function(z, k){
-        out <- FinalPvalue(Info.d = Info.d[1:k],
-                           Info.i = Info.i[1:min(k,kMax-1)],
-                           #ck = ck[1:min(k,kMax-1)], ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],
-                           ck = ck[1:min(k,kMax)], ck.unrestricted = ck.unrestricted[1:min(k,kMax)],
-                           lk = lk[1:min(k,kMax-1)],
-                           uk = uk[1:min(k,kMax-1)],
-                           kMax = kMax,
-                           delta = 0, 
-                           estimate = z / sqrt(Info.d[k]),
-                           reason.interim = reason.interim[1:k],
-                           method = method,
-                           bindingFutility = bindingFutility, 
-                           cNotBelowFixedc = cNotBelowFixedc,
-                           continuity.correction = continuity.correction)
+        out <- do.call(FCT.p_value, list(Info.d = Info.d[1:k],
+                                         Info.i = Info.i[1:min(k,kMax-1)],
+                                        #ck = ck[1:min(k,kMax-1)], ck.unrestricted = ck.unrestricted[1:min(k,kMax-1)],
+                                         ck = ck[1:min(k,kMax)],
+                                         ck.unrestricted = ck.unrestricted[1:min(k,kMax)],
+                                         lk = lk[1:min(k,kMax-1)],
+                                         uk = uk[1:min(k,kMax-1)],
+                                         kMax = kMax,
+                                         delta = 0, 
+                                         estimate = z / sqrt(Info.d[k]),
+                                         reason.interim = reason.interim[1:k],
+                                         method = method,
+                                         bindingFutility = bindingFutility, 
+                                         cNotBelowFixedc = cNotBelowFixedc,
+                                         continuity.correction = continuity.correction)
+                       )
         return(data.frame(z = z, k = k, p.value = out, continuity.correction = continuity.correction))
     }
-
+    
     out <- do.call(rbind,lapply(1:n.grid, function(iG){
         cbind(calcP(z = grid[iG,"z"], k = grid[iG,"k"]), alphaSpent = grid[iG,"alphaSpent"])
     }))
