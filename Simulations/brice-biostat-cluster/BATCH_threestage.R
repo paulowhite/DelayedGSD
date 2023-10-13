@@ -16,12 +16,12 @@ if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on
     iter_sim <- 61
     n.iter_sim <- 100
 
-    if("missing" %in% ls() == FALSE){ missing <- TRUE }
+    if("missing" %in% ls() == FALSE){ missing <- FALSE }
     if("binding" %in% ls() == FALSE){ binding <- TRUE }
     if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 5 }
     if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
-    if("n.method" %in% ls() == FALSE){ n.method <- NULL }
+    if("n.method" %in% ls() == FALSE){ n.method <- 3 }
 }
 
 name <- ""
@@ -121,6 +121,7 @@ allseeds <- sample.int(n = 1000000000, size = nsimAll, replace=FALSE) #x=1:(.Mac
 
 ## * Load dependencies
 library(DelayedGSD) ## remotes::install_github("PauloWhite/DelayedGSD")
+DelayedGSD.options(FCT.p_value = "FinalPvalue2", continuity.correction = 2)
 source("FCT.R") ## exportGSD function
 
 ## * Planned boundaries
@@ -134,7 +135,7 @@ for(iMeth in 1:length(method)){ ## iMeth <- 1
                                       rho_alpha = rho_alpha,  
                                       rho_beta = rho_beta,  
                                       method = method[iMeth],  
-                                      cNotBelowFixedc = cNotBelowFixedc,
+                                      cNotBelowFixedc = cNotBelowFixedc || (iMeth==3),
                                       bindingFutility = binding,
                                       delta = deltaPower)
   ## summary(plannedB[[1]])
@@ -269,7 +270,7 @@ for(j in allj){ ## j <- 1 ## 5
               stopGSD[iMeth] <- TRUE              
       
           }else{
-              if(iConclusion["interim",iStage] == "stop"){ ## overrule futility boundary
+              if(iConclusion["interim",iStage] == "stop"){ ## overrule futility boundary                  
                   currentGSD.interim[[iStage]][[iMeth]] <- update(currentGSD.interim[[iStage]][[iMeth]], overrule.futility = TRUE)
               }
               ## update information

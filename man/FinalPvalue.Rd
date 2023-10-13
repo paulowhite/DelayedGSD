@@ -18,7 +18,7 @@ FinalPvalue(
   method,
   bindingFutility,
   cNotBelowFixedc,
-  continuity.correction = DelayedGSD.options()$continuity.correction
+  continuity.correction
 )
 }
 \arguments{

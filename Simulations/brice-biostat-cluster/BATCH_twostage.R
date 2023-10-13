@@ -113,6 +113,7 @@ allseeds <- sample.int(n = 1000000000, size = nsimAll, replace=FALSE) #x=1:(.Mac
 
 ## * Load dependencies
 library(DelayedGSD) ## remotes::install_github("PauloWhite/DelayedGSD")
+DelayedGSD.options(FCT.p_value = "FinalPvalue2", continuity.correction = 2)
 source("FCT.R") ## exportGSD function
 
 ## * Planned boundaries
@@ -126,7 +127,7 @@ for(iMeth in method){ ## iMeth <- 1
                                         rho_alpha=rho_alpha,  
                                         rho_beta=rho_beta,  
                                         method=iMeth,  
-                                        cNotBelowFixedc=cNotBelowFixedc,
+                                        cNotBelowFixedc=cNotBelowFixedc || (iMeth==3),
                                         bindingFutility=binding,
                                         delta=deltaPower)
     ## summary(plannedB[[1]])

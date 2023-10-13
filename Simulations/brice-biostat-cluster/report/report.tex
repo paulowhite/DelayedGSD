@@ -1,4 +1,4 @@
-% Created 2023-10-10 ti 12:12
+% Created 2023-10-13 fr 09:30
 % Intended LaTeX compiler: pdflatex
 \documentclass[12pt]{article}
 
@@ -123,10 +123,10 @@ linkcolor=[rgb]{0,0,0.5},
 \maketitle
 
 \section{Rejection rate}
-\label{sec:org3249754}
+\label{sec:org11e0f53}
 
 \subsection{2 stages}
-\label{sec:org33615e3}
+\label{sec:org2889356}
 Power by method (columns) and scenario (rows): \hfill (nominal level 80\%)
 \begin{verbatim}
  scenario n.sim missing binding  fixC ar method 1 method 2 method 3
@@ -174,35 +174,37 @@ Type 1 error by method (columns) and scenario (rows): \hfill (nominal level 2.5\
 \clearpage
 
 \subsection{3 stages}
-\label{sec:org7c6c38a}
+\label{sec:org726f094}
+
 Power by method (columns) and scenario (rows): \hfill (nominal level 80\%)
 \begin{verbatim}
-scenario n.sim missing binding  fixC ar method 1 method 2 method 3
-       1  1868    TRUE    TRUE FALSE 10   75.32%   75.32%   75.00%
-       5  1934    TRUE    TRUE  TRUE 10   75.18%   76.01%   76.11%
-       7   245    TRUE    TRUE  TRUE  5   75.51%   75.92%   75.92%
-       9  2500    TRUE   FALSE  TRUE 10   74.80%   75.32%   75.00%
-      11  2500    TRUE   FALSE  TRUE  5   74.76%   75.44%   74.68%
-      13  2500    TRUE   FALSE FALSE 10   75.28%   75.40%   75.36%
-      15  2500    TRUE   FALSE FALSE  5   75.12%   75.24%   75.12%
+ scenario n.sim missing binding  fixC ar method 1 method 2 method 3
+        1 10000    TRUE    TRUE FALSE 10   74.51%   74.51%   74.01%
+        3 10000    TRUE    TRUE FALSE  5   74.35%   74.35%   73.99%
+        5 10000    TRUE    TRUE  TRUE 10   73.84%   73.91%   74.01%
+        7 10000    TRUE    TRUE  TRUE  5   74.00%   74.01%   73.99%
+        9 10000    TRUE   FALSE  TRUE 10   74.17%   74.25%   74.45%
+       11 10000    TRUE   FALSE  TRUE  5   74.33%   74.37%   74.43%
+       13 10000    TRUE   FALSE FALSE 10   74.71%   74.71%   74.45%
+       15 10000    TRUE   FALSE FALSE  5   74.61%   74.59%   74.43%
+       17 10000   FALSE    TRUE FALSE  5   72.18%   72.18%   71.97%
 \end{verbatim}
-
 
 \bigskip
 
 Type 1 error by method (columns) and scenario (rows): \hfill (nominal level 2.5\%)
 \begin{verbatim}
-scenario n.sim missing binding  fixC ar method 1 method 2 method 3
-       2  2481    TRUE    TRUE FALSE 10    2.94%    2.94%    2.70%
-       4  1127    TRUE    TRUE FALSE  5    3.11%    3.11%    3.11%
-       6  2432    TRUE    TRUE  TRUE 10    1.89%    2.14%    2.01%
-       8  1042    TRUE    TRUE  TRUE  5    1.73%    1.92%    1.82%
-      10  2500    TRUE   FALSE  TRUE 10    2.36%    2.40%    2.32%
-      12  2500    TRUE   FALSE  TRUE  5    2.36%    2.28%    2.28%
-      14  2483    TRUE   FALSE FALSE 10    3.02%    3.10%    3.10%
-      16  2500    TRUE   FALSE FALSE  5    3.16%    3.12%    3.04%
+ scenario n.sim missing binding  fixC ar method 1 method 2 method 3
+        2 10000    TRUE    TRUE FALSE 10    2.60%    2.60%    2.49%
+        4 10000    TRUE    TRUE FALSE  5    2.61%    2.61%    2.59%
+        6 10000    TRUE    TRUE  TRUE 10    2.47%    2.50%    2.49%
+        8 10000    TRUE    TRUE  TRUE  5    2.56%    2.55%    2.59%
+       10  9990    TRUE   FALSE  TRUE 10    2.37%    2.37%    2.42%
+       12 10000    TRUE   FALSE  TRUE  5    2.43%    2.44%    2.44%
+       14  9990    TRUE   FALSE FALSE 10    2.49%    2.49%    2.42%
+       16 10000    TRUE   FALSE FALSE  5    2.53%    2.53%    2.44%
+       18 10000   FALSE    TRUE FALSE  5    2.61%    2.61%    2.54%
 \end{verbatim}
-
 
 \clearpage
 
@@ -221,10 +223,10 @@ scenario n.sim missing binding  fixC ar method 1 method 2 method 3
 \clearpage
 
 \section{Conclusion of the trial}
-\label{sec:orga165221}
+\label{sec:orga4243b3}
 
 \subsection{2 stages}
-\label{sec:org771dea9}
+\label{sec:org656a578}
 Relative frequency of stopping for efficacy/futility at decision/final
 
 \begin{itemize}
@@ -330,51 +332,57 @@ Relative frequency of stopping for with a threshold below 1.96:
 \clearpage
 
 \subsection{3 stages}
-\label{sec:org5eaea5e}
+\label{sec:org747d42b}
 Relative frequency of stopping for efficacy/futility at decision/final
 
 \begin{itemize}
 \item Method 1
 \end{itemize}
 \begin{verbatim}
-       N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
- 1: 1868    TRUE power    TRUE FALSE 10    8.73%    1.93%   19.86%    3.37%    46.73%    19.38%
- 2: 2481    TRUE typeI    TRUE FALSE 10    0.32%   26.64%    0.60%   35.95%     2.02%    34.46%
- 3: 1127    TRUE typeI    TRUE FALSE  5    0.44%   30.26%    0.27%   36.11%     2.40%    30.52%
- 4: 1934    TRUE power    TRUE  TRUE 10    9.31%    1.71%   19.65%    3.67%    46.23%    19.44%
- 5: 2432    TRUE typeI    TRUE  TRUE 10    0.08%   25.82%    0.16%   36.06%     1.64%    36.23%
- 6:  245    TRUE power    TRUE  TRUE  5   14.29%    2.04%   13.47%    6.12%    47.76%    16.33%
- 7: 1042    TRUE typeI    TRUE  TRUE  5    0.19%   27.45%        0   37.04%     1.54%    33.78%
- 8: 2500    TRUE power   FALSE  TRUE 10    9.84%    1.88%   21.20%    3.60%    43.76%    19.72%
- 9: 2500    TRUE typeI   FALSE  TRUE 10    0.20%    0.04%    0.44%    0.12%     1.72%    97.48%
-10: 2500    TRUE power   FALSE  TRUE  5   10.32%    1.80%   21.04%    3.32%    43.40%    20.12%
-11: 2500    TRUE typeI   FALSE  TRUE  5    0.08%    0.04%    0.52%        0     1.76%    97.60%
-12: 2500    TRUE power   FALSE FALSE 10    9.36%    1.48%   20.68%    3.56%    45.24%    19.68%
-13: 2483    TRUE typeI   FALSE FALSE 10    0.36%    0.12%    0.20%    0.04%     2.46%    96.82%
-14: 2500    TRUE power   FALSE FALSE  5    9.92%    1.80%   20.64%    3.56%    44.56%    19.52%
-15: 2500    TRUE typeI   FALSE FALSE  5    0.44%        0    0.40%        0     2.32%    96.84%
+        N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
+ 1: 10000    TRUE power    TRUE FALSE 10    9.46%    1.46%   20.92%    3.30%    44.13%    20.73%
+ 2: 10000    TRUE typeI    TRUE FALSE 10    0.23%   26.36%    0.48%   35.88%     1.89%    35.16%
+ 3: 10000    TRUE power    TRUE FALSE  5    9.90%    1.65%   20.79%    3.54%    43.66%    20.46%
+ 4: 10000    TRUE typeI    TRUE FALSE  5    0.27%   27.41%    0.39%   35.44%     1.95%    34.54%
+ 5: 10000    TRUE power    TRUE  TRUE 10    9.27%    1.65%   20.44%    3.78%    44.13%    20.73%
+ 6: 10000    TRUE typeI    TRUE  TRUE 10    0.17%   26.42%    0.41%   35.95%     1.89%    35.16%
+ 7: 10000    TRUE power    TRUE  TRUE  5    9.75%    1.80%   20.59%    3.74%    43.66%    20.46%
+ 8: 10000    TRUE typeI    TRUE  TRUE  5    0.25%   27.43%    0.36%   35.47%     1.95%    34.54%
+ 9: 10000    TRUE power   FALSE  TRUE 10    9.60%    1.62%   20.44%    3.60%    44.13%    20.61%
+10:  9990    TRUE typeI   FALSE  TRUE 10    0.16%    0.07%    0.34%    0.11%     1.87%    97.45%
+11: 10000    TRUE power   FALSE  TRUE  5   10.34%    1.78%   20.48%    3.35%    43.51%    20.54%
+12: 10000    TRUE typeI   FALSE  TRUE  5    0.27%    0.02%    0.36%    0.08%     1.80%    97.47%
+13: 10000    TRUE power   FALSE FALSE 10    9.83%    1.39%   20.75%    3.29%    44.13%    20.61%
+14:  9990    TRUE typeI   FALSE FALSE 10    0.21%    0.02%    0.41%    0.04%     1.87%    97.45%
+15: 10000    TRUE power   FALSE FALSE  5   10.46%    1.66%   20.64%    3.19%    43.51%    20.54%
+16: 10000    TRUE typeI   FALSE FALSE  5    0.29%        0    0.44%        0     1.80%    97.47%
+17: 10000   FALSE power    TRUE FALSE  5    8.93%    1.66%   19.60%    2.97%    43.65%    23.19%
+18: 10000   FALSE typeI    TRUE FALSE  5    0.23%   25.91%    0.38%   34.48%     2.00%    37.00%
 \end{verbatim}
 
 \begin{itemize}
 \item Method 2
 \end{itemize}
 \begin{verbatim}
-       N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
- 1: 1868    TRUE power    TRUE FALSE 10    8.73%    1.93%   19.86%    3.37%    46.73%    19.38%
- 2: 2481    TRUE typeI    TRUE FALSE 10    0.32%   26.68%    0.60%   35.99%     2.02%    34.38%
- 3: 1127    TRUE typeI    TRUE FALSE  5    0.44%   30.35%    0.27%   36.02%     2.40%    30.52%
- 4: 1934    TRUE power    TRUE  TRUE 10    9.46%    1.60%   20.42%    3.41%    46.12%    18.98%
- 5: 2432    TRUE typeI    TRUE  TRUE 10    0.12%   24.96%    0.16%   35.44%     1.85%    37.46%
- 6:  245    TRUE power    TRUE  TRUE  5   13.88%    2.04%   13.06%    6.53%    48.98%    15.51%
- 7: 1042    TRUE typeI    TRUE  TRUE  5    0.19%   26.97%    0.10%   37.04%     1.63%    34.07%
- 8: 2500    TRUE power   FALSE  TRUE 10    9.92%    1.76%   21.44%    3.40%    43.96%    19.52%
- 9: 2500    TRUE typeI   FALSE  TRUE 10    0.24%    0.04%    0.44%    0.08%     1.72%    97.48%
-10: 2500    TRUE power   FALSE  TRUE  5   10.36%    2.00%   21.32%    3.04%    43.76%    19.52%
-11: 2500    TRUE typeI   FALSE  TRUE  5    0.08%    0.08%    0.52%        0     1.68%    97.64%
-12: 2500    TRUE power   FALSE FALSE 10    9.36%    1.48%   20.72%    3.44%    45.32%    19.68%
-13: 2483    TRUE typeI   FALSE FALSE 10    0.36%    0.12%    0.20%        0     2.54%    96.78%
-14: 2500    TRUE power   FALSE FALSE  5    9.92%    1.80%   20.40%    3.28%    44.92%    19.68%
-15: 2500    TRUE typeI   FALSE FALSE  5    0.44%        0    0.32%        0     2.36%    96.88%
+        N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
+ 1: 10000    TRUE power    TRUE FALSE 10    9.49%    1.47%   20.92%    3.32%    44.10%    20.70%
+ 2: 10000    TRUE typeI    TRUE FALSE 10    0.23%   26.43%    0.48%   35.92%     1.89%    35.05%
+ 3: 10000    TRUE power    TRUE FALSE  5    9.91%    1.65%   20.81%    3.55%    43.63%    20.45%
+ 4: 10000    TRUE typeI    TRUE FALSE  5    0.27%   27.42%    0.39%   35.46%     1.95%    34.51%
+ 5: 10000    TRUE power    TRUE  TRUE 10    9.14%    1.51%   20.35%    3.43%    44.42%    21.15%
+ 6: 10000    TRUE typeI    TRUE  TRUE 10    0.17%   25.29%    0.41%   35.73%     1.92%    36.48%
+ 7: 10000    TRUE power    TRUE  TRUE  5    9.67%    1.74%   20.46%    3.64%    43.88%    20.61%
+ 8: 10000    TRUE typeI    TRUE  TRUE  5    0.24%   26.94%    0.35%   35.19%     1.96%    35.32%
+ 9: 10000    TRUE power   FALSE  TRUE 10    9.56%    1.46%   20.30%    3.39%    44.39%    20.90%
+10:  9990    TRUE typeI   FALSE  TRUE 10    0.16%    0.07%    0.34%    0.11%     1.87%    97.45%
+11: 10000    TRUE power   FALSE  TRUE  5   10.27%    1.74%   20.29%    3.26%    43.81%    20.63%
+12: 10000    TRUE typeI   FALSE  TRUE  5    0.27%    0.02%    0.36%    0.07%     1.81%    97.47%
+13: 10000    TRUE power   FALSE FALSE 10    9.84%    1.40%   20.75%    3.29%    44.12%    20.60%
+14:  9990    TRUE typeI   FALSE FALSE 10    0.21%    0.02%    0.41%    0.04%     1.87%    97.45%
+15: 10000    TRUE power   FALSE FALSE  5   10.47%    1.67%   20.64%    3.19%    43.48%    20.55%
+16: 10000    TRUE typeI   FALSE FALSE  5    0.29%        0    0.45%        0     1.79%    97.47%
+17: 10000   FALSE power    TRUE FALSE  5    8.93%    1.66%   19.62%    2.98%    43.63%    23.18%
+18: 10000   FALSE typeI    TRUE FALSE  5    0.23%   25.96%    0.38%   34.49%     2.00%    36.94%
 \end{verbatim}
 
 \clearpage
@@ -383,74 +391,83 @@ Relative frequency of stopping for efficacy/futility at decision/final
 \item Method 3
 \end{itemize}
 \begin{verbatim}
-       N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
- 1: 1868    TRUE power    TRUE FALSE 10    8.94%    2.19%   20.77%    3.43%    45.29%    19.38%
- 2: 2481    TRUE typeI    TRUE FALSE 10    0.24%   25.39%    0.48%   35.99%     1.98%    35.91%
- 3: 1127    TRUE typeI    TRUE FALSE  5    0.35%   30.08%    0.27%   35.67%     2.48%    31.14%
- 4: 1934    TRUE power    TRUE  TRUE 10    9.82%    1.55%   21.15%    3.46%    45.14%    18.87%
- 5: 2432    TRUE typeI    TRUE  TRUE 10    0.08%   24.71%    0.21%   35.57%     1.73%    37.71%
- 6:  245    TRUE power    TRUE  TRUE  5   14.69%    2.04%   13.88%    6.12%    47.35%    15.92%
- 7: 1042    TRUE typeI    TRUE  TRUE  5    0.19%   27.06%        0   37.04%     1.63%    34.07%
- 8: 2500    TRUE power   FALSE  TRUE 10   10.40%    1.80%   21.80%    3.32%    42.80%    19.88%
- 9: 2500    TRUE typeI   FALSE  TRUE 10    0.20%    0.04%    0.44%    0.16%     1.68%    97.48%
-10: 2500    TRUE power   FALSE  TRUE  5   10.64%    1.80%   21.04%    3.36%    43.00%    20.16%
-11: 2500    TRUE typeI   FALSE  TRUE  5    0.12%    0.04%    0.48%        0     1.68%    97.68%
-12: 2500    TRUE power   FALSE FALSE 10   10.36%    1.68%   21.36%    3.48%    43.64%    19.48%
-13: 2483    TRUE typeI   FALSE FALSE 10    0.32%    0.16%    0.20%    0.04%     2.58%    96.70%
-14: 2500    TRUE power   FALSE FALSE  5    9.96%    1.84%   20.68%    3.20%    44.48%    19.84%
-15: 2500    TRUE typeI   FALSE FALSE  5    0.44%    0.04%    0.32%    0.04%     2.28%    96.88%
+        N missing  hypo binding  fixC ar dec1.eff dec1.fut dec2.eff dec2.fut final.eff final.fut
+ 1: 10000    TRUE power    TRUE FALSE 10    9.90%    1.60%   21.38%    3.57%    42.73%    20.82%
+ 2: 10000    TRUE typeI    TRUE FALSE 10    0.18%   25.24%    0.42%   35.72%     1.89%    36.55%
+ 3: 10000    TRUE power    TRUE FALSE  5    9.85%    1.79%   20.78%    3.71%    43.36%    20.51%
+ 4: 10000    TRUE typeI    TRUE FALSE  5    0.25%   27.11%    0.38%   35.31%     1.96%    34.99%
+ 5: 10000    TRUE power    TRUE  TRUE 10    9.90%    1.60%   21.38%    3.57%    42.73%    20.82%
+ 6: 10000    TRUE typeI    TRUE  TRUE 10    0.18%   25.24%    0.42%   35.72%     1.89%    36.55%
+ 7: 10000    TRUE power    TRUE  TRUE  5    9.85%    1.79%   20.78%    3.71%    43.36%    20.51%
+ 8: 10000    TRUE typeI    TRUE  TRUE  5    0.25%   27.11%    0.38%   35.31%     1.96%    34.99%
+ 9: 10000    TRUE power   FALSE  TRUE 10   10.35%    1.54%   21.20%    3.42%    42.90%    20.59%
+10:  9990    TRUE typeI   FALSE  TRUE 10    0.17%    0.10%    0.38%    0.12%     1.87%    97.36%
+11: 10000    TRUE power   FALSE  TRUE  5   10.60%    1.77%   20.68%    3.32%    43.15%    20.48%
+12: 10000    TRUE typeI   FALSE  TRUE  5    0.27%    0.03%    0.39%    0.08%     1.78%    97.45%
+13: 10000    TRUE power   FALSE FALSE 10   10.35%    1.54%   21.20%    3.42%    42.90%    20.59%
+14:  9990    TRUE typeI   FALSE FALSE 10    0.17%    0.10%    0.38%    0.12%     1.87%    97.36%
+15: 10000    TRUE power   FALSE FALSE  5   10.60%    1.77%   20.68%    3.32%    43.15%    20.48%
+16: 10000    TRUE typeI   FALSE FALSE  5    0.27%    0.03%    0.39%    0.08%     1.78%    97.45%
+17: 10000   FALSE power    TRUE FALSE  5    8.94%    1.77%   19.69%    3.03%    43.34%    23.23%
+18: 10000   FALSE typeI    TRUE FALSE  5    0.21%   25.61%    0.33%   34.46%     2.00%    37.39%
 \end{verbatim}
 
 Relative frequency of stopping for with a threshold below 1.96:
 \begin{verbatim}
-    scenario missing method binding  fixC ar  hypo    N rejection rejectionBelow196
- 1:        1    TRUE      1    TRUE FALSE 10 power 1868    75.32%             0.64%
- 2:        1    TRUE      2    TRUE FALSE 10 power 1868    75.32%             0.64%
- 3:        2    TRUE      1    TRUE FALSE 10 typeI 2481     2.94%             0.24%
- 4:        2    TRUE      2    TRUE FALSE 10 typeI 2481     2.94%             0.24%
- 5:        4    TRUE      1    TRUE FALSE  5 typeI 1127     3.11%             0.09%
- 6:        4    TRUE      2    TRUE FALSE  5 typeI 1127     3.11%             0.09%
- 7:       13    TRUE      1   FALSE FALSE 10 power 2500    75.28%             0.36%
- 8:       13    TRUE      2   FALSE FALSE 10 power 2500    75.40%             0.32%
- 9:       14    TRUE      1   FALSE FALSE 10 typeI 2483     3.02%             0.04%
-10:       14    TRUE      2   FALSE FALSE 10 typeI 2483     3.10%             0.04%
-11:       15    TRUE      1   FALSE FALSE  5 power 2500    75.12%             0.16%
-12:       15    TRUE      2   FALSE FALSE  5 power 2500    75.24%             0.16%
-13:       16    TRUE      1   FALSE FALSE  5 typeI 2500     3.16%             0.08%
-14:       16    TRUE      2   FALSE FALSE  5 typeI 2500     3.12%             0.08%
+    scenario missing method binding  fixC ar  hypo     N rejection rejectionBelow196
+ 1:        1    TRUE      1    TRUE FALSE 10 power 10000    74.51%             0.67%
+ 2:        1    TRUE      2    TRUE FALSE 10 power 10000    74.51%             0.67%
+ 3:        2    TRUE      1    TRUE FALSE 10 typeI 10000     2.60%             0.13%
+ 4:        2    TRUE      2    TRUE FALSE 10 typeI 10000     2.60%             0.13%
+ 5:        3    TRUE      1    TRUE FALSE  5 power 10000    74.35%             0.35%
+ 6:        3    TRUE      2    TRUE FALSE  5 power 10000    74.35%             0.35%
+ 7:        4    TRUE      1    TRUE FALSE  5 typeI 10000     2.61%             0.05%
+ 8:        4    TRUE      2    TRUE FALSE  5 typeI 10000     2.61%             0.05%
+ 9:       13    TRUE      1   FALSE FALSE 10 power 10000    74.71%             0.54%
+10:       13    TRUE      2   FALSE FALSE 10 power 10000    74.71%             0.54%
+11:       14    TRUE      1   FALSE FALSE 10 typeI  9990     2.49%             0.12%
+12:       14    TRUE      2   FALSE FALSE 10 typeI  9990     2.49%             0.12%
+13:       15    TRUE      1   FALSE FALSE  5 power 10000    74.61%             0.28%
+14:       15    TRUE      2   FALSE FALSE  5 power 10000    74.59%             0.28%
+15:       16    TRUE      1   FALSE FALSE  5 typeI 10000     2.53%             0.10%
+16:       16    TRUE      2   FALSE FALSE  5 typeI 10000     2.53%             0.10%
+17:       17   FALSE      1    TRUE FALSE  5 power 10000    72.18%             0.29%
+18:       17   FALSE      2    TRUE FALSE  5 power 10000    72.18%             0.29%
+19:       18   FALSE      1    TRUE FALSE  5 typeI 10000     2.61%             0.08%
+20:       18   FALSE      2    TRUE FALSE  5 typeI 10000     2.61%             0.08%
 \end{verbatim}
 
 
 \clearpage
 
 \section{Bias (True effect: 0.6 under the alternative)}
-\label{sec:org552c1f2}
+\label{sec:org76bd5f1}
 
 \subsection{2 stages}
-\label{sec:orgee86737}
+\label{sec:org4824153}
 Bias per estimator and method\footnote{e.g. \texttt{biasMLE1} mixed model
 estimator (treatment effect), method 1 (boundaries)}:
 \begin{adjustwidth}{-1cm}{-1cm}
 \begin{verbatim}
      hypo missing binding  fixC ar biasMLE1 biasMLE2 biasMLE3 biasMUE1 biasMUE2 biasMUE3
- 1: power    TRUE    TRUE FALSE 10  0.01345  0.01315  0.01468  0.00598  0.00566  0.00221
- 2: typeI    TRUE    TRUE FALSE 10 -0.01794 -0.01784 -0.01856 -0.00453 -0.00448 -0.00510
- 3: power    TRUE    TRUE FALSE  5  0.02257  0.02255  0.02358  0.01045  0.01048  0.00870
- 4: typeI    TRUE    TRUE FALSE  5 -0.03034 -0.03031 -0.03065 -0.01190 -0.01185 -0.01243
- 5: power    TRUE    TRUE  TRUE 10  0.01345  0.01403  0.01468  0.00110  0.00169  0.00221
- 6: typeI    TRUE    TRUE  TRUE 10 -0.01794 -0.01871 -0.01856 -0.00542 -0.00609 -0.00510
- 7: power    TRUE    TRUE  TRUE  5  0.02257  0.02309  0.02358  0.00788  0.00827  0.00870
- 8: typeI    TRUE    TRUE  TRUE  5 -0.03034 -0.03085 -0.03065 -0.01230 -0.01288 -0.01243
- 9: power    TRUE   FALSE  TRUE 10  0.01433  0.01490  0.01529  0.03456  0.03325  0.03453
-10: typeI    TRUE   FALSE  TRUE 10  0.00019  0.00019  0.00051 -0.00076 -0.00068  0.00077
-11: power    TRUE   FALSE  TRUE  5  0.02366  0.02402  0.02438  0.04130  0.04038  0.04201
-12: typeI    TRUE   FALSE  TRUE  5  0.00091  0.00085  0.00101  0.00052  0.00047  0.00091
-13: power    TRUE   FALSE FALSE 10  0.01433  0.01416  0.01529  0.03552  0.03589  0.03453
-14: typeI    TRUE   FALSE FALSE 10  0.00019  0.00019  0.00051 -0.00020 -0.00021  0.00077
-15: power    TRUE   FALSE FALSE  5  0.02366  0.02365  0.02438  0.04186  0.04202  0.04201
-16: typeI    TRUE   FALSE FALSE  5  0.00091  0.00091  0.00101  0.00087  0.00087  0.00091
-17: power   FALSE    TRUE FALSE  5  0.02284  0.02277  0.02381  0.01197  0.01196  0.01001
-18: typeI   FALSE    TRUE FALSE  5 -0.02952 -0.02945 -0.02992 -0.01111 -0.01106 -0.01168
+ 1: power    TRUE    TRUE FALSE 10  0.01345  0.01315  0.01468  0.00598  0.00566 -0.00286
+ 2: typeI    TRUE    TRUE FALSE 10 -0.01794 -0.01784 -0.01856 -0.00453 -0.00448 -0.00513
+ 3: power    TRUE    TRUE FALSE  5  0.02257  0.02255  0.02358  0.01044  0.01047  0.00364
+ 4: typeI    TRUE    TRUE FALSE  5 -0.03034 -0.03031 -0.03065 -0.01186 -0.01182 -0.01244
+ 5: power    TRUE    TRUE  TRUE 10  0.01345  0.01403  0.01468 -0.01482 -0.01515 -0.00286
+ 6: typeI    TRUE    TRUE  TRUE 10 -0.01794 -0.01871 -0.01856 -0.00553 -0.00619 -0.00513
+ 7: power    TRUE    TRUE  TRUE  5  0.02257  0.02309  0.02358 -0.01511 -0.01521  0.00364
+ 8: typeI    TRUE    TRUE  TRUE  5 -0.03034 -0.03085 -0.03065 -0.01249 -0.01307 -0.01244
+ 9: power    TRUE   FALSE  TRUE 10  0.01433  0.01490  0.01529  0.01725  0.01500  0.02897
+10: typeI    TRUE   FALSE  TRUE 10  0.00019  0.00019  0.00051 -0.00087 -0.00079  0.00073
+11: power    TRUE   FALSE  TRUE  5  0.02366  0.02402  0.02438  0.01667  0.01524  0.03653
+12: typeI    TRUE   FALSE  TRUE  5  0.00091  0.00085  0.00101  0.00033  0.00027  0.00086
+13: power    TRUE   FALSE FALSE 10  0.01433  0.01416  0.01529  0.03552  0.03589  0.02897
+14: typeI    TRUE   FALSE FALSE 10  0.00019  0.00019  0.00051 -0.00020 -0.00021  0.00073
+15: power    TRUE   FALSE FALSE  5  0.02366  0.02365  0.02438  0.04186  0.04202  0.03653
+16: typeI    TRUE   FALSE FALSE  5  0.00091  0.00091  0.00101  0.00087  0.00087  0.00086
+17: power   FALSE    TRUE FALSE  5  0.02284  0.02277  0.02381  0.01197  0.01196  0.00412
+18: typeI   FALSE    TRUE FALSE  5 -0.02952 -0.02945 -0.02992 -0.01111 -0.01106 -0.01172
 \end{verbatim}
 \end{adjustwidth}
 
@@ -458,21 +475,21 @@ Median bias \footnote{Relative frequency at which the estimate is greater than t
 \begin{adjustwidth}{-1cm}{-1cm}
 \begin{verbatim}
      hypo missing binding  fixC ar mbiasMLE1 mbiasMLE2 mbiasMLE3 mbiasMUE1 mbiasMUE2 mbiasMUE3
- 1: power    TRUE    TRUE FALSE 10    0.0261    0.0260    0.0301  -0.00240  -0.00250  -0.00535
+ 1: power    TRUE    TRUE FALSE 10    0.0261    0.0260    0.0301  -0.00240  -0.00250  -0.00545
  2: typeI    TRUE    TRUE FALSE 10   -0.0173   -0.0170   -0.0202   0.00100   0.00075  -0.00015
- 3: power    TRUE    TRUE FALSE  5    0.0405    0.0405    0.0432  -0.00340  -0.00330  -0.00530
+ 3: power    TRUE    TRUE FALSE  5    0.0405    0.0405    0.0432  -0.00345  -0.00335  -0.00545
  4: typeI    TRUE    TRUE FALSE  5   -0.0330   -0.0329   -0.0345   0.00055   0.00055   0.00065
- 5: power    TRUE    TRUE  TRUE 10    0.0261    0.0265    0.0301  -0.01050  -0.01010  -0.00535
+ 5: power    TRUE    TRUE  TRUE 10    0.0261    0.0265    0.0301  -0.01110  -0.01050  -0.00545
  6: typeI    TRUE    TRUE  TRUE 10   -0.0173   -0.0197   -0.0202   0.00100  -0.00065  -0.00015
- 7: power    TRUE    TRUE  TRUE  5    0.0405    0.0407    0.0432  -0.00770  -0.00650  -0.00530
+ 7: power    TRUE    TRUE  TRUE  5    0.0405    0.0407    0.0432  -0.00865  -0.00755  -0.00545
  8: typeI    TRUE    TRUE  TRUE  5   -0.0330   -0.0346   -0.0345   0.00055   0.00075   0.00065
- 9: power    TRUE   FALSE  TRUE 10    0.0326    0.0332    0.0327   0.02772   0.02517   0.02868
+ 9: power    TRUE   FALSE  TRUE 10    0.0326    0.0332    0.0327   0.02719   0.02475   0.02804
 10: typeI    TRUE   FALSE  TRUE 10   -0.0009   -0.0009   -0.0009  -0.00190  -0.00185  -0.00025
-11: power    TRUE   FALSE  TRUE  5    0.0462    0.0459    0.0489   0.02621   0.02512   0.02820
+11: power    TRUE   FALSE  TRUE  5    0.0462    0.0459    0.0489   0.02568   0.02469   0.02799
 12: typeI    TRUE   FALSE  TRUE  5   -0.0009   -0.0010   -0.0009  -0.00130  -0.00140  -0.00015
-13: power    TRUE   FALSE FALSE 10    0.0326    0.0324    0.0327   0.03094   0.03184   0.02868
+13: power    TRUE   FALSE FALSE 10    0.0326    0.0324    0.0327   0.03094   0.03184   0.02804
 14: typeI    TRUE   FALSE FALSE 10   -0.0009   -0.0009   -0.0009  -0.00150  -0.00140  -0.00025
-15: power    TRUE   FALSE FALSE  5    0.0462    0.0464    0.0489   0.02832   0.02865   0.02820
+15: power    TRUE   FALSE FALSE  5    0.0462    0.0464    0.0489   0.02832   0.02865   0.02799
 16: typeI    TRUE   FALSE FALSE  5   -0.0009   -0.0009   -0.0009  -0.00105  -0.00105  -0.00015
 17: power   FALSE    TRUE FALSE  5    0.0383    0.0383    0.0400  -0.00265  -0.00255  -0.00485
 18: typeI   FALSE    TRUE FALSE  5   -0.0329   -0.0327   -0.0353   0.00420   0.00420   0.00330
@@ -483,27 +500,30 @@ Median bias \footnote{Relative frequency at which the estimate is greater than t
 \clearpage
 
 \subsection{3 stages}
-\label{sec:orgf87ffa6}
+\label{sec:orgf5c49ff}
 Bias per estimator and method\footnote{e.g. \texttt{biasMLE1} mixed model
 estimator (treatment effect), method 1 (boundaries)}:
 \begin{adjustwidth}{-1cm}{-1cm}
 \begin{verbatim}
      hypo missing binding  fixC ar biasMLE1 biasMLE2 biasMLE3 biasMUE1 biasMUE2 biasMUE3
- 1: power    TRUE    TRUE FALSE 10   0.0191   0.0191   0.0201   0.0181   0.0179   0.0133
- 2: typeI    TRUE    TRUE FALSE 10  -0.0278  -0.0276  -0.0263  -0.0233  -0.0230  -0.0245
- 3: typeI    TRUE    TRUE FALSE  5  -0.0688  -0.0690  -0.0693  -0.0528  -0.0531  -0.0541
- 4: power    TRUE    TRUE  TRUE 10   0.0197   0.0202   0.0217   0.0187   0.0211   0.0200
- 5: typeI    TRUE    TRUE  TRUE 10  -0.0341  -0.0336  -0.0340  -0.0252  -0.0240  -0.0253
- 6: power    TRUE    TRUE  TRUE  5   0.0167   0.0148   0.0177   0.0354   0.0190   0.0157
- 7: typeI    TRUE    TRUE  TRUE  5  -0.0547  -0.0539  -0.0542  -0.0342  -0.0350  -0.0361
- 8: power    TRUE   FALSE  TRUE 10   0.0251   0.0254   0.0262   0.0561   0.0553   0.0523
- 9: typeI    TRUE   FALSE  TRUE 10   0.0085   0.0081   0.0085   0.0100   0.0096   0.0101
-10: power    TRUE   FALSE  TRUE  5   0.0377   0.0377   0.0374   0.0569   0.0570   0.0547
-11: typeI    TRUE   FALSE  TRUE  5   0.0087   0.0085   0.0088   0.0092   0.0091   0.0092
-12: power    TRUE   FALSE FALSE 10   0.0266   0.0268   0.0296   0.0539   0.0538   0.0536
-13: typeI    TRUE   FALSE FALSE 10   0.0111   0.0106   0.0106   0.0130   0.0124   0.0130
-14: power    TRUE   FALSE FALSE  5   0.0416   0.0419   0.0428   0.0605   0.0593   0.0584
-15: typeI    TRUE   FALSE FALSE  5   0.0126   0.0122   0.0125   0.0137   0.0132   0.0134
+ 1: power    TRUE    TRUE FALSE 10   0.0212   0.0212   0.0228   0.0233   0.0233   0.0136
+ 2: typeI    TRUE    TRUE FALSE 10  -0.0348  -0.0348  -0.0340  -0.0268  -0.0268  -0.0280
+ 3: power    TRUE    TRUE FALSE  5   0.0344   0.0344   0.0350   0.0258   0.0258   0.0164
+ 4: typeI    TRUE    TRUE FALSE  5  -0.0563  -0.0562  -0.0560  -0.0336  -0.0335  -0.0339
+ 5: power    TRUE    TRUE  TRUE 10   0.0212   0.0214   0.0228   0.0077   0.0080   0.0136
+ 6: typeI    TRUE    TRUE  TRUE 10  -0.0348  -0.0340  -0.0340  -0.0280  -0.0283  -0.0280
+ 7: power    TRUE    TRUE  TRUE  5   0.0344   0.0345   0.0350   0.0053   0.0056   0.0164
+ 8: typeI    TRUE    TRUE  TRUE  5  -0.0563  -0.0562  -0.0560  -0.0341  -0.0344  -0.0339
+ 9: power    TRUE   FALSE  TRUE 10   0.0209   0.0212   0.0224   0.0375   0.0359   0.0422
+10: typeI    TRUE   FALSE  TRUE 10   0.0027   0.0027   0.0028   0.0023   0.0023   0.0029
+11: power    TRUE   FALSE  TRUE  5   0.0339   0.0340   0.0347   0.0376   0.0369   0.0494
+12: typeI    TRUE   FALSE  TRUE  5   0.0037   0.0037   0.0038   0.0034   0.0035   0.0037
+13: power    TRUE   FALSE FALSE 10   0.0209   0.0209   0.0224   0.0505   0.0505   0.0422
+14: typeI    TRUE   FALSE FALSE 10   0.0027   0.0027   0.0028   0.0031   0.0031   0.0029
+15: power    TRUE   FALSE FALSE  5   0.0339   0.0339   0.0347   0.0572   0.0572   0.0494
+16: typeI    TRUE   FALSE FALSE  5   0.0037   0.0038   0.0038   0.0044   0.0044   0.0037
+17: power   FALSE    TRUE FALSE  5   0.0303   0.0303   0.0310   0.0235   0.0235   0.0149
+18: typeI   FALSE    TRUE FALSE  5  -0.0565  -0.0565  -0.0564  -0.0362  -0.0363  -0.0368
 \end{verbatim}
 \end{adjustwidth}
 
@@ -511,21 +531,24 @@ Median bias \footnote{Relative frequency at which the estimate is greater than t
 \begin{adjustwidth}{-1cm}{-1cm}
 \begin{verbatim}
      hypo missing binding  fixC ar mbiasMLE1 mbiasMLE2 mbiasMLE3 mbiasMUE1 mbiasMUE2 mbiasMUE3
- 1: power    TRUE    TRUE FALSE 10     0.034     0.034     0.038    0.0134    0.0134    0.0054
- 2: typeI    TRUE    TRUE FALSE 10    -0.022    -0.022    -0.020    0.0147    0.0151    0.0139
- 3: typeI    TRUE    TRUE FALSE  5    -0.072    -0.072    -0.075   -0.0138   -0.0129   -0.0138
- 4: power    TRUE    TRUE  TRUE 10     0.028     0.029     0.029    0.0031    0.0041    0.0057
- 5: typeI    TRUE    TRUE  TRUE 10    -0.029    -0.033    -0.032    0.0086    0.0095    0.0074
- 6: power    TRUE    TRUE  TRUE  5    -0.018    -0.014    -0.018   -0.0347   -0.0347   -0.0429
- 7: typeI    TRUE    TRUE  TRUE  5    -0.054    -0.047    -0.057   -0.0106   -0.0106   -0.0134
- 8: power    TRUE   FALSE  TRUE 10     0.039     0.038     0.040    0.0520    0.0576    0.0484
- 9: typeI    TRUE   FALSE  TRUE 10     0.022     0.023     0.020    0.0228    0.0232    0.0220
-10: power    TRUE   FALSE  TRUE  5     0.048     0.050     0.046    0.0372    0.0428    0.0352
-11: typeI    TRUE   FALSE  TRUE  5     0.023     0.023     0.021    0.0228    0.0236    0.0212
-12: power    TRUE   FALSE FALSE 10     0.034     0.030     0.036    0.0460    0.0444    0.0408
-13: typeI    TRUE   FALSE FALSE 10     0.018     0.015     0.015    0.0171    0.0151    0.0159
-14: power    TRUE   FALSE FALSE  5     0.044     0.040     0.042    0.0452    0.0392    0.0384
-15: typeI    TRUE   FALSE FALSE  5     0.018     0.015     0.015    0.0180    0.0152    0.0156
+ 1: power    TRUE    TRUE FALSE 10    0.0281    0.0281    0.0300    0.0072   0.00700    0.0025
+ 2: typeI    TRUE    TRUE FALSE 10   -0.0389   -0.0388   -0.0376   -0.0001   0.00020    0.0013
+ 3: power    TRUE    TRUE FALSE  5    0.0391    0.0390    0.0400    0.0081   0.00800    0.0053
+ 4: typeI    TRUE    TRUE FALSE  5   -0.0660   -0.0658   -0.0660   -0.0015  -0.00115   -0.0013
+ 5: power    TRUE    TRUE  TRUE 10    0.0281    0.0280    0.0300    0.0013   0.00185    0.0025
+ 6: typeI    TRUE    TRUE  TRUE 10   -0.0389   -0.0377   -0.0376   -0.0005   0.00075    0.0011
+ 7: power    TRUE    TRUE  TRUE  5    0.0391    0.0387    0.0400    0.0050   0.00530    0.0053
+ 8: typeI    TRUE    TRUE  TRUE  5   -0.0660   -0.0660   -0.0660   -0.0016  -0.00120   -0.0012
+ 9: power    TRUE   FALSE  TRUE 10    0.0175    0.0173    0.0188    0.0233   0.02086    0.0221
+10: typeI    TRUE   FALSE  TRUE 10   -0.0036   -0.0036   -0.0036   -0.0045  -0.00451   -0.0040
+11: power    TRUE   FALSE  TRUE  5    0.0275    0.0272    0.0287    0.0241   0.02347    0.0252
+12: typeI    TRUE   FALSE  TRUE  5   -0.0035   -0.0035   -0.0035   -0.0039  -0.00385   -0.0037
+13: power    TRUE   FALSE FALSE 10    0.0175    0.0174    0.0188    0.0260   0.02586    0.0221
+14: typeI    TRUE   FALSE FALSE 10   -0.0036   -0.0036   -0.0036   -0.0040  -0.00401   -0.0039
+15: power    TRUE   FALSE FALSE  5    0.0275    0.0275    0.0287    0.0255   0.02554    0.0252
+16: typeI    TRUE   FALSE FALSE  5   -0.0035   -0.0035   -0.0035   -0.0034  -0.00350   -0.0039
+17: power   FALSE    TRUE FALSE  5    0.0244    0.0245    0.0251    0.0036   0.00360    0.0014
+18: typeI   FALSE    TRUE FALSE  5   -0.0634   -0.0632   -0.0630   -0.0041  -0.00425   -0.0037
 \end{verbatim}
 
 \end{adjustwidth}
@@ -533,10 +556,10 @@ Median bias \footnote{Relative frequency at which the estimate is greater than t
 \clearpage
 
 \section{Distribution of the estimates}
-\label{sec:org1423ed4}
+\label{sec:org58a4e51}
 
 \subsection{2 stages}
-\label{sec:org554815b}
+\label{sec:org2fee04d}
 Distribution of the estimates:
 \begin{figure}[!h]
 \centering
@@ -562,7 +585,7 @@ Distribution of the median unbiased estimate conditional to the stage:
 \clearpage
 
 \subsection{3 stages}
-\label{sec:org627302a}
+\label{sec:orgddcd92f}
 
 Distribution of the estimates:
 \begin{figure}[!h]
@@ -589,10 +612,10 @@ Distribution of the median unbiased estimate conditional to the stage:
 \clearpage
 
 \section{Special cases}
-\label{sec:org7094af2}
+\label{sec:orge48747f}
 
 \subsection{2 stages}
-\label{sec:org769a6b0}
+\label{sec:orgdf7099d}
 
 Reason for stopping (efficacy, futility, Imax reached), continuing the
 trial (decreasing information, no boundary crossed), or concluding
@@ -640,49 +663,52 @@ stop for futility at interim 1                  0    0    0    0    0    0    0 
 \clearpage
 
 \subsection{3 stages}
-\label{sec:orga3c3574}
+\label{sec:orga8a1bd4}
 
 Reason for stopping (efficacy, futility, Imax reached), continuing the
 trial (decreasing information, no boundary crossed), or concluding
 (stop for futility at interim):
 \begin{verbatim}
-                                    scenario    1    2    4    5    6    7    8
-reason                       method                                            
-efficacy                     1                529   20    9  566   10   69    5
-                             2                529   20    9  584   12   67    7
-                             3                566   22    9  609   12   71    5
-futility                     1                104 1556  747   98 1501   19  669
-                             2                104 1558  747   91 1464   20  663
-                             3                 94 1519  739   87 1461   19  665
-no boundary crossed          1               2904 2717 1152 2991 2723  362 1122
-                             2               2904 2714 1151 2979 2778  364 1131
-                             3               2868 2785 1163 2952 2788  359 1130
-stop for futility at interim 1                  0    0    0    0    0    0    0
-                             2                  0    0    0    0    0    0    0
-                             3                  2    1    0    0    0    0    0
+                                    scenario     1     2     3     4     5     6     7     8
+reason                       method                                                         
+efficacy                     1                3021    71  3070    67  3021    71  3070    67
+                             2                3024    71  3073    67  2995    71  3048    65
+                             3                3201    82  3108    69  3201    82  3108    69
+futility                     1                 493  6224   518  6284   493  6224   518  6284
+                             2                 496  6235   519  6287   448  6089   503  6207
+                             3                 444  6074   505  6236   444  6074   505  6236
+no boundary crossed          1               15394 11046 15257 10881 15394 11046 15257 10881
+                             2               15384 11028 15252 10877 15492 11294 15308 11010
+                             3               15205 11302 15223 10959 15205 11302 15223 10959
+stop for futility at interim 1                   0     0     0     0     0     0     0     0
+                             2                   0     0     0     0     0     0     0     0
+                             3                   3     1     0     0     3     1     0     0
 \end{verbatim}
 
 \begin{verbatim}
-                           scenario    9   10   11   12   13   14   15   16
-reason              method                                                 
-efficacy            1                782   20  794   16  749   18  764   21
-                    2                792   20  798   17  750   17  758   19
-                    3                814   21  802   16  804   18  770   21
-futility            1                131 2200  118 2242  128 2248  134 2282
-                    2                121 2148  120 2242  125 2243  127 2278
-                    3                119 2110  119 2216  118 2181  122 2257
-no boundary crossed 1               3794 2774 3785 2739 3852 2688 3809 2686
-                    2               3795 2825 3773 2737 3854 2694 3822 2692
-                    3               3762 2863 3768 2764 3777 2755 3813 2710
+                                    scenario     9    10    11    12    13    14    15    16    17    18
+reason                       method                                                                     
+efficacy                     1                3046    68  3110    73  3046    68  3110    73  2851    61
+                             2                3028    68  3083    72  3047    68  3111    74  2853    61
+                             3                3212    77  3160    77  3212    77  3160    77  2894    62
+futility                     1                 480  8907   485  9058   480  8907   485  9058   465  6039
+                             2                 443  8657   473  8953   481  8924   486  9063   466  6045
+                             3                 439  8644   477  9002   439  8644   477  9002   449  5999
+no boundary crossed          1               15352 10982 15193 10840 15352 10982 15193 10840 15625 11286
+                             2               15427 11232 15243 10946 15348 10965 15189 10834 15622 11275
+                             3               15160 11232 15126 10891 15160 11232 15126 10891 15586 11357
+stop for futility at interim 1                   0     0     0     0     0     0     0     0     0     0
+                             2                   0     0     0     0     0     0     0     0     0     0
+                             3                   3     0     1     0     3     0     1     0     0     0
 \end{verbatim}
 
 \clearpage
 
 \section{Reversal probability}
-\label{sec:orgdf46b2f}
+\label{sec:org02cf1f9}
 
 \subsection{2 stages}
-\label{sec:org13888a5}
+\label{sec:org8549a3a}
 
 Percentage of time we observe a reversal:
 
@@ -711,38 +737,37 @@ Percentage of time we observe a reversal:
 \clearpage
 
 \subsection{3 stages}
-\label{sec:org0cd38dc}
+\label{sec:org19f7f06}
 Percentage of time we observe a reversal:
 \begin{verbatim}
-       N  hypo missing ar binding  fixC fu2eff_1 fu2eff_2 fu2eff_3 eff2fu_1 eff2fu_2 eff2fu_3
- 1: 1868 power    TRUE 10    TRUE FALSE    0.32%    0.32%        0    0.05%    0.05%    0.59%
- 2: 2481 typeI    TRUE 10    TRUE FALSE    0.20%    0.20%        0    0.08%    0.08%    0.16%
- 3: 1127 typeI    TRUE  5    TRUE FALSE        0        0        0    0.09%    0.09%    0.18%
- 4: 1934 power    TRUE 10    TRUE  TRUE        0        0        0    0.31%    0.31%    0.52%
- 5: 2432 typeI    TRUE 10    TRUE  TRUE        0        0        0    0.16%    0.21%    0.21%
- 6:  245 power    TRUE  5    TRUE  TRUE        0        0        0    0.41%    0.41%    0.41%
- 7: 1042 typeI    TRUE  5    TRUE  TRUE        0        0        0    0.29%    0.38%    0.29%
- 8: 2500 power    TRUE 10   FALSE  TRUE    0.04%        0        0    0.28%    0.32%    0.36%
- 9: 2500 typeI    TRUE 10   FALSE  TRUE        0        0        0    0.16%    0.12%    0.20%
-10: 2500 power    TRUE  5   FALSE  TRUE        0        0        0    0.40%    0.24%    0.40%
-11: 2500 typeI    TRUE  5   FALSE  TRUE        0        0        0    0.04%    0.08%    0.04%
-12: 2500 power    TRUE 10   FALSE FALSE    0.12%    0.12%        0    0.04%    0.04%    0.44%
-13: 2483 typeI    TRUE 10   FALSE FALSE        0        0        0    0.16%    0.12%    0.20%
-14: 2500 power    TRUE  5   FALSE FALSE        0        0        0        0        0    0.16%
-15: 2500 typeI    TRUE  5   FALSE FALSE        0        0        0        0        0    0.08%
+        N  hypo missing ar binding  fixC fu2eff_1 fu2eff_2 fu2eff_3 eff2fu_1 eff2fu_2 eff2fu_3
+ 1: 10000 power    TRUE 10    TRUE FALSE    0.25%    0.25%        0    0.08%    0.08%    0.73%
+ 2: 10000 typeI    TRUE 10    TRUE FALSE    0.06%    0.06%        0    0.06%    0.06%    0.22%
+ 3: 10000 typeI    TRUE  5    TRUE FALSE        0        0        0    0.01%    0.01%    0.06%
+ 4: 10000 power    TRUE 10    TRUE  TRUE    0.04%    0.04%        0    0.54%    0.50%    0.73%
+ 5: 10000 typeI    TRUE 10    TRUE  TRUE    0.01%    0.01%        0    0.14%    0.14%    0.22%
+ 6: 10000 power    TRUE  5    TRUE  TRUE        0        0        0    0.36%    0.35%    0.45%
+ 7: 10000 typeI    TRUE  5    TRUE  TRUE        0        0        0    0.06%    0.06%    0.06%
+ 8: 10000 power    TRUE 10   FALSE  TRUE    0.05%    0.04%        0    0.47%    0.46%    0.57%
+ 9:  9990 typeI    TRUE 10   FALSE  TRUE        0        0        0    0.18%    0.18%    0.22%
+10: 10000 power    TRUE  5   FALSE  TRUE    0.01%    0.01%        0    0.29%    0.28%    0.32%
+11: 10000 typeI    TRUE  5   FALSE  TRUE        0        0        0    0.10%    0.09%    0.11%
+12: 10000 power    TRUE 10   FALSE FALSE    0.21%    0.21%        0    0.09%    0.09%    0.57%
+13:  9990 typeI    TRUE 10   FALSE FALSE        0        0        0    0.06%    0.06%    0.22%
+14: 10000 power    TRUE  5   FALSE FALSE    0.01%    0.01%        0    0.01%    0.01%    0.32%
+15: 10000 typeI    TRUE  5   FALSE FALSE        0        0        0        0        0    0.11%
 \end{verbatim}
 
 
 \clearpage
 
 \section{Logical consistency of p-values/CIs}
-\label{sec:orgab7644f}
-
+\label{sec:org1d54d68}
 
 \subsection{Mismatch p-value / boundaries}
-\label{sec:orgf13b1c3}
+\label{sec:orgbcc1256}
 \subsubsection{2 stages}
-\label{sec:org9ea0e19}
+\label{sec:orgf5154bc}
 
 When concluding for futility:
 \begin{verbatim}
@@ -793,55 +818,61 @@ When concluding for efficacy:
 \clearpage
 
 \subsubsection{3 stages}
-\label{sec:org2099d81}
+\label{sec:org1746b3f}
 
 When concluding for futility:
 \begin{verbatim}
      hypo missing ar binding  fixC method 1 method 2 method 3
  1: power    TRUE 10    TRUE FALSE        0        0        0
  2: typeI    TRUE 10    TRUE FALSE        0        0        0
- 3: typeI    TRUE  5    TRUE FALSE        0        0        0
- 4: power    TRUE 10    TRUE  TRUE        0        0        0
- 5: typeI    TRUE 10    TRUE  TRUE        0        0        0
- 6: power    TRUE  5    TRUE  TRUE        0        0        0
- 7: typeI    TRUE  5    TRUE  TRUE        0        0        0
- 8: power    TRUE 10   FALSE  TRUE        0    0.16%        0
- 9: typeI    TRUE 10   FALSE  TRUE        0        0        0
-10: power    TRUE  5   FALSE  TRUE        0        0        0
-11: typeI    TRUE  5   FALSE  TRUE        0        0        0
-12: power    TRUE 10   FALSE FALSE        0        0        0
-13: typeI    TRUE 10   FALSE FALSE        0        0        0
-14: power    TRUE  5   FALSE FALSE        0        0        0
-15: typeI    TRUE  5   FALSE FALSE        0        0        0
+ 3: power    TRUE  5    TRUE FALSE        0        0        0
+ 4: typeI    TRUE  5    TRUE FALSE        0        0        0
+ 5: power    TRUE 10    TRUE  TRUE        0        0    0.04%
+ 6: typeI    TRUE 10    TRUE  TRUE        0        0        0
+ 7: power    TRUE  5    TRUE  TRUE        0        0        0
+ 8: typeI    TRUE  5    TRUE  TRUE        0        0        0
+ 9: power    TRUE 10   FALSE  TRUE    0.04%    0.04%        0
+10: typeI    TRUE 10   FALSE  TRUE        0        0        0
+11: power    TRUE  5   FALSE  TRUE        0        0        0
+12: typeI    TRUE  5   FALSE  TRUE        0        0        0
+13: power    TRUE 10   FALSE FALSE    0.04%        0        0
+14: typeI    TRUE 10   FALSE FALSE        0        0        0
+15: power    TRUE  5   FALSE FALSE        0        0        0
+16: typeI    TRUE  5   FALSE FALSE        0        0        0
+17: power   FALSE  5    TRUE FALSE        0        0        0
+18: typeI   FALSE  5    TRUE FALSE        0        0        0
 \end{verbatim}
 
 When concluding for efficacy:
 \begin{verbatim}
      hypo missing ar binding  fixC method 1 method 2 method 3
- 1: power    TRUE 10    TRUE FALSE        0        0        0
- 2: typeI    TRUE 10    TRUE FALSE        0        0        0
- 3: typeI    TRUE  5    TRUE FALSE        0        0        0
- 4: power    TRUE 10    TRUE  TRUE        0        0        0
- 5: typeI    TRUE 10    TRUE  TRUE        0        0        0
- 6: power    TRUE  5    TRUE  TRUE        0        0        0
- 7: typeI    TRUE  5    TRUE  TRUE        0        0        0
- 8: power    TRUE 10   FALSE  TRUE        0        0        0
- 9: typeI    TRUE 10   FALSE  TRUE        0        0        0
-10: power    TRUE  5   FALSE  TRUE        0        0        0
-11: typeI    TRUE  5   FALSE  TRUE        0        0        0
-12: power    TRUE 10   FALSE FALSE        0    0.05%        0
-13: typeI    TRUE 10   FALSE FALSE        0        0        0
-14: power    TRUE  5   FALSE FALSE        0    0.05%        0
-15: typeI    TRUE  5   FALSE FALSE        0        0        0
+ 1: power    TRUE 10    TRUE FALSE    0.01%    0.01%        0
+ 2: typeI    TRUE 10    TRUE FALSE    0.38%        0        0
+ 3: power    TRUE  5    TRUE FALSE        0        0        0
+ 4: typeI    TRUE  5    TRUE FALSE        0        0        0
+ 5: power    TRUE 10    TRUE  TRUE    0.01%        0        0
+ 6: typeI    TRUE 10    TRUE  TRUE    0.40%        0        0
+ 7: power    TRUE  5    TRUE  TRUE        0        0        0
+ 8: typeI    TRUE  5    TRUE  TRUE        0        0        0
+ 9: power    TRUE 10   FALSE  TRUE        0        0        0
+10: typeI    TRUE 10   FALSE  TRUE        0        0        0
+11: power    TRUE  5   FALSE  TRUE    0.01%    0.01%        0
+12: typeI    TRUE  5   FALSE  TRUE        0        0        0
+13: power    TRUE 10   FALSE FALSE        0    0.01%        0
+14: typeI    TRUE 10   FALSE FALSE        0        0        0
+15: power    TRUE  5   FALSE FALSE    0.01%        0        0
+16: typeI    TRUE  5   FALSE FALSE        0        0        0
+17: power   FALSE  5    TRUE FALSE        0        0        0
+18: typeI   FALSE  5    TRUE FALSE        0        0        0
 \end{verbatim}
 
 \clearpage
 
 \subsection{Mismatch confidence intervals / boundaries}
-\label{sec:org48495be}
+\label{sec:org4bb3d0c}
 
 \subsubsection{2 stages}
-\label{sec:orged24ffa}
+\label{sec:org60347dc}
 
 When concluding for futility:
 \begin{verbatim}
@@ -890,176 +921,258 @@ When concluding for efficacy:
 \end{verbatim}
 
 \subsubsection{3 stages}
-\label{sec:org3d53077}
+\label{sec:org798d7e3}
 
 When concluding for futility:
 \begin{verbatim}
-     hypo missing ar binding  fixC           method 1       method 2           method 3
- 1: power    TRUE 10    TRUE FALSE                  0              0                  0
- 2: typeI    TRUE 10    TRUE FALSE                  0              0                  0
- 3: typeI    TRUE  5    TRUE FALSE                  0              0                  0
- 4: power    TRUE 10    TRUE  TRUE                  0              0                  0
- 5: typeI    TRUE 10    TRUE  TRUE                  0              0                  0
- 6: power    TRUE  5    TRUE  TRUE                  0              0                  0
- 7: typeI    TRUE  5    TRUE  TRUE                  0              0                  0
- 8: power    TRUE 10   FALSE  TRUE 0.20% (NA: 21.43%) 0 (NA: 20.42%) 1.97% (NA: 18.88%)
- 9: typeI    TRUE 10   FALSE  TRUE      0 (NA: 0.12%)  0 (NA: 0.08%)  0.16% (NA: 0.04%)
-10: power    TRUE  5   FALSE  TRUE     0 (NA: 19.65%) 0 (NA: 20.36%) 2.51% (NA: 18.33%)
-11: typeI    TRUE  5   FALSE  TRUE      0 (NA: 0.04%)  0 (NA: 0.04%)              0.04%
-12: power    TRUE 10   FALSE FALSE     0 (NA: 20.39%) 0 (NA: 20.00%) 2.99% (NA: 18.51%)
-13: typeI    TRUE 10   FALSE FALSE      0 (NA: 0.17%)  0 (NA: 0.12%)  0.04% (NA: 0.17%)
-14: power    TRUE  5   FALSE FALSE     0 (NA: 21.54%) 0 (NA: 20.52%) 0.80% (NA: 19.61%)
-15: typeI    TRUE  5   FALSE FALSE                  0              0              0.08%
+     hypo missing ar binding  fixC          method 1          method 2           method 3
+ 1: power    TRUE 10    TRUE FALSE 0.04% (NA: 0.12%)     0 (NA: 0.12%)  0.04% (NA: 0.85%)
+ 2: typeI    TRUE 10    TRUE FALSE     0 (NA: 0.03%)     0 (NA: 0.03%)      0 (NA: 0.09%)
+ 3: power    TRUE  5    TRUE FALSE             0.08%                 0      0 (NA: 0.42%)
+ 4: typeI    TRUE  5    TRUE FALSE                 0                 0      0 (NA: 0.01%)
+ 5: power    TRUE 10    TRUE  TRUE 0.04% (NA: 0.61%) 0.04% (NA: 0.61%)      0 (NA: 0.85%)
+ 6: typeI    TRUE 10    TRUE  TRUE     0 (NA: 0.07%) 0.01% (NA: 0.07%)  0.01% (NA: 0.09%)
+ 7: power    TRUE  5    TRUE  TRUE 0.08% (NA: 0.31%)     0 (NA: 0.31%)  0.04% (NA: 0.42%)
+ 8: typeI    TRUE  5    TRUE  TRUE     0 (NA: 0.01%) 0.01% (NA: 0.01%)      0 (NA: 0.01%)
+ 9: power    TRUE 10   FALSE  TRUE    0 (NA: 20.21%)    0 (NA: 18.83%)     0 (NA: 19.41%)
+10: typeI    TRUE 10   FALSE  TRUE     0 (NA: 0.18%)     0 (NA: 0.18%)      0 (NA: 0.23%)
+11: power    TRUE  5   FALSE  TRUE    0 (NA: 19.98%)    0 (NA: 19.51%)     0 (NA: 19.91%)
+12: typeI    TRUE  5   FALSE  TRUE     0 (NA: 0.10%)     0 (NA: 0.09%)      0 (NA: 0.11%)
+13: power    TRUE 10   FALSE FALSE    0 (NA: 18.51%)    0 (NA: 18.54%)     0 (NA: 19.41%)
+14: typeI    TRUE 10   FALSE FALSE     0 (NA: 0.06%)     0 (NA: 0.06%)      0 (NA: 0.23%)
+15: power    TRUE  5   FALSE FALSE    0 (NA: 19.10%)    0 (NA: 19.13%) 0.05% (NA: 19.91%)
+16: typeI    TRUE  5   FALSE FALSE                 0                 0      0 (NA: 0.11%)
+17: power   FALSE  5    TRUE FALSE             0.04%             0.04%      0 (NA: 0.43%)
+18: typeI   FALSE  5    TRUE FALSE                 0                 0      0 (NA: 0.02%)
 \end{verbatim}
 
 When concluding for efficacy:
 \begin{verbatim}
-     hypo missing ar binding  fixC method 1 method 2 method 3
- 1: power    TRUE 10    TRUE FALSE        0        0        0
- 2: typeI    TRUE 10    TRUE FALSE        0        0        0
- 3: typeI    TRUE  5    TRUE FALSE        0        0        0
- 4: power    TRUE 10    TRUE  TRUE        0        0        0
- 5: typeI    TRUE 10    TRUE  TRUE        0        0        0
- 6: power    TRUE  5    TRUE  TRUE        0        0        0
- 7: typeI    TRUE  5    TRUE  TRUE        0        0        0
- 8: power    TRUE 10   FALSE  TRUE        0        0        0
- 9: typeI    TRUE 10   FALSE  TRUE        0        0        0
-10: power    TRUE  5   FALSE  TRUE        0        0        0
-11: typeI    TRUE  5   FALSE  TRUE        0        0        0
-12: power    TRUE 10   FALSE FALSE        0        0        0
-13: typeI    TRUE 10   FALSE FALSE        0        0        0
-14: power    TRUE  5   FALSE FALSE        0        0        0
-15: typeI    TRUE  5   FALSE FALSE        0        0        0
+     hypo missing ar binding  fixC      method 1      method 2      method 3
+ 1: power    TRUE 10    TRUE FALSE             0         0.01%             0
+ 2: typeI    TRUE 10    TRUE FALSE             0             0             0
+ 3: power    TRUE  5    TRUE FALSE             0             0             0
+ 4: typeI    TRUE  5    TRUE FALSE             0             0             0
+ 5: power    TRUE 10    TRUE  TRUE             0         0.01%             0
+ 6: typeI    TRUE 10    TRUE  TRUE             0             0             0
+ 7: power    TRUE  5    TRUE  TRUE             0             0             0
+ 8: typeI    TRUE  5    TRUE  TRUE             0             0             0
+ 9: power    TRUE 10   FALSE  TRUE             0         0.01% 0 (NA: 0.01%)
+10: typeI    TRUE 10   FALSE  TRUE             0             0             0
+11: power    TRUE  5   FALSE  TRUE         0.01%             0         0.01%
+12: typeI    TRUE  5   FALSE  TRUE             0             0             0
+13: power    TRUE 10   FALSE FALSE             0             0 0 (NA: 0.01%)
+14: typeI    TRUE 10   FALSE FALSE             0             0             0
+15: power    TRUE  5   FALSE FALSE         0.01%             0             0
+16: typeI    TRUE  5   FALSE FALSE             0             0             0
+17: power   FALSE  5    TRUE FALSE 0 (NA: 0.01%) 0 (NA: 0.01%) 0 (NA: 0.01%)
+18: typeI   FALSE  5    TRUE FALSE             0             0             0
 \end{verbatim}
 
 \subsection{Range of p-values}
-\label{sec:orgcb7167a}
+\label{sec:orge5dc5d6}
 
 \subsubsection{2 stages}
-\label{sec:orga37518c}
+\label{sec:org04a03ba}
 \begin{verbatim}
-    missing binding  fixC ar  hypo        method 1        method 2       method 3
- 1:    TRUE    TRUE FALSE 10 power      [0;0.9147]      [0;0.9147]     [0;0.9147]
- 2:    TRUE    TRUE FALSE 10 typeI  [1e-04;0.9999]  [1e-04;0.9999] [1e-04;0.9999]
- 3:    TRUE    TRUE FALSE  5 power      [0;0.9015]      [0;0.9015]     [0;0.9015]
- 4:    TRUE    TRUE FALSE  5 typeI  [1e-04;0.9998]  [1e-04;0.9998] [1e-04;0.9998]
- 5:    TRUE    TRUE  TRUE 10 power  [7e-04;0.9147]  [7e-04;0.9147]     [0;0.9147]
- 6:    TRUE    TRUE  TRUE 10 typeI [0.0016;0.9999] [0.0016;0.9999] [1e-04;0.9999]
- 7:    TRUE    TRUE  TRUE  5 power  [1e-04;0.9015]  [1e-04;0.9015]     [0;0.9015]
- 8:    TRUE    TRUE  TRUE  5 typeI  [5e-04;0.9998]  [5e-04;0.9998] [1e-04;0.9998]
- 9:    TRUE   FALSE  TRUE 10 power       [8e-04;1]       [8e-04;1]          [0;1]
-10:    TRUE   FALSE  TRUE 10 typeI      [0.0015;1]      [0.0015;1]      [5e-04;1]
-11:    TRUE   FALSE  TRUE  5 power       [1e-04;1]       [1e-04;1]          [0;1]
-12:    TRUE   FALSE  TRUE  5 typeI       [6e-04;1]       [5e-04;1]      [2e-04;1]
-13:    TRUE   FALSE FALSE 10 power           [0;1]           [0;1]          [0;1]
-14:    TRUE   FALSE FALSE 10 typeI       [1e-04;1]       [1e-04;1]      [5e-04;1]
-15:    TRUE   FALSE FALSE  5 power           [0;1]           [0;1]          [0;1]
-16:    TRUE   FALSE FALSE  5 typeI           [0;1]           [0;1]      [2e-04;1]
-17:   FALSE    TRUE FALSE  5 power      [0;0.9642]      [0;0.9642]     [0;0.9642]
-18:   FALSE    TRUE FALSE  5 typeI           [0;1]           [0;1]      [3e-04;1]
+    missing binding  fixC ar  hypo       method 1       method 2       method 3
+ 1:    TRUE    TRUE FALSE 10 power     [0;0.9147]     [0;0.9147]     [0;0.9147]
+ 2:    TRUE    TRUE FALSE 10 typeI [1e-04;0.9999] [1e-04;0.9999] [1e-04;0.9999]
+ 3:    TRUE    TRUE FALSE  5 power     [0;0.9015]     [0;0.9015]     [0;0.9015]
+ 4:    TRUE    TRUE FALSE  5 typeI [1e-04;0.9998] [1e-04;0.9998] [1e-04;0.9998]
+ 5:    TRUE    TRUE  TRUE 10 power     [0;0.9147]     [0;0.9147]     [0;0.9147]
+ 6:    TRUE    TRUE  TRUE 10 typeI [2e-04;0.9999] [2e-04;0.9999] [1e-04;0.9999]
+ 7:    TRUE    TRUE  TRUE  5 power     [0;0.9015]     [0;0.9015]     [0;0.9015]
+ 8:    TRUE    TRUE  TRUE  5 typeI [3e-04;0.9998] [3e-04;0.9998] [1e-04;0.9998]
+ 9:    TRUE   FALSE  TRUE 10 power          [0;1]          [0;1]          [0;1]
+10:    TRUE   FALSE  TRUE 10 typeI      [1e-04;1]      [1e-04;1]      [1e-04;1]
+11:    TRUE   FALSE  TRUE  5 power          [0;1]          [0;1]          [0;1]
+12:    TRUE   FALSE  TRUE  5 typeI      [2e-04;1]      [2e-04;1]      [1e-04;1]
+13:    TRUE   FALSE FALSE 10 power          [0;1]          [0;1]          [0;1]
+14:    TRUE   FALSE FALSE 10 typeI      [1e-04;1]      [1e-04;1]      [1e-04;1]
+15:    TRUE   FALSE FALSE  5 power          [0;1]          [0;1]          [0;1]
+16:    TRUE   FALSE FALSE  5 typeI          [0;1]          [0;1]      [1e-04;1]
+17:   FALSE    TRUE FALSE  5 power     [0;0.9642]     [0;0.9642]     [0;0.9642]
+18:   FALSE    TRUE FALSE  5 typeI          [0;1]          [0;1]      [1e-04;1]
 \end{verbatim}
 
 \clearpage
 
 \subsubsection{3 stages}
-\label{sec:orgce511ef}
+\label{sec:org70a14fb}
 \begin{verbatim}
-    missing binding  fixC ar  hypo        method 1        method 2        method 3
- 1:    TRUE    TRUE FALSE 10 power      [0;0.9417]      [0;0.9417]      [0;0.9426]
- 2:    TRUE    TRUE FALSE 10 typeI  [1e-04;0.9998]  [1e-04;0.9998]  [4e-04;0.9998]
- 3:    TRUE    TRUE FALSE  5 typeI  [1e-04;0.9998]  [1e-04;0.9998]  [3e-04;0.9998]
- 4:    TRUE    TRUE  TRUE 10 power  [3e-04;0.9071]  [3e-04;0.8993]  [1e-04;0.9091]
- 5:    TRUE    TRUE  TRUE 10 typeI [0.0013;0.9995] [0.0014;0.9995] [0.0012;0.9995]
- 6:    TRUE    TRUE  TRUE  5 power  [1e-04;0.8871]  [1e-04;0.8987]      [0;0.8873]
- 7:    TRUE    TRUE  TRUE  5 typeI  [9e-04;0.9975]  [9e-04;0.9979]  [9e-04;0.9975]
- 8:    TRUE   FALSE  TRUE 10 power       [3e-04;1]       [2e-04;1]           [0;1]
- 9:    TRUE   FALSE  TRUE 10 typeI       [8e-04;1]       [8e-04;1]       [7e-04;1]
-10:    TRUE   FALSE  TRUE  5 power       [1e-04;1]           [0;1]           [0;1]
-11:    TRUE   FALSE  TRUE  5 typeI      [0.0012;1]      [0.0012;1]      [0.0012;1]
-12:    TRUE   FALSE FALSE 10 power           [0;1]           [0;1]           [0;1]
-13:    TRUE   FALSE FALSE 10 typeI       [7e-04;1]       [7e-04;1]       [8e-04;1]
-14:    TRUE   FALSE FALSE  5 power           [0;1]           [0;1]           [0;1]
-15:    TRUE   FALSE FALSE  5 typeI  [1e-04;0.9999]  [1e-04;0.9998]  [1e-04;0.9999]
+    missing binding  fixC ar  hypo       method 1       method 2   method 3
+ 1:    TRUE    TRUE FALSE 10 power     [0;0.9788]     [0;0.9788] [0;0.9788]
+ 2:    TRUE    TRUE FALSE 10 typeI      [1e-04;1]      [1e-04;1]  [3e-04;1]
+ 3:    TRUE    TRUE FALSE  5 power     [0;0.9884]     [0;0.9884] [0;0.9884]
+ 4:    TRUE    TRUE FALSE  5 typeI      [1e-04;1]      [1e-04;1]  [1e-04;1]
+ 5:    TRUE    TRUE  TRUE 10 power     [0;0.9788]     [0;0.9788] [0;0.9788]
+ 6:    TRUE    TRUE  TRUE 10 typeI      [5e-04;1]      [5e-04;1]  [3e-04;1]
+ 7:    TRUE    TRUE  TRUE  5 power     [0;0.9884]     [0;0.9884] [0;0.9884]
+ 8:    TRUE    TRUE  TRUE  5 typeI      [7e-04;1]      [7e-04;1]  [1e-04;1]
+ 9:    TRUE   FALSE  TRUE 10 power          [0;1]          [0;1]      [0;1]
+10:    TRUE   FALSE  TRUE 10 typeI      [0.001;1]      [0.001;1]  [8e-04;1]
+11:    TRUE   FALSE  TRUE  5 power          [0;1]          [0;1]      [0;1]
+12:    TRUE   FALSE  TRUE  5 typeI     [0.0011;1]     [0.0011;1]  [3e-04;1]
+13:    TRUE   FALSE FALSE 10 power          [0;1]          [0;1]      [0;1]
+14:    TRUE   FALSE FALSE 10 typeI      [4e-04;1]      [4e-04;1]  [8e-04;1]
+15:    TRUE   FALSE FALSE  5 power          [0;1]          [0;1]      [0;1]
+16:    TRUE   FALSE FALSE  5 typeI [3e-04;0.9998] [3e-04;0.9999]  [3e-04;1]
+17:   FALSE    TRUE FALSE  5 power     [0;0.9868]     [0;0.9868] [0;0.9868]
+18:   FALSE    TRUE FALSE  5 typeI          [0;1]          [0;1]  [1e-04;1]
 \end{verbatim}
 
 \clearpage 
+
 \section{Coverage}
-\label{sec:org3af74a8}
+\label{sec:orgaa75db4}
 
 \subsection{2 stages}
-\label{sec:org1de7605}
+\label{sec:org104e0dc}
 \begin{verbatim}
-     hypo missing ar binding  fixC method 1 method 2 method 3
- 1: power   FALSE  5    TRUE FALSE 94.79000 94.79000 94.92000
- 2: power    TRUE  5   FALSE FALSE 95.86382 95.86207 95.66505
- 3: power    TRUE  5   FALSE  TRUE 96.30458 96.26486 95.66505
- 4: power    TRUE  5    TRUE FALSE 94.74000 94.74000 94.87000
- 5: power    TRUE  5    TRUE  TRUE 95.08000 95.08000 94.87000
- 6: power    TRUE 10   FALSE FALSE 95.98172 96.04941 95.75968
- 7: power    TRUE 10   FALSE  TRUE 96.79139 96.75297 95.75968
- 8: power    TRUE 10    TRUE FALSE 94.84000 94.82000 95.12000
- 9: power    TRUE 10    TRUE  TRUE 95.73000 95.65000 95.12000
-10: typeI   FALSE  5    TRUE FALSE 95.14000 95.14000 95.15000
-11: typeI    TRUE  5   FALSE FALSE 94.86949 94.86949 95.39954
-12: typeI    TRUE  5   FALSE  TRUE 94.91695 94.90745 95.39954
-13: typeI    TRUE  5    TRUE FALSE 94.82000 94.82000 94.87000
-14: typeI    TRUE  5    TRUE  TRUE 94.90000 94.91000 94.87000
-15: typeI    TRUE 10   FALSE FALSE 95.01402 95.01402 96.04407
-16: typeI    TRUE 10   FALSE  TRUE 95.09116 95.07162 96.04407
-17: typeI    TRUE 10    TRUE FALSE 95.16000 95.19000 95.21000
-18: typeI    TRUE 10    TRUE  TRUE 95.34000 95.36000 95.21000
+     hypo missing ar binding  fixC           method 1           method 2           method 3
+ 1: power   FALSE  5    TRUE FALSE 94.79% (NA: 0.02%) 94.79% (NA: 0.02%) 95.31% (NA: 0.02%)
+ 2: power    TRUE  5   FALSE FALSE 95.86% (NA: 5.72%) 95.86% (NA: 5.76%) 95.97% (NA: 5.48%)
+ 3: power    TRUE  5   FALSE  TRUE 97.77% (NA: 6.16%) 97.76% (NA: 5.86%) 95.97% (NA: 5.48%)
+ 4: power    TRUE  5    TRUE FALSE             94.73%             94.73%             95.13%
+ 5: power    TRUE  5    TRUE  TRUE             96.28%             96.32%             95.13%
+ 6: power    TRUE 10   FALSE FALSE 95.90% (NA: 5.95%) 95.89% (NA: 6.11%) 96.07% (NA: 5.30%)
+ 7: power    TRUE 10   FALSE  TRUE 97.38% (NA: 6.59%) 97.45% (NA: 6.06%) 96.07% (NA: 5.30%)
+ 8: power    TRUE 10    TRUE FALSE 94.84% (NA: 0.02%) 94.82% (NA: 0.02%) 95.34% (NA: 0.02%)
+ 9: power    TRUE 10    TRUE  TRUE 96.26% (NA: 0.02%) 96.31% (NA: 0.02%) 95.34% (NA: 0.02%)
+10: typeI   FALSE  5    TRUE FALSE 95.13% (NA: 0.15%) 95.13% (NA: 0.15%) 95.14% (NA: 0.17%)
+11: typeI    TRUE  5   FALSE FALSE 94.87% (NA: 0.01%) 94.87% (NA: 0.01%) 94.96% (NA: 0.09%)
+12: typeI    TRUE  5   FALSE  TRUE 94.92% (NA: 0.06%) 94.91% (NA: 0.06%) 94.96% (NA: 0.09%)
+13: typeI    TRUE  5    TRUE FALSE 94.81% (NA: 0.14%) 94.81% (NA: 0.14%) 94.86% (NA: 0.14%)
+14: typeI    TRUE  5    TRUE  TRUE 94.89% (NA: 0.14%) 94.90% (NA: 0.12%) 94.86% (NA: 0.14%)
+15: typeI    TRUE 10   FALSE FALSE 95.01% (NA: 0.12%) 95.01% (NA: 0.12%) 95.29% (NA: 0.33%)
+16: typeI    TRUE 10   FALSE  TRUE 95.09% (NA: 0.20%) 95.07% (NA: 0.19%) 95.29% (NA: 0.33%)
+17: typeI    TRUE 10    TRUE FALSE 95.16% (NA: 0.09%) 95.19% (NA: 0.10%) 95.20% (NA: 0.13%)
+18: typeI    TRUE 10    TRUE  TRUE 95.34% (NA: 0.09%) 95.36% (NA: 0.07%) 95.20% (NA: 0.13%)
 \end{verbatim}
 
 Average width of the confidence intervals
 \begin{verbatim}
-     hypo missing ar binding  fixC  method 1  method 2 method 3
- 1: power   FALSE  5    TRUE FALSE 1.0517981 1.0518066 1.053592
- 2: power    TRUE  5   FALSE FALSE 1.0355785 1.0355525 1.030753
- 3: power    TRUE  5   FALSE  TRUE 1.0410966 1.0414270 1.030753
- 4: power    TRUE  5    TRUE FALSE 1.0513207 1.0513607 1.052634
- 5: power    TRUE  5    TRUE  TRUE 1.0570088 1.0563598 1.052629
- 6: power    TRUE 10   FALSE FALSE 1.0469276 1.0468858 1.039428
- 7: power    TRUE 10   FALSE  TRUE 1.0634581 1.0625586 1.039438
- 8: power    TRUE 10    TRUE FALSE 1.0624494 1.0626858 1.062576
- 9: power    TRUE 10    TRUE  TRUE 1.0765867 1.0753692 1.062555
-10: typeI   FALSE  5    TRUE FALSE 1.0431774 1.0431218 1.046821
-11: typeI    TRUE  5   FALSE FALSE 0.9997886 0.9998440 1.018905
-12: typeI    TRUE  5   FALSE  TRUE 0.9996979 0.9996859 1.018905
-13: typeI    TRUE  5    TRUE FALSE 1.0416221 1.0415882 1.045180
-14: typeI    TRUE  5    TRUE  TRUE 1.0416986 1.0423673 1.045180
-15: typeI    TRUE 10   FALSE FALSE 1.0182710 1.0227130 1.049875
-16: typeI    TRUE 10   FALSE  TRUE 1.0183637 1.0101640 1.049882
-17: typeI    TRUE 10    TRUE FALSE 1.0459447 1.0453954 1.056218
-18: typeI    TRUE 10    TRUE  TRUE 1.0461003 1.0478314 1.056215
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE   1.0517   1.0517    1.053
+ 2: power    TRUE  5   FALSE FALSE   1.0355   1.0355    1.036
+ 3: power    TRUE  5   FALSE  TRUE   1.0410   1.0414    1.036
+ 4: power    TRUE  5    TRUE FALSE   1.0512   1.0512    1.052
+ 5: power    TRUE  5    TRUE  TRUE   1.0573   1.0571    1.052
+ 6: power    TRUE 10   FALSE FALSE   1.0465   1.0463    1.046
+ 7: power    TRUE 10   FALSE  TRUE   1.0531   1.0541    1.046
+ 8: power    TRUE 10    TRUE FALSE   1.0623   1.0625    1.061
+ 9: power    TRUE 10    TRUE  TRUE   1.0700   1.0697    1.061
+10: typeI   FALSE  5    TRUE FALSE   1.0427   1.0427    1.046
+11: typeI    TRUE  5   FALSE FALSE   0.9995   0.9994    1.012
+12: typeI    TRUE  5   FALSE  TRUE   0.9994   0.9995    1.012
+13: typeI    TRUE  5    TRUE FALSE   1.0412   1.0411    1.045
+14: typeI    TRUE  5    TRUE  TRUE   1.0413   1.0420    1.045
+15: typeI    TRUE 10   FALSE FALSE   0.9927   0.9926    1.040
+16: typeI    TRUE 10   FALSE  TRUE   0.9926   0.9935    1.040
+17: typeI    TRUE 10    TRUE FALSE   1.0456   1.0450    1.056
+18: typeI    TRUE 10    TRUE  TRUE   1.0457   1.0475    1.056
 \end{verbatim}
 
 Average ratio between the length of the MUE CIs vs. the ML CIs
 \begin{verbatim}
-     hypo missing ar binding  fixC  method 1  method 2 method 3
- 1: power   FALSE  5    TRUE FALSE 1.0554164 1.0554324 1.057018
- 2: power    TRUE  5   FALSE FALSE 1.0477000 1.0477317 1.043003
- 3: power    TRUE  5   FALSE  TRUE 1.0532445 1.0529897 1.043003
- 4: power    TRUE  5    TRUE FALSE 1.0556658 1.0557135 1.056796
- 5: power    TRUE  5    TRUE  TRUE 1.0607293 1.0599867 1.056792
- 6: power    TRUE 10   FALSE FALSE 1.0539283 1.0540501 1.045799
- 7: power    TRUE 10   FALSE  TRUE 1.0695786 1.0683330 1.045809
- 8: power    TRUE 10    TRUE FALSE 1.0641965 1.0644562 1.064036
- 9: power    TRUE 10    TRUE  TRUE 1.0773006 1.0760174 1.064016
-10: typeI   FALSE  5    TRUE FALSE 1.0496649 1.0496083 1.053799
-11: typeI    TRUE  5   FALSE FALSE 0.9997633 0.9998237 1.019473
-12: typeI    TRUE  5   FALSE  TRUE 0.9998075 0.9997468 1.019473
-13: typeI    TRUE  5    TRUE FALSE 1.0486330 1.0486034 1.052752
-14: typeI    TRUE  5    TRUE  TRUE 1.0487063 1.0493717 1.052752
-15: typeI    TRUE 10   FALSE FALSE 1.0194380 1.0240187 1.051009
-16: typeI    TRUE 10   FALSE  TRUE 1.0196328 1.0111242 1.051015
-17: typeI    TRUE 10    TRUE FALSE 1.0497075 1.0491459 1.060913
-18: typeI    TRUE 10    TRUE  TRUE 1.0498579 1.0516113 1.060910
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE   1.0553   1.0553    1.056
+ 2: power    TRUE  5   FALSE FALSE   1.0476   1.0476    1.049
+ 3: power    TRUE  5   FALSE  TRUE   1.0530   1.0529    1.049
+ 4: power    TRUE  5    TRUE FALSE   1.0555   1.0556    1.056
+ 5: power    TRUE  5    TRUE  TRUE   1.0608   1.0605    1.056
+ 6: power    TRUE 10   FALSE FALSE   1.0534   1.0533    1.053
+ 7: power    TRUE 10   FALSE  TRUE   1.0601   1.0605    1.053
+ 8: power    TRUE 10    TRUE FALSE   1.0640   1.0643    1.062
+ 9: power    TRUE 10    TRUE  TRUE   1.0710   1.0706    1.062
+10: typeI   FALSE  5    TRUE FALSE   1.0489   1.0488    1.053
+11: typeI    TRUE  5   FALSE FALSE   0.9994   0.9994    1.013
+12: typeI    TRUE  5   FALSE  TRUE   0.9995   0.9996    1.013
+13: typeI    TRUE  5    TRUE FALSE   1.0478   1.0478    1.052
+14: typeI    TRUE  5    TRUE  TRUE   1.0479   1.0487    1.052
+15: typeI    TRUE 10   FALSE FALSE   0.9928   0.9926    1.041
+16: typeI    TRUE 10   FALSE  TRUE   0.9928   0.9937    1.041
+17: typeI    TRUE 10    TRUE FALSE   1.0492   1.0486    1.060
+18: typeI    TRUE 10    TRUE  TRUE   1.0493   1.0511    1.060
 \end{verbatim}
 
 \clearpage
 
-\section{Percentage of missing values}
-\label{sec:orgadf1d47}
+\subsection{3 stages}
+\label{sec:org41e8dfe}
+\begin{verbatim}
+     hypo missing ar binding  fixC           method 1           method 2           method 3
+ 1: power   FALSE  5    TRUE FALSE 94.87% (NA: 0.01%) 94.88% (NA: 0.01%) 95.92% (NA: 0.01%)
+ 2: power    TRUE  5   FALSE FALSE 95.87% (NA: 4.85%) 95.89% (NA: 4.86%) 96.70% (NA: 4.80%)
+ 3: power    TRUE  5   FALSE  TRUE 98.24% (NA: 5.13%) 98.24% (NA: 5.00%) 96.68% (NA: 4.79%)
+ 4: power    TRUE  5    TRUE FALSE             94.63%             94.63% 95.59% (NA: 0.02%)
+ 5: power    TRUE  5    TRUE  TRUE             96.76%             96.74% 95.58% (NA: 0.02%)
+ 6: power    TRUE 10   FALSE FALSE 96.02% (NA: 4.78%) 96.01% (NA: 4.79%) 96.77% (NA: 4.36%)
+ 7: power    TRUE 10   FALSE  TRUE 97.96% (NA: 5.25%) 97.95% (NA: 4.88%) 96.73% (NA: 4.36%)
+ 8: power    TRUE 10    TRUE FALSE 95.05% (NA: 0.09%) 95.05% (NA: 0.09%) 95.91% (NA: 0.01%)
+ 9: power    TRUE 10    TRUE  TRUE 96.72% (NA: 0.04%) 96.76% (NA: 0.04%) 95.90% (NA: 0.01%)
+10: typeI   FALSE  5    TRUE FALSE 94.95% (NA: 0.04%) 94.95% (NA: 0.04%) 95.02% (NA: 0.07%)
+11: typeI    TRUE  5   FALSE FALSE             95.00%             95.04% 95.09% (NA: 0.11%)
+12: typeI    TRUE  5   FALSE  TRUE 95.10% (NA: 0.10%) 95.12% (NA: 0.09%) 95.11% (NA: 0.11%)
+13: typeI    TRUE  5    TRUE FALSE 94.94% (NA: 0.04%) 94.94% (NA: 0.04%) 94.96% (NA: 0.05%)
+14: typeI    TRUE  5    TRUE  TRUE 94.99% (NA: 0.05%) 94.99% (NA: 0.05%) 94.96% (NA: 0.05%)
+15: typeI    TRUE 10   FALSE FALSE 95.02% (NA: 0.06%) 95.04% (NA: 0.06%) 95.20% (NA: 0.22%)
+16: typeI    TRUE 10   FALSE  TRUE 95.14% (NA: 0.18%) 95.13% (NA: 0.18%) 95.17% (NA: 0.22%)
+17: typeI    TRUE 10    TRUE FALSE 94.81% (NA: 0.11%) 94.81% (NA: 0.11%) 94.92% (NA: 0.19%)
+18: typeI    TRUE 10    TRUE  TRUE 94.94% (NA: 0.15%) 94.90% (NA: 0.15%) 94.91% (NA: 0.18%)
+\end{verbatim}
+
+Average width of the confidence intervals
+\begin{verbatim}
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE   1.0589   1.0590   1.0601
+ 2: power    TRUE  5   FALSE FALSE   1.0454   1.0454   1.0468
+ 3: power    TRUE  5   FALSE  TRUE   1.0497   1.0497   1.0469
+ 4: power    TRUE  5    TRUE FALSE   1.0611   1.0611   1.0622
+ 5: power    TRUE  5    TRUE  TRUE   1.0656   1.0651   1.0622
+ 6: power    TRUE 10   FALSE FALSE   1.0702   1.0703   1.0740
+ 7: power    TRUE 10   FALSE  TRUE   1.0765   1.0766   1.0740
+ 8: power    TRUE 10    TRUE FALSE   1.0854   1.0855   1.0888
+ 9: power    TRUE 10    TRUE  TRUE   1.0923   1.0909   1.0888
+10: typeI   FALSE  5    TRUE FALSE   1.0850   1.0850   1.0860
+11: typeI    TRUE  5   FALSE FALSE   0.9966   0.9967   0.9991
+12: typeI    TRUE  5   FALSE  TRUE   0.9964   0.9965   0.9994
+13: typeI    TRUE  5    TRUE FALSE   1.0840   1.0840   1.0853
+14: typeI    TRUE  5    TRUE  TRUE   1.0841   1.0838   1.0853
+15: typeI    TRUE 10   FALSE FALSE   0.9938   0.9937   1.0070
+16: typeI    TRUE 10   FALSE  TRUE   0.9936   0.9939   1.0071
+17: typeI    TRUE 10    TRUE FALSE   1.1229   1.1230   1.1275
+18: typeI    TRUE 10    TRUE  TRUE   1.1230   1.1218   1.1275
+\end{verbatim}
+
+Average ratio between the length of the MUE CIs vs. the ML CIs
+\begin{verbatim}
+     hypo missing ar binding  fixC method 1 method 2 method 3
+ 1: power   FALSE  5    TRUE FALSE   1.0578   1.0579   1.0589
+ 2: power    TRUE  5   FALSE FALSE   1.0530   1.0530   1.0543
+ 3: power    TRUE  5   FALSE  TRUE   1.0564   1.0562   1.0543
+ 4: power    TRUE  5    TRUE FALSE   1.0606   1.0606   1.0617
+ 5: power    TRUE  5    TRUE  TRUE   1.0639   1.0634   1.0617
+ 6: power    TRUE 10   FALSE FALSE   1.0725   1.0726   1.0755
+ 7: power    TRUE 10   FALSE  TRUE   1.0779   1.0775   1.0756
+ 8: power    TRUE 10    TRUE FALSE   1.0825   1.0826   1.0856
+ 9: power    TRUE 10    TRUE  TRUE   1.0883   1.0870   1.0856
+10: typeI   FALSE  5    TRUE FALSE   1.0879   1.0879   1.0891
+11: typeI    TRUE  5   FALSE FALSE   0.9964   0.9965   0.9993
+12: typeI    TRUE  5   FALSE  TRUE   0.9964   0.9965   0.9996
+13: typeI    TRUE  5    TRUE FALSE   1.0880   1.0880   1.0894
+14: typeI    TRUE  5    TRUE  TRUE   1.0880   1.0877   1.0894
+15: typeI    TRUE 10   FALSE FALSE   0.9938   0.9937   1.0074
+16: typeI    TRUE 10   FALSE  TRUE   0.9937   0.9941   1.0075
+17: typeI    TRUE 10    TRUE FALSE   1.1230   1.1232   1.1279
+18: typeI    TRUE 10    TRUE  TRUE   1.1231   1.1216   1.1279
+\end{verbatim}
+
+\clearpage
+
+\section{Percentage of missing values (2 stages)}
+\label{sec:org8cf34f1}
 
 At the first interim
 \begin{itemize}
@@ -1073,53 +1186,53 @@ but with intermediate outcome value and baseline.
 Here only for method 1 - values are very similar between different
 methods:
 \begin{verbatim}
-    method missing ar  hypo  fixC binding     N   pc.all pc.missing3 pc.missing23
- 1:      1    TRUE  5 power FALSE    TRUE 10000 79.52088    9.591086    10.888036
- 2:      1    TRUE  5 typeI FALSE    TRUE 10000 79.52088    9.591086    10.888036
- 3:      1    TRUE  5 power  TRUE    TRUE 10000 79.52088    9.591086    10.888036
- 4:      1    TRUE  5 typeI  TRUE    TRUE 10000 79.52088    9.591086    10.888036
- 5:      1    TRUE  5 power  TRUE   FALSE 10000 79.64470    9.441772    10.913523
- 6:      1    TRUE  5 typeI  TRUE   FALSE 10000 79.64470    9.441772    10.913523
- 7:      1    TRUE  5 power FALSE   FALSE 10000 79.64470    9.441772    10.913523
- 8:      1    TRUE  5 typeI FALSE   FALSE 10000 79.64470    9.441772    10.913523
- 9:      1   FALSE  5 power FALSE    TRUE 10000 87.78863    6.090240     6.121126
-10:      1   FALSE  5 typeI FALSE    TRUE 10000 87.78863    6.090240     6.121126
-11:      1    TRUE 10 power FALSE    TRUE 10000 71.59741   13.353880    15.048710
-12:      1    TRUE 10 typeI FALSE    TRUE 10000 71.59741   13.353880    15.048710
-13:      1    TRUE 10 power  TRUE    TRUE 10000 71.59741   13.353880    15.048710
-14:      1    TRUE 10 typeI  TRUE    TRUE 10000 71.59741   13.353880    15.048710
-15:      1    TRUE 10 power  TRUE   FALSE 10000 71.79650   13.161615    15.041889
-16:      1    TRUE 10 typeI  TRUE   FALSE 10000 71.79650   13.161615    15.041889
-17:      1    TRUE 10 power FALSE   FALSE 10000 71.79650   13.161615    15.041889
-18:      1    TRUE 10 typeI FALSE   FALSE 10000 71.79650   13.161615    15.041889
+    method missing ar  hypo  fixC binding     N pc.all pc.missing3 pc.missing23
+ 1:      1    TRUE  5 power FALSE    TRUE 10000  79.52       9.591       10.888
+ 2:      1    TRUE  5 typeI FALSE    TRUE 10000  79.52       9.591       10.888
+ 3:      1    TRUE  5 power  TRUE    TRUE 10000  79.52       9.591       10.888
+ 4:      1    TRUE  5 typeI  TRUE    TRUE 10000  79.52       9.591       10.888
+ 5:      1    TRUE  5 power  TRUE   FALSE 10000  79.64       9.442       10.914
+ 6:      1    TRUE  5 typeI  TRUE   FALSE 10000  79.64       9.442       10.914
+ 7:      1    TRUE  5 power FALSE   FALSE 10000  79.64       9.442       10.914
+ 8:      1    TRUE  5 typeI FALSE   FALSE 10000  79.64       9.442       10.914
+ 9:      1   FALSE  5 power FALSE    TRUE 10000  87.79       6.090        6.121
+10:      1   FALSE  5 typeI FALSE    TRUE 10000  87.79       6.090        6.121
+11:      1    TRUE 10 power FALSE    TRUE 10000  71.60      13.354       15.049
+12:      1    TRUE 10 typeI FALSE    TRUE 10000  71.60      13.354       15.049
+13:      1    TRUE 10 power  TRUE    TRUE 10000  71.60      13.354       15.049
+14:      1    TRUE 10 typeI  TRUE    TRUE 10000  71.60      13.354       15.049
+15:      1    TRUE 10 power  TRUE   FALSE 10000  71.80      13.162       15.042
+16:      1    TRUE 10 typeI  TRUE   FALSE 10000  71.80      13.162       15.042
+17:      1    TRUE 10 power FALSE   FALSE 10000  71.80      13.162       15.042
+18:      1    TRUE 10 typeI FALSE   FALSE 10000  71.80      13.162       15.042
 \end{verbatim}
 
 \clearpage
 
-\section{Information}
-\label{sec:orge03fdcc}
+\section{Information (2 stages)}
+\label{sec:org8906a77}
 
 Percentage of information for method 1\footnote{average over the reached stages}:
 \begin{verbatim}
- scenario missing binding  fixC ar  interim decision     final
-        1    TRUE    TRUE FALSE 10 54.63712 75.34460 102.69691
-        2    TRUE    TRUE FALSE 10 54.63712 74.98217 102.36588
-        3    TRUE    TRUE FALSE  5 53.26864 64.03618 102.73604
-        4    TRUE    TRUE FALSE  5 53.26864 63.58436 102.37416
-        5    TRUE    TRUE  TRUE 10 54.63712 75.34460 102.69691
-        6    TRUE    TRUE  TRUE 10 54.63712 74.98217 102.36588
-        7    TRUE    TRUE  TRUE  5 53.26864 64.03618 102.73604
-        8    TRUE    TRUE  TRUE  5 53.26864 63.58436 102.37416
-        9    TRUE   FALSE  TRUE 10 54.50012 74.96442 102.53821
-       10    TRUE   FALSE  TRUE 10 54.50012 75.17490 103.12700
-       11    TRUE   FALSE  TRUE  5 53.15854 63.71662 102.62539
-       12    TRUE   FALSE  TRUE  5 53.15854 64.60960 103.12516
-       13    TRUE   FALSE FALSE 10 54.50012 74.96442 102.53821
-       14    TRUE   FALSE FALSE 10 54.50012 75.17490 103.12700
-       15    TRUE   FALSE FALSE  5 53.15854 63.71662 102.62539
-       16    TRUE   FALSE FALSE  5 53.15854 64.60960 103.12516
-       17   FALSE    TRUE FALSE  5 52.06840 63.77019  99.96969
-       18   FALSE    TRUE FALSE  5 52.06840 63.21929  99.62860
+ scenario missing binding  fixC ar interim decision  final
+        1    TRUE    TRUE FALSE 10   54.64    75.34 102.70
+        2    TRUE    TRUE FALSE 10   54.64    74.98 102.37
+        3    TRUE    TRUE FALSE  5   53.27    64.04 102.74
+        4    TRUE    TRUE FALSE  5   53.27    63.58 102.37
+        5    TRUE    TRUE  TRUE 10   54.64    75.34 102.70
+        6    TRUE    TRUE  TRUE 10   54.64    74.98 102.37
+        7    TRUE    TRUE  TRUE  5   53.27    64.04 102.74
+        8    TRUE    TRUE  TRUE  5   53.27    63.58 102.37
+        9    TRUE   FALSE  TRUE 10   54.50    74.96 102.54
+       10    TRUE   FALSE  TRUE 10   54.50    75.17 103.13
+       11    TRUE   FALSE  TRUE  5   53.16    63.72 102.63
+       12    TRUE   FALSE  TRUE  5   53.16    64.61 103.13
+       13    TRUE   FALSE FALSE 10   54.50    74.96 102.54
+       14    TRUE   FALSE FALSE 10   54.50    75.17 103.13
+       15    TRUE   FALSE FALSE  5   53.16    63.72 102.63
+       16    TRUE   FALSE FALSE  5   53.16    64.61 103.13
+       17   FALSE    TRUE FALSE  5   52.07    63.77  99.97
+       18   FALSE    TRUE FALSE  5   52.07    63.22  99.63
 \end{verbatim}
 
 Similar results for other methods.
