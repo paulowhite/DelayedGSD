@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (MiKTeX 21.8) (preloaded format=pdflatex 2021.8.26)  22 MAR 2023 19:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (MiKTeX 21.8) (preloaded format=pdflatex 2021.8.26)  19 OCT 2023 09:56
 entering extended mode
 **./report.tex
 (report.tex
@@ -1183,15 +1183,15 @@ loading the todonotes package. on input line 121.
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
 * modes: 
-* h-part:(L,W,R)=(92.14519pt, 430.00462pt, 92.14519pt)
-* v-part:(T,H,B)=(28.45274pt, 671.11987pt, 95.39737pt)
+* h-part:(L,W,R)=(42.67912pt, 528.93675pt, 42.67912pt)
+* v-part:(T,H,B)=(56.9055pt, 652.70622pt, 85.35826pt)
 * \paperwidth=614.295pt
 * \paperheight=794.96999pt
-* \textwidth=430.00462pt
-* \textheight=671.11987pt
-* \oddsidemargin=19.8752pt
-* \evensidemargin=19.8752pt
-* \topmargin=-80.81725pt
+* \textwidth=528.93675pt
+* \textheight=652.70622pt
+* \oddsidemargin=-29.59087pt
+* \evensidemargin=-29.59087pt
+* \topmargin=-52.36449pt
 * \headheight=12.0pt
 * \headsep=25.0pt
 * \topskip=12.0pt
@@ -1277,119 +1277,197 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 LaTeX Warning: No \author given.
 
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
-29.
+31.
 (C:\Program Files\MiKTeX 2.9\tex/latex/lm\t1lmtt.fd
 File: t1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 141.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 141.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 141.
- [1
+) [1
 
 {C:/Users/hpl802/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
-<./figures/gg-pvalue-density.pdf, id=65, 867.24pt x 722.7pt>
-File: ./figures/gg-pvalue-density.pdf Graphic file (type pdf)
-<use ./figures/gg-pvalue-density.pdf>
-Package pdftex.def Info: ./figures/gg-pvalue-density.pdf  used on input line 16
-4.
-(pdftex.def)             Requested size: 430.00462pt x 358.3386pt.
-<./figures/gg-pvalue2-density.pdf, id=66, 867.24pt x 722.7pt>
-File: ./figures/gg-pvalue2-density.pdf Graphic file (type pdf)
-<use ./figures/gg-pvalue2-density.pdf>
-Package pdftex.def Info: ./figures/gg-pvalue2-density.pdf  used on input line 1
-70.
-(pdftex.def)             Requested size: 430.00462pt x 358.3386pt.
+<./figures/gg2stage-pvalue-density.pdf, id=147, 867.24pt x 722.7pt>
+File: ./figures/gg2stage-pvalue-density.pdf Graphic file (type pdf)
+<use ./figures/gg2stage-pvalue-density.pdf>
+Package pdftex.def Info: ./figures/gg2stage-pvalue-density.pdf  used on input l
+ine 164.
+(pdftex.def)             Requested size: 528.93675pt x 440.80225pt.
+<./figures/gg2stage-pvalue2-density.pdf, id=148, 867.24pt x 722.7pt>
+File: ./figures/gg2stage-pvalue2-density.pdf Graphic file (type pdf)
+<use ./figures/gg2stage-pvalue2-density.pdf>
+Package pdftex.def Info: ./figures/gg2stage-pvalue2-density.pdf  used on input 
+line 170.
+(pdftex.def)             Requested size: 528.93675pt x 440.80225pt.
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 [2
 
- <./figures/gg-pvalue-density.pdf>] [3 <./figures/gg-pvalue2-density.pdf>]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
-82.
-
-(C:\Program Files\MiKTeX 2.9\tex/latex/lm\ts1lmr.fd
-File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-) [4
-
-] [5
-
-] [6
+ <./figures/gg2stage-pvalue-density.pdf>] [3 <./figures/gg2stage-pvalue2-densit
+y.pdf>] [4
 
 ]
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 262.
- [7
-
-]
-<./figures/gg-estimate-density.pdf, id=118, 867.24pt x 722.7pt>
-File: ./figures/gg-estimate-density.pdf Graphic file (type pdf)
-<use ./figures/gg-estimate-density.pdf>
-Package pdftex.def Info: ./figures/gg-estimate-density.pdf  used on input line 
-321.
-(pdftex.def)             Requested size: 430.00462pt x 358.3386pt.
-<./figures/gg-estimate-density-scenario1.pdf, id=119, 722.7pt x 505.89pt>
-File: ./figures/gg-estimate-density-scenario1.pdf Graphic file (type pdf)
-<use ./figures/gg-estimate-density-scenario1.pdf>
-Package pdftex.def Info: ./figures/gg-estimate-density-scenario1.pdf  used on i
-nput line 327.
-(pdftex.def)             Requested size: 430.00462pt x 301.00441pt.
+<./figures/gg3stage-pvalue-density.pdf, id=179, 867.24pt x 722.7pt>
+File: ./figures/gg3stage-pvalue-density.pdf Graphic file (type pdf)
+<use ./figures/gg3stage-pvalue-density.pdf>
+Package pdftex.def Info: ./figures/gg3stage-pvalue-density.pdf  used on input l
+ine 213.
+(pdftex.def)             Requested size: 528.93675pt x 440.80225pt.
+<./figures/gg-pvalue2-density.pdf, id=180, 867.24pt x 722.7pt>
+File: ./figures/gg-pvalue2-density.pdf Graphic file (type pdf)
+<use ./figures/gg-pvalue2-density.pdf>
+Package pdftex.def Info: ./figures/gg-pvalue2-density.pdf  used on input line 2
+19.
+(pdftex.def)             Requested size: 528.93675pt x 440.80225pt.
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-[8
+[5
 
- <./figures/gg-estimate-density.pdf>] [9 <./figures/gg-estimate-density-scenari
-o1.pdf>]
-<./figures/gg-estimateC-density.pdf, id=146, 867.24pt x 722.7pt>
-File: ./figures/gg-estimateC-density.pdf Graphic file (type pdf)
-<use ./figures/gg-estimateC-density.pdf>
-Package pdftex.def Info: ./figures/gg-estimateC-density.pdf  used on input line
- 336.
-(pdftex.def)             Requested size: 430.00462pt x 358.3386pt.
- [10
+ <./figures/gg3stage-pvalue-density.pdf>] [6 <./figures/gg-pvalue2-density.pdf>
+]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 2
+33.
+ (C:\Program Files\MiKTeX 2.9\tex/latex/lm\ts1lmr.fd
+File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+) [7
 
- <./figures/gg-estimateC-density.pdf>] [11
+] [8
 
-] [12
+] [9
 
-] [13
-
-] [14
+] [10
 
 ]
-[15
+[11] [12
 
-] [16
+]
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <12> on input line 448.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <8> on input line 448.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <6> on input line 448.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <5> on input line 449.
+ [13
 
-] [17]
+] [14] [15
+
+] [16]
+<./figures/gg2stage-estimate-density.pdf, id=261, 867.24pt x 722.7pt>
+File: ./figures/gg2stage-estimate-density.pdf Graphic file (type pdf)
+<use ./figures/gg2stage-estimate-density.pdf>
+Package pdftex.def Info: ./figures/gg2stage-estimate-density.pdf  used on input
+ line 566.
+(pdftex.def)             Requested size: 528.93675pt x 440.80225pt.
+<./figures/gg2stage-estimate-density-scenario1.pdf, id=262, 722.7pt x 505.89pt>
+
+File: ./figures/gg2stage-estimate-density-scenario1.pdf Graphic file (type pdf)
+
+<use ./figures/gg2stage-estimate-density-scenario1.pdf>
+Package pdftex.def Info: ./figures/gg2stage-estimate-density-scenario1.pdf  use
+d on input line 572.
+(pdftex.def)             Requested size: 528.93675pt x 370.2538pt.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[17
+
+ <./figures/gg2stage-estimate-density.pdf>] [18 <./figures/gg2stage-estimate-de
+nsity-scenario1.pdf>]
+<./figures/gg2stage-estimateC-density.pdf, id=289, 867.24pt x 722.7pt>
+File: ./figures/gg2stage-estimateC-density.pdf Graphic file (type pdf)
+<use ./figures/gg2stage-estimateC-density.pdf>
+Package pdftex.def Info: ./figures/gg2stage-estimateC-density.pdf  used on inpu
+t line 581.
+(pdftex.def)             Requested size: 528.93675pt x 440.80225pt.
+ [19
+
+ <./figures/gg2stage-estimateC-density.pdf>]
+<./figures/gg3stage-estimate-density.pdf, id=304, 867.24pt x 722.7pt>
+File: ./figures/gg3stage-estimate-density.pdf Graphic file (type pdf)
+<use ./figures/gg3stage-estimate-density.pdf>
+Package pdftex.def Info: ./figures/gg3stage-estimate-density.pdf  used on input
+ line 593.
+(pdftex.def)             Requested size: 528.93675pt x 440.80225pt.
+<./figures/gg3stage-estimate-density-scenario1.pdf, id=305, 722.7pt x 505.89pt>
+
+File: ./figures/gg3stage-estimate-density-scenario1.pdf Graphic file (type pdf)
+
+<use ./figures/gg3stage-estimate-density-scenario1.pdf>
+Package pdftex.def Info: ./figures/gg3stage-estimate-density-scenario1.pdf  use
+d on input line 599.
+(pdftex.def)             Requested size: 528.93675pt x 370.2538pt.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[20
+
+ <./figures/gg3stage-estimate-density.pdf>] [21 <./figures/gg3stage-estimate-de
+nsity-scenario1.pdf>]
+<./figures/gg3stage-estimateC-density.pdf, id=332, 867.24pt x 722.7pt>
+File: ./figures/gg3stage-estimateC-density.pdf Graphic file (type pdf)
+<use ./figures/gg3stage-estimateC-density.pdf>
+Package pdftex.def Info: ./figures/gg3stage-estimateC-density.pdf  used on inpu
+t line 608.
+(pdftex.def)             Requested size: 528.93675pt x 440.80225pt.
+ [22
+
+ <./figures/gg3stage-estimateC-density.pdf>]
+[23
+
+] [24
+
+] [25
+
+] [26
+
+] [27
+
+] [28] [29
+
+] [30
+
+] [31] [32] [33
+
+] [34
+
+] [35] [36
+
+] [37]
+[38
+
+]
 \Changes@OutFile=\write6
 \openout6 = `report.soc'.
 
 \tf@loc=\write7
 \openout7 = `report.loc'.
 
- [18
+ [39
 
 ] (report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: D781247FFAF3C7C7EEB040E77FD89000;1865.
+(rerunfilecheck)             Checksum: 49E4025DA2D55978585E9D257CDDD00E;4486.
  ) 
 Here is how much of TeX's memory you used:
- 27735 strings out of 478868
- 493008 string characters out of 2856724
- 819347 words of memory out of 3000000
- 45014 multiletter control sequences out of 15000+600000
- 470894 words of font info for 84 fonts, out of 8000000 for 9000
+ 27858 strings out of 478868
+ 496072 string characters out of 2856724
+ 822327 words of memory out of 3000000
+ 45085 multiletter control sequences out of 15000+600000
+ 467913 words of font info for 83 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 114i,8n,117p,493b,424s stack positions out of 5000i,500n,10000p,200000b,80000s
-pdfTeX warning (dest): name{Hfootnote.3} has been referenced but does not exi
+ 114i,8n,117p,493b,614s stack positions out of 5000i,500n,10000p,200000b,80000s
+pdfTeX warning (dest): name{Hfootnote.5} has been referenced but does not exi
 st, replaced by a fixed one
+
+pdfTeX warning (dest): name{Hfootnote.4} has been referenced but does not exist
+, replaced by a fixed one
+
+pdfTeX warning (dest): name{Hfootnote.3} has been referenced but does not exist
+, replaced by a fixed one
 
 pdfTeX warning (dest): name{Hfootnote.2} has been referenced but does not exist
 , replaced by a fixed one
@@ -1398,19 +1476,16 @@ pdfTeX warning (dest): name{Hfootnote.1} has been referenced but does not exist
 , replaced by a fixed one
 
 {C:/Program Files/MiKTeX 2.9/fonts/enc/dvips/lm/lm-ec.enc}{C:/Program Files/MiK
-TeX 2.9/fonts/enc/dvips/lm/lm-ts1.enc}{C:/Program Files/MiKTeX 2.9/fonts/enc/dv
-ips/lm/lm-mathsy.enc}<C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmbx12.
-pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmbx6.pfb><C:/Program Fi
-les/MiKTeX 2.9/fonts/type1/public/lm/lmr10.pfb><C:/Program Files/MiKTeX 2.9/fon
-ts/type1/public/lm/lmr12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm
-/lmr17.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmr7.pfb><C:/Prog
-ram Files/MiKTeX 2.9/fonts/type1/public/lm/lmr8.pfb><C:/Program Files/MiKTeX 2.
-9/fonts/type1/public/lm/lmsy10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/pub
-lic/lm/lmtt10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmtt12.pfb
->
-Output written on report.pdf (18 pages, 1266953 bytes).
+TeX 2.9/fonts/enc/dvips/lm/lm-ts1.enc}<C:/Program Files/MiKTeX 2.9/fonts/type1/
+public/lm/lmbx12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmr10.p
+fb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmr12.pfb><C:/Program Fil
+es/MiKTeX 2.9/fonts/type1/public/lm/lmr17.pfb><C:/Program Files/MiKTeX 2.9/font
+s/type1/public/lm/lmr7.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/l
+mr8.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmtt10.pfb><C:/Progr
+am Files/MiKTeX 2.9/fonts/type1/public/lm/lmtt12.pfb>
+Output written on report.pdf (39 pages, 2333541 bytes).
 PDF statistics:
- 255 PDF objects out of 1000 (max. 8388607)
- 39 named destinations out of 1000 (max. 500000)
- 134 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 481 PDF objects out of 1000 (max. 8388607)
+ 88 named destinations out of 1000 (max. 500000)
+ 327 words of extra memory for PDF output out of 10000 (max. 10000000)
 
