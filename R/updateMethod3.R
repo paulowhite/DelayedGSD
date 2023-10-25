@@ -167,7 +167,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
                                            sigma= sigmaZk2,
                                            abseps = abseps) - alphaSpentInc[k]},
                        lower = lk[k-1],
-                       upper = uk[k-1],
+                       upper = 1.1*uk[k-1],
                        tol = abseps)$root
       
       ## ** Estimate lk
@@ -216,7 +216,7 @@ updateMethod3 <- function(rho_alpha=2,          # rho parameter of the rho-famil
         betaSpentInc[k] <- betaSpent[k] - betaSpent[(k-1)]   
 
         lowerRoot <- lk[utils::tail(intersect(which(!is.infinite(lk)),1:(k-1)),1)]  ## last boundary among the k-1 already computed that is not infinite
-        upperRoot <- uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
+        upperRoot <- 1.1*uk[utils::tail(intersect(which(!is.infinite(uk)),1:(k-1)),1)]
         if(InfoR.d[k]>1){
             lowerRoot <- -10
             upperRoot <- 10
