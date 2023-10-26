@@ -13,10 +13,10 @@ if(length(args)>0){
     }
 }
 if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on the server via slurm, iter_sim will be NA)
-    iter_sim <- 61
+    iter_sim <- 95
     n.iter_sim <- 100
 
-    if("missing" %in% ls() == FALSE){ missing <- FALSE }
+    if("missing" %in% ls() == FALSE){ missing <- TRUE }
     if("binding" %in% ls() == FALSE){ binding <- TRUE }
     if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- FALSE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 5 }
@@ -72,31 +72,24 @@ Id <- c(0.50,0.75)  #(expected) information rate at each decision analysis
                                         #---- to generate data -----------
                                         #
 block <- c(1,1,0,0) 
-allsd <- c(2.5,2.1,2.4,2.7) # sd, first from baseline measurement, then the two changes from baseline
-mean0 <- c(10,0,0,0) # mean placebo group (again, first is absolute value, then change from baseline)
-delta <- c(0,0.4,0.7,1)*delta.factor # treatment effect
+allsd <- c(2.5,2.1,2.4) # sd, first from baseline measurement, then the two changes from baseline
+mean0 <- c(10,0,0) # mean placebo group (again, first is absolute value, then change from baseline)
+delta <- c(0,0.5,1)*delta.factor # treatment effect
 ar <- (0.86*2)*2*ar.factor # orginial accrual rate from data from Corine is 0.86 per week, hence we multiply by 2 for by 14 days. As too low, we further multiply by 2
 cor011 <- -0.15 # ~ from data from Corine
 corij1 <- 0.68  # ~ from data from Corine
 cor0j1 <- -0.27  # ~ from data from Corine
 if(missing){
-    MyMissProb <- array(NA, dim = c(2,2,2), 
-                        dimnames = list(c("V1 missing","V1 not missing"),
-                                        c("V2 missing","V2 not missing"),
-                                        c("V3 missing","V3 not missing")))
-
-    MyMissProb[1,1,1] <- 1/104 # miss all
-    MyMissProb[1,2,1] <- 3/104 # miss V1, V3 but not V2
-    MyMissProb[2,1,1] <- 2/104 # miss V2, V3 but not V1
-    MyMissProb[2,2,1] <- 4/104 # miss V3 but not V1, V2
-    MyMissProb[1,1,2] <- 1/104 # miss V1, V2 but not V3
-    MyMissProb[1,2,2] <- 1/104 # miss V1 but not V2, V3
-    MyMissProb[2,1,2] <- 2/104 # miss V2 but not V1, V3
-    MyMissProb[2,2,2] <- 90/104 # miss none
-    
+    Miss11 <- 5/104 # miss both V1 and V2
+    Miss12 <- 1/104 # miss V1 and but not V2
+    Miss21 <- 6/104 # do not miss V1 and but miss V2
+    Miss22 <- 92/104 # miss none
+    MyMissProb <- matrix(c(Miss11,Miss12,Miss21,Miss22),ncol=2,nrow=2,byrow=TRUE, # to additionnally remove 1 more because some FASFL=N
+                         dimnames = list(c("V1 missing","V1 not missing"), c("V2 missing","V2 not missing")))
 }else{
     MyMissProb <- NULL
 }
+
 PropForInterim <- c(0.35,0.6) # Decide to have interim analysiz when PropForInterim % of all subjects have had the chance to have one follow-up measuement recorded in the data to be available for analysis.
 theDelta.t <- 1.50001 # time lag to process the data and make them ready to analyze after collecting them (unit is time between two follow-up visits)
 TimeFactor <- 14 ## number of days between two visits
@@ -111,7 +104,7 @@ n <- ceiling(2*2*((sdPower/deltaPower)^2)*(qnorm(1-beta)-qnorm(alpha))^2) #104 w
 
 ## adjust for expected withdrawal
 if(missing){
-    n <- n/(1-sum(MyMissProb[,,"V3 missing"]))
+    n <- n/(1-(Miss11+Miss21))
 }
 
 ## * Seed
@@ -158,7 +151,6 @@ allj <- seq(1+(iter_sim-1)*nsim, iter_sim*nsim, by = 1)
 for(j in allj){ ## j <- 1 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 835429993
   # {{{ TRACE info (e.g. to check the Rout)
   print(paste0("seed ",myseedi," for ","j=",j," (index ",which(j==allj),") out of ",nsim))
   # }}}
@@ -166,7 +158,7 @@ for(j in allj){ ## j <- 1 ## 5
   # {{{ generate data
   ## ** simulate
   res <- GenData(n=max(nGSD), 
-                 N.fw=kMax,
+                 N.fw=2,
                  rand.block=block,
                  allsd=allsd,
                  mean0=mean0,
@@ -222,13 +214,13 @@ for(j in allj){ ## j <- 1 ## 5
               currentGSD.interim[[iStage]][[iMeth]] <- update(currentGSD.interim[[iStage-1]][[iMeth]], delta = lmmI, trace = FALSE)
           }
           
-          countNA <- rowSums(is.na(di[,paste0("X",2:(kMax+1))]))
+          countNA <- rowSums(is.na(di[,paste0("X",2:3)]))
 
           outMerge <- rbind(outMerge,
                             cbind(time = thets[iMeth,iStage],
                                   completeData = sum(countNA==0),
-                                  partialData = sum(countNA %in% 1:(kMax-1)),
-                                  nofuData = sum(countNA==kMax), ## no follow-up data
+                                  partialData = sum(countNA==1),
+                                  nofuData = sum(countNA==2), ## no follow-up data
                                   exportGSD(currentGSD.interim[[iStage]][[iMeth]],
                                       export.statistic = TRUE,
                                       export.ML = TRUE,
@@ -251,13 +243,13 @@ for(j in allj){ ## j <- 1 ## 5
               currentGSD.decision[[iStage]][[iMeth]] <- update(currentGSD.interim[[iStage]][[iMeth]], delta = lmmD, trace = FALSE)
               ## plot(currentGSD[[iMeth]])
       
-              countNA <- rowSums(is.na(dDecision[,paste0("X",2:(kMax+1))]))
+              countNA <- rowSums(is.na(dDecision[,paste0("X",2:3)]))
 
               outMerge <- rbind(outMerge,
-                                cbind(time = max(dDecision$t4),
+                                cbind(time = max(dDecision$t3),
                                       completeData = sum(countNA==0),
-                                      partialData = sum(countNA %in% 1:(kMax-1)),
-                                      nofuData = sum(countNA==kMax), ## no follow-up data
+                                      partialData = sum(countNA==1),
+                                      nofuData = sum(countNA==2), ## no follow-up data
                                       exportGSD(currentGSD.decision[[iStage]][[iMeth]],
                                                 export.statistic = TRUE,
                                                 export.ML = TRUE,
@@ -287,14 +279,14 @@ for(j in allj){ ## j <- 1 ## 5
     
       currentGSD.final[[iMeth]] <- update(currentGSD.interim[[iStage]][[iMeth]], delta = lmmF, trace = FALSE)
       
-      countNA <- rowSums(is.na(dFinal[,paste0("X",2:(kMax+1))]))
+      countNA <- rowSums(is.na(dFinal[,paste0("X",2:3)]))
 
       ## confint(currentGSD.final[[iMeth]], method = c("ML","MUE"))
       outMerge <- rbind(outMerge,
-                        cbind(time = max(dFinal$t4),
+                        cbind(time = max(dFinal$t3),
                               completeData = sum(countNA==0),
-                              partialData = sum(countNA %in% 1:(kMax-1)),
-                              nofuData = sum(countNA==kMax), ## no follow-up data
+                              partialData = sum(countNA==1),
+                              nofuData = sum(countNA==2), ## no follow-up data
                               exportGSD(currentGSD.final[[iMeth]],
                                         export.statistic = TRUE,
                                         export.ML = TRUE,

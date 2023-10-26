@@ -20,8 +20,8 @@ if(is.na(iter_sim)){ ## arguments for interactive R session (when not running on
     if("binding" %in% ls() == FALSE){ binding <- FALSE }
     if("cNotBelowFixedc" %in% ls() == FALSE){ cNotBelowFixedc <- TRUE }
     if("ar.factor" %in% ls() == FALSE){ ar.factor <- 10 }
-    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0.6 }
-    if("n.method" %in% ls() == FALSE){ n.method <- NULL }
+    if("delta.factor" %in% ls() == FALSE){ delta.factor <- 0 }
+    if("n.method" %in% ls() == FALSE){ n.method <- 3 }
 }
 
 name <- ""
@@ -82,7 +82,7 @@ cor0j1 <- -0.27  # ~ from data from Corine
 if(missing){
     Miss11 <- 5/104 # miss both V1 and V2
     Miss12 <- 1/104 # miss V1 and but not V2
-    Miss21 <- 6/104 # do not miss V1 and but miss V2
+    Miss21 <-  # do not miss V1 and but miss V2
     Miss22 <- 92/104 # miss none
     MyMissProb <- matrix(c(Miss11,Miss12,Miss21,Miss22),ncol=2,nrow=2,byrow=TRUE, # to additionnally remove 1 more because some FASFL=N
                          dimnames = list(c("V1 missing","V1 not missing"), c("V2 missing","V2 not missing")))
@@ -149,7 +149,7 @@ allj <- seq(1+(iter_sim-1)*nsim, iter_sim*nsim, by = 1)
 for(j in allj){ ## j <- 1 ## 5
   startComp <- Sys.time()
   myseedi <- allseeds[j]
-  #myseedi <- 94206819
+  #myseedi <- 744011468
   # {{{ TRACE info (e.g. to check the Rout)
   cat("seed ",myseedi," for ","j=",j," (index ",which(j==allj),") out of ",nsim,": ", sep="")
   # }}}
@@ -198,7 +198,7 @@ for(j in allj){ ## j <- 1 ## 5
   nX3.interim <- vector()
   currentGSD <- vector(mode = "list", length = 3)
   out.interim <- vector(mode = "list", length = 3)
-  for(iMeth in method){ ## iMeth <- 1
+  for(iMeth in method){ ## iMeth <- 3
     # {{{ make data available at interim
     di <- SelectData(d,t=thets[iMeth])
     
@@ -263,7 +263,7 @@ for(j in allj){ ## j <- 1 ## 5
   
   ## ** finale
   out.final <- vector(mode = "list", length = 3)
-  for(iMeth in method){ ## iMeth <- 1
+  for(iMeth in method){ ## iMeth <- 3
     dFinal <- d[1:nGSD[iMeth],]
     lmmF <- analyzeData(dFinal, ddf = "nlme", getinfo = TRUE, trace = TRUE)
     

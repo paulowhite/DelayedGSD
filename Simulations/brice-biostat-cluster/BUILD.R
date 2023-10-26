@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: okt  7 2022 (16:40) 
 ## Version: 
-## Last-Updated: okt 12 2023 (16:45) 
+## Last-Updated: okt 25 2023 (19:33) 
 ##           By: Brice Ozenne
-##     Update #: 77
+##     Update #: 81
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,7 +19,11 @@ library(data.table)
 library(ggplot2)
 
 ## cd /projects/biostat01/people/hpl802/DelayedGSD/
-path <- "x:/DelayedGSD"
+if(system("whoami",intern=TRUE)=="unicph\\hpl802"){  
+    path <- "x:/DelayedGSD"
+}else if(system("whoami",intern=TRUE)=="hpl802"){  
+    path <- "."
+}
 path.results <- file.path(path,"Results")
 path.Bresults <- file.path(path,"Results-built")
 export <- TRUE
