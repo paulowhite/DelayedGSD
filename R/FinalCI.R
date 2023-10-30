@@ -11,7 +11,6 @@
 #' @param kMax maximum number of analyses
 #' @param conf.level confidence level (to get a 100*(1-alpha)\% CI)
 #' @param estimate naive estimate (e.g. using  ML or REML).
-#' @param optimizer the observed treatment estimate at decision
 #' @param method  method 1, 2 or 3
 #' @param bindingFutility [logical]  whether the futility stopping rule is binding.
 #' @param cNotBelowFixedc [logical] whether the value c at the decision analysis can be below that of a fixed sample test (H & J page 10)
@@ -32,16 +31,17 @@ FinalCI <- function(Info.d,
                     kMax, 
                     conf.level,
                     estimate,
-                    optimizer = "optimise",
                     method,
                     bindingFutility,
                     cNotBelowFixedc,
                     continuity.correction,
                     tolerance,
+                    conclusion,                    
                     FCT.p_value){
 
     alpha <- 1 - conf.level
 
+    ## ** objective function
     f <- function(delta){
         do.call(FCT.p_value, list(Info.d=Info.d,
                                   Info.i=Info.i,
@@ -60,41 +60,74 @@ FinalCI <- function(Info.d,
                 )
     }
 
-    lowerBound <- c(estimate - 4*sqrt(1/Info.d[length(Info.d)]),
-                    estimate - 0.5*sqrt(1/Info.d[length(Info.d)]))
-    upperBound <- c(estimate + 0.5*sqrt(1/Info.d[length(Info.d)]),
-                    estimate + 4*sqrt(1/Info.d[length(Info.d)]))
+    ## ** initialization
+    lowerBound <- c(lbnd = estimate - 4*sqrt(1/Info.d[length(Info.d)]),
+                    ubnd = estimate - 0.5*sqrt(1/Info.d[length(Info.d)]))
+    upperBound <- c(lbnd = estimate + 0.5*sqrt(1/Info.d[length(Info.d)]),
+                    ubnd = estimate + 4*sqrt(1/Info.d[length(Info.d)]))
+    if(conclusion=="efficacy"){
+        lowerBound <- pmax(0,lowerBound)
+        upperBound <- pmax(0,upperBound)        
+    }else if(conclusion=="futility"){
+        lowerBound <- pmin(0,lowerBound)
+        upperBound <- pmin(0,upperBound)        
+    }
 
-    if(optimizer=="optimise"){
-        lbnd <- stats::optimise(function(x){(f(x) - alpha/2)^2},
-                                lower = lowerBound[1],
-                                upper = upperBound[1],
-                                tol = 1e-10)
-        ubnd <- stats::optimise(function(x){(1 - f(x) - alpha/2)^2},
-                                lower = lowerBound[2],
-                                upper = upperBound[2],
-                                tol = 1e-10)
-        if(abs(lbnd$objective)>tolerance){
-            lbnd$minimum <- NA
-        }
-        if(abs(ubnd$objective)>tolerance){
-            ubnd$minimum <- NA
-        }
-        out <- c(lower = lbnd$minimum, upper = ubnd$minimum)
-        attr(out,"error") <- c(lower = lbnd$objective, upper = ubnd$objective)
-    }else if(optimizer=="uniroot"){
-        lbnd <- stats::uniroot(function(x){(f(x) - alpha/2)^2},
+    f_lowerBound <- c(f(lowerBound[1]),f(lowerBound[2]))
+    f_upperBound <- c(f(upperBound[1]),f(upperBound[2]))
+
+    ## ** lower bound of the CI
+    if(sign(f_lowerBound[1] - alpha/2) != sign(f_upperBound[1] - alpha/2)){
+        lbnd <- stats::uniroot(function(x){(f(x) - alpha/2)},
                                lower = lowerBound[1],
                                upper = upperBound[1],
                                tol = 1e-10)
-        ubnd <- stats::uniroot(function(x){(1 - f(x) - alpha/2)^2},
+    }else{
+        lbnd <- suppressWarnings(stats::optim(fn = function(x){(f(x) - alpha/2)^2},
+                                              par = (lowerBound[1] + upperBound[1])/2,
+                                              method = "Nelder-Mead"))
+        ## Advarselsbesked:
+        ## I stats::optim(fn = function(x) { :
+        ##   one-dimensional optimization by Nelder-Mead is unreliable:
+        ## use "Brent" or optimize() directly
+        ## optimize requires lower,upper values which we are unable to provide here
+        lbnd$iter <- unname(lbnd$counts["function"])
+        lbnd$root <- lbnd$par
+        lbnd$f.root <- lbnd$value
+    }
+
+    if(abs(lbnd$f.root)>tolerance){
+        lbnd$root <- NA
+    }
+
+    ## ** lower bound of the CI
+    if(sign(1 - f_lowerBound[2] - alpha/2)!=sign(1 - f_upperBound[2] - alpha/2)){
+        ubnd <- stats::uniroot(function(x){(1 - f(x) - alpha/2)},
                                lower = lowerBound[2],
                                upper = upperBound[2],
                                tol = 1e-10)
-        out <- c(lower = lbnd$root, upper = ubnd$root)
-        attr(out,"error") <- c(lower = lbnd$f.root, upper = ubnd$f.root)
-        attr(out,"iter") <- c(lower = lbnd$iter, upper = ubnd$iter)
+
+    }else{
+        ubnd <- suppressWarnings(stats::optim(fn = function(x){(1 - f(x) - alpha/2)^2},
+                                              par = (lowerBound[2] + upperBound[2])/2,
+                                              method = "Nelder-Mead"))
+        ## Advarselsbesked:
+        ## I stats::optim(fn = function(x) { :
+        ##   one-dimensional optimization by Nelder-Mead is unreliable:
+        ## use "Brent" or optimize() directly
+        ## optimize requires lower,upper values which we are unable to provide here
+        ubnd$iter <- unname(ubnd$counts["function"])
+        ubnd$root <- ubnd$par
+        ubnd$f.root <- ubnd$value
     }
 
-  return(out)
+    if(abs(ubnd$f.root)>tolerance){
+        ubnd$root <- NA
+    }
+
+    ## ** export
+    out <- c(lower = lbnd$root, upper = ubnd$root)
+    attr(out,"error") <- c(lower = lbnd$f.root, upper = ubnd$f.root)
+    attr(out,"iter") <- c(lower = lbnd$iter, upper = ubnd$iter)
+    return(out)
 }

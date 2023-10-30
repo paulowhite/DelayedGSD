@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 21 2023 (09:42) 
 ## Version: 
-## Last-Updated: okt 11 2023 (17:26) 
+## Last-Updated: okt 30 2023 (11:42) 
 ##           By: Brice Ozenne
-##     Update #: 89
+##     Update #: 94
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -172,7 +172,6 @@ gridFinalPvalue <- function(object,
         for(iArg in 1:length(valid.args)){
             assign(valid.args[iArg], value = object[[valid.args[iArg]]], envir = environment())
         }
-        kMax <- length(Info.d)
         alphaSpent <- rep(NA, kMax)
     }else{
         stop("Argument \'object\' should either be \n",
@@ -255,8 +254,7 @@ gridFinalPvalue <- function(object,
                        )
         return(data.frame(z = z, k = k, p.value = out, continuity.correction = continuity.correction))
     }
-    
-    out <- do.call(rbind,lapply(1:n.grid, function(iG){
+    out <- do.call(rbind,lapply(1:n.grid, function(iG){ ## iG <- 1
         cbind(calcP(z = grid[iG,"z"], k = grid[iG,"k"]), alphaSpent = grid[iG,"alphaSpent"])
     }))
 

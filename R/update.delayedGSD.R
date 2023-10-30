@@ -274,7 +274,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
 
         ## *** CI
         if(ci & as.double(resP) < 1){
-            resCI <- do.call(FinalCI, c(ls.args, list(FCT.p_value = FCT.p_value, conf.level = object$conf.level, tolerance=tolerance)))
+            
+            resCI <- do.call(FinalCI, c(ls.args, list(FCT.p_value = FCT.p_value, conf.level = object$conf.level, tolerance = tolerance, conclusion = object$conclusion["decision",k])))
             delta.MUE[1,"lower"] <- resCI["lower"]
             delta.MUE[1,"upper"] <- resCI["upper"]
 

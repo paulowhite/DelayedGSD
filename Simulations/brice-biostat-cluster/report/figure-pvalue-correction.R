@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 10 2023 (13:16) 
 ## Version: 
-## Last-Updated: mar 23 2023 (10:54) 
+## Last-Updated: okt 30 2023 (11:50) 
 ##           By: Brice Ozenne
-##     Update #: 30
+##     Update #: 32
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -25,9 +25,9 @@ export <- TRUE
 if(export){
     pdf("figures/illustration-pvalue-2stage.pdf", width = 5)
 }
-res2stage <- gridFinalPvalue(list(Info.d = c(12.58797814),
+res2stage <- gridFinalPvalue(list(Info.d = c(12.58797814, 20.74866926),
                                   Info.i = c(10.60271846, 20.74866926),
-                                  ck = 1.49772992, ck.unrestricted = 1.49772992,
+                                  ck = c(1.49772992, 1.9961649), ck.unrestricted = c(1.49772992, 1.9961649),
                                   lk = c(0.24335814, 1.9961649),
                                   uk = c(2.5458844, 1.9961649),
                                   kMax = 2,
@@ -55,9 +55,9 @@ for(iC in 0:2){ ## iC <- 0
                      "2" = "continuity correction \n (shift stat)",
                      )
     set.seed(10)
-    res2stage.fixC[[iC+1]] <- gridFinalPvalue(list(Info.d = c(12.58797814),
+    res2stage.fixC[[iC+1]] <- gridFinalPvalue(list(Info.d = c(12.58797814, 20.74866926),
                                                    Info.i = c(10.60271846, 20.74866926),
-                                                   ck = 1.959964, ck.unrestricted = 1.49772992,
+                                                   ck = c(1.959964, 1.9961649), ck.unrestricted = c(1.49772992, 1.9961649),
                                                    lk = c(0.24335814, 1.9961649),
                                                    uk = c(2.5458844, 1.9961649),
                                                    kMax = 2,
