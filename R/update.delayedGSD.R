@@ -74,14 +74,13 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                               k = NULL, type.k = NULL, overrule.futility = FALSE,
                               p.value = TRUE, ci = TRUE, estimate = TRUE, trace = TRUE, ...){
 
-    
     if(overrule.futility){        
         if(any(names(match.call()[-1]) %in% c("object","overrule.futility") == FALSE)){
             args.ignore <- names(match.call()[-1])[names(match.call()[-1]) %in% c("object","overrule.futility") == FALSE]
             warning("Arguments \"",paste(args.ignore, collapse="\", \""),"\" are ignored when overruling the futility bound. \n")
         }
             
-        return(.overrrule(object))
+        return(.overrule(object))
     }
 
     ## ** normalize user input
@@ -271,10 +270,10 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                 attr(delta.MUE,"error") <- c(p.value = unname(attr(resP,"error")))
             }
         }
-
+            
         ## *** CI
         if(ci & as.double(resP) < 1){
-            
+
             resCI <- do.call(FinalCI, c(ls.args, list(FCT.p_value = FCT.p_value, conf.level = object$conf.level, tolerance = tolerance, conclusion = object$conclusion["decision",k])))
             delta.MUE[1,"lower"] <- resCI["lower"]
             delta.MUE[1,"upper"] <- resCI["upper"]
@@ -489,8 +488,8 @@ update.delayedGSD <- function(object, delta, Info.i, Info.d,
                 type.update = type.update))
 }
 
-## * .overrrule
-.overrrule <- function(object){
+## * .overrule
+.overrule <- function(object){
     kMax <- object$kMax
     object.type.k <- object$stage$type
     object.k <- object$stage$k
